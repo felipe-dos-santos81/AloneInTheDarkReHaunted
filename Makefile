@@ -40,6 +40,19 @@ archive ?= backgrounds_hd.hda
 # Texture tools (tools/textures.py). Prefer the project venv when present.
 PYTHON ?= $(if $(wildcard tools/.venv/bin/python),tools/.venv/bin/python,python3)
 
+# Texture pipeline paths (never reuse `data`/`out`: run and hda-pack own them).
+gamedata ?= data/aitd1
+textures ?= data/textures
+textures_ai ?= data/textures-ai
+dest ?= Assets/backgrounds_hd
+dark ?= mirror
+HD_ARCHIVE = $(SRC_DIR)/backgrounds_hd.hda
+ifeq ($(UNAME_S),Darwin)
+BUNDLE_RESOURCES = $(BUILD_DIR)/Fitd/Tatou.app/Contents/Resources
+else
+BUNDLE_RESOURCES =
+endif
+
 # First existing path across the single-config and multi-config output layouts.
 BINARY = $(firstword $(wildcard \
 	$(BUILD_DIR)/Fitd/Tatou \
@@ -54,7 +67,8 @@ UNPACK_TOOL = $(firstword $(wildcard \
 
 .PHONY: help deps configure build build-fitd build-tools run \
         hda-pack hda-unpack clean distclean rebuild \
-        tools-deps test-tools
+        tools-deps test-tools \
+        export-textures check-textures import-textures hd-install
 
 # ── Environment ──────────────────────────────────────────────────────────────
 
@@ -108,6 +122,24 @@ tools-deps: ## [STEP 5] Create tools/.venv with the texture tool dependencies
 
 test-tools: ## Run the texture tool test-suite
 	$(PYTHON) -m pytest tests/tools -q
+
+export-textures: ## [STEP 5] Export original 320x200 plates and screens (usage: make export-textures [gamedata=DIR] [textures=DIR])
+	$(PYTHON) tools/textures.py export --data "$(gamedata)" --out "$(textures)"
+
+check-textures: ## [STEP 5] Validate upscaled textures without writing (usage: make check-textures [textures_ai=DIR] [dest=DIR] [dark=mirror|all|none])
+	$(PYTHON) tools/textures.py import --src "$(textures_ai)" --dest "$(dest)" --originals "$(textures)" --dark "$(dark)" --dry-run
+
+import-textures: ## [STEP 5] Import upscaled textures into Assets/backgrounds_hd (usage: make import-textures [textures_ai=DIR] [dest=DIR] [dark=mirror|all|none])
+	$(PYTHON) tools/textures.py import --src "$(textures_ai)" --dest "$(dest)" --originals "$(textures)" --dark "$(dark)"
+
+hd-install: ## [STEP 5] Pack Assets/backgrounds_hd into backgrounds_hd.hda and copy it into the app bundle (run 'make build-tools' first)
+	@test -x "$(HDA_TOOL)" || { echo "error: build_hda_archive not found - run 'make build-tools'"; exit 1; }
+	"$(HDA_TOOL)" "$(dest)" "$(HD_ARCHIVE)"
+	@if [ -n "$(BUNDLE_RESOURCES)" ] && [ -d "$(BUNDLE_RESOURCES)" ]; then \
+		cp "$(HD_ARCHIVE)" "$(BUNDLE_RESOURCES)/" && echo "installed $(HD_ARCHIVE) -> $(BUNDLE_RESOURCES)/"; \
+	else \
+		echo "note: no built app bundle found; the next 'make build' copies $(HD_ARCHIVE) into it"; \
+	fi
 
 # ── Development ───────────────────────────────────────────────────────────────
 

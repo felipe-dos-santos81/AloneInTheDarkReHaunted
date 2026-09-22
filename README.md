@@ -57,6 +57,30 @@ The original game files are **not** included, so you still need to supply them. 
 
 The game loads its files from the folder you start it in and writes `aitd_remaster.cfg` there too, so that folder must be writable.
 
+### HD Textures: Export, Upscale, Import
+
+The engine already loads high-resolution backgrounds from `backgrounds_hd.hda`
+when `graphics.hdBackgrounds = true` in `aitd_remaster.cfg`. The texture tool
+in `tools/` lets you produce your own set from the original game data:
+
+```bash
+make tools-deps          # once: Python venv with Pillow, numpy, pytest
+make export-textures     # originals (320x200 PNG) -> data/textures/{backgrounds,screens} + manifest.json
+# upscale data/textures/** with any tool into data/textures-ai/**, same file names
+make check-textures      # validate data/textures-ai the way the engine will load it (writes nothing)
+make import-textures     # copy validated PNGs into Assets/backgrounds_hd, derive *_DARK variants
+make hd-install          # pack Assets/backgrounds_hd into backgrounds_hd.hda and copy it into the app bundle
+make run data=data/aitd1
+```
+
+Files use the engine's own names (`CAMERA02_007.png`, `ITD_RESS_013.png`).
+Any resolution with a 16:10 aspect works; integer multiples of 320x200 are
+recommended. A file that is missing from `data/textures-ai` leaves the
+existing HD art in place; a file identical to the original is skipped. Dark
+rooms use `<name>_DARK.png`, which `import-textures` derives from your
+upscale (`dark=all` for every camera, `dark=none` to skip). `data/` is
+git-ignored, so neither the game files nor the exports are ever committed.
+
 ---
 
 ## Screenshots (In-Game)

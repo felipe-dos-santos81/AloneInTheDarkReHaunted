@@ -10,3 +10,5 @@ docs/superpowers/
 tools/.venv/
 __pycache__/
 .pytest_cache/
+TatouSource/backgrounds_hd.hda
+TatouSource/build/**/Resources/backgrounds_hd.hda
