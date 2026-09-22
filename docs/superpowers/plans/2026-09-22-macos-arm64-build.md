@@ -179,19 +179,20 @@ ifeq ($(UNAME_S),Darwin)
 # Apple Silicon: default to arm64, Ninja, and a platform-named build dir that
 # matches the "macos-arm64" CMake preset so both entry points share one tree.
 ARCH ?= arm64
+DEPLOY_TARGET ?= 11.3
 generator ?= Ninja
 BUILD_DIR ?= build/macos-$(ARCH)
-ARCH_FLAGS = -DCMAKE_OSX_ARCHITECTURES="$(ARCH)"
+DARWIN_FLAGS = -DCMAKE_OSX_ARCHITECTURES="$(ARCH)" -DCMAKE_OSX_DEPLOYMENT_TARGET="$(DEPLOY_TARGET)"
 else
 BUILD_DIR ?= build/$(BUILD_TYPE)
-ARCH_FLAGS =
+DARWIN_FLAGS =
 endif
 
 JOBS ?= $(shell sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)
 CMAKE = cmake
 
 # Optional per-invocation args
-CONFIGURE_FLAGS = -DCMAKE_BUILD_TYPE="$(BUILD_TYPE)" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $(ARCH_FLAGS) $(if $(generator),-G "$(generator)")
+CONFIGURE_FLAGS = -DCMAKE_BUILD_TYPE="$(BUILD_TYPE)" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $(DARWIN_FLAGS) $(if $(generator),-G "$(generator)")
 ```
 
 - [ ] **Step 2: Verify the Makefile configures the shared tree**
@@ -201,9 +202,9 @@ Expected: CMake configures `build/macos-arm64` with no error.
 
 Run:
 ```bash
-grep -E "CMAKE_OSX_ARCHITECTURES|CMAKE_GENERATOR:" build/macos-arm64/CMakeCache.txt
+grep -E "CMAKE_OSX_ARCHITECTURES|CMAKE_OSX_DEPLOYMENT_TARGET|CMAKE_GENERATOR:" build/macos-arm64/CMakeCache.txt
 ```
-Expected: `arm64` and `CMAKE_GENERATOR:INTERNAL=Ninja` (same tree Task 1 configured, no generator conflict).
+Expected: `arm64`, `11.3`, and `CMAKE_GENERATOR:INTERNAL=Ninja` (same tree Task 1 configured, no generator conflict; the Makefile sets the deployment target too, not only the preset).
 
 - [ ] **Step 3: Verify the run target resolves the arm64 bundle path**
 
