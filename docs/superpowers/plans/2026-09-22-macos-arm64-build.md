@@ -340,7 +340,9 @@ foreach(_file IN LISTS _files)
 endforeach()
 ```
 
-In `Fitd/CMakeLists.txt`, make exactly two edits: add the `string(REPLACE ...)` line immediately before `add_custom_command`, and change the `"-DFILES=${MACOS_ASSETS}"` argument to `"-DFILES=${MACOS_ASSETS_ARG}"`. The resulting block is:
+In `Fitd/CMakeLists.txt`, make exactly two edits: add the `string(REPLACE ...)` line immediately before `add_custom_command`, and change the `"-DFILES=${MACOS_ASSETS}"` argument to `"-DFILES=\"${MACOS_ASSETS_ARG}\""`.
+
+The escaped quotes are required: CMake's Ninja generator emits custom-command arguments **raw** (this block does not use `VERBATIM`), so a bare `a|b|c` would be read by `/bin/sh` as a pipe. Escaping the quotes keeps it a single argument, matching the block's existing `-DDESTINATION="…"` idiom. The resulting block is:
 
 ```cmake
     # Copy any assets that might not exist yet at configure time via a post-build step.
@@ -350,7 +352,7 @@ In `Fitd/CMakeLists.txt`, make exactly two edits: add the `string(REPLACE ...)` 
     add_custom_command(TARGET Fitd POST_BUILD
         COMMAND ${CMAKE_COMMAND}
             -DDESTINATION="$<TARGET_BUNDLE_CONTENT_DIR:Fitd>/Resources"
-            "-DFILES=${MACOS_ASSETS_ARG}"
+            "-DFILES=\"${MACOS_ASSETS_ARG}\""
             -P "${CMAKE_SOURCE_DIR}/cmake/copy_existing_files.cmake"
         COMMAND chmod +x
             "$<TARGET_BUNDLE_CONTENT_DIR:Fitd>/MacOS/Tatou"
