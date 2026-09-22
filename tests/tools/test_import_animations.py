@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-only
 import dataclasses
 import shutil
 
@@ -63,6 +64,14 @@ def test_stray_files_are_errors(tmp_path):
     seq, findings = validate_sequence(d, job())
     assert seq is None and [f.kind for f in findings] == ["frames"]
     assert "frame_3.png" in findings[0].message and "notes.txt" in findings[0].message
+
+
+def test_hidden_files_are_ignored(tmp_path):
+    d = write_frames(tmp_path / "frames", 2)
+    (d / ".DS_Store").write_bytes(b"x")
+    seq, findings = validate_sequence(d, job())
+    assert findings == []
+    assert [p.name for p in seq.frames] == ["frame_0001.png", "frame_0002.png"]
 
 
 def test_an_empty_folder_is_an_error(tmp_path):
@@ -190,6 +199,34 @@ def test_menu_frames_are_flat_and_stale_numbers_are_removed(tree):
     assert (dest / "StartupMenuBackground_001.png").read_bytes() != b"old"
     assert (dest / "StartupMenuBackground.png").read_bytes() == b"still"
     assert (dest / "anim_StartupMenuBackground").is_dir()
+
+
+def test_menu_import_logs_the_useartwork_note(tree):
+    src, dest = tree
+    write_frames(frames_dir(src, "StartupMenuBackground"), 2)
+    logs = []
+    result = run_import(src, dest, manifest_for("StartupMenuBackground"), log=logs.append)
+    assert result.errors == []
+    assert any(line == "note: StartupMenuBackground_NNN.png plays only with "
+                       "graphics.useArtwork = false" for line in logs)
+
+
+def test_menu_dry_run_also_logs_the_useartwork_note(tree):
+    src, dest = tree
+    write_frames(frames_dir(src, "StartupMenuBackground"), 2)
+    logs = []
+    result = run_import(src, dest, manifest_for("StartupMenuBackground"), dry_run=True, log=logs.append)
+    assert result.errors == []
+    assert any("plays only with graphics.useArtwork = false" in line for line in logs)
+
+
+def test_scene_import_does_not_log_the_useartwork_note(tree):
+    src, dest = tree
+    write_frames(frames_dir(src, "CAMERA07_004"), 2)
+    logs = []
+    result = run_import(src, dest, manifest_for("CAMERA07_004"), log=logs.append)
+    assert result.errors == []
+    assert not any("useArtwork" in line for line in logs)
 
 
 def test_mixed_modes_are_written_as_rgb(tree):

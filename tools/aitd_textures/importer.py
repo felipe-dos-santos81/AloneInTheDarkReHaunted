@@ -145,7 +145,8 @@ def validate_sequence(frames_dir, job: AnimationJob) -> tuple[Sequence | None, l
     error rejects the whole sequence: the engine drops a frame whose size or
     channel count differs from frame 1, and a half-replaced clip plays wrong."""
     frames_dir = pathlib.Path(frames_dir)
-    entries = sorted(frames_dir.iterdir(), key=lambda p: p.name)
+    entries = sorted((p for p in frames_dir.iterdir() if not p.name.startswith(".")),
+                     key=lambda p: p.name)
     stray = [p.name for p in entries if not (p.is_file() and FRAME_RE.match(p.name))]
     if stray:
         return _rejected(frames_dir, "frames", "only frame_NNNN.png files belong here; found "
@@ -211,8 +212,9 @@ def _frame_bytes(path: pathlib.Path, verbatim: bool) -> bytes:
 def _import_animations(src: pathlib.Path, dest: pathlib.Path, manifest: Manifest | None,
                        dark: str, dark_factor: float, dry_run: bool, log,
                        result: ImportResult) -> set[str]:
-    """Validate and write every animations/<NAME>/frames/ sequence. Returns the
-    names imported (in a dry run: the names that would be)."""
+    """Validate and write every animations/<NAME>/frames/ sequence, and derive
+    anim_<NAME>_DARK/ for camera jobs per the `dark` policy. Returns the names
+    imported (in a dry run: the names that would be)."""
     jobs = manifest.jobs_by_name() if manifest is not None else {}
     imported: set[str] = set()
     for frames_dir in sorted((src / ANIMATIONS_FOLDER).glob(f"*/{FRAMES_FOLDER}")):
@@ -237,6 +239,7 @@ def _import_animations(src: pathlib.Path, dest: pathlib.Path, manifest: Manifest
             target = dest / menu_frame_name(1)
             if not dry_run:
                 write_menu_frames(dest, (_frame_bytes(path, seq.verbatim) for _, path in frames))
+            log(f"note: {job.engine} plays only with graphics.useArtwork = false")
         else:
             target = dest / anim_folder(name)
             if not dry_run:

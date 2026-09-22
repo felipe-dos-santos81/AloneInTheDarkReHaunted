@@ -162,6 +162,51 @@ def test_export_anims_flag_overrides_the_default_and_a_skip_exits_1(synthetic_da
     assert any("anim_CAMERA00_000: no PNG frames" in line for line in logs)
 
 
+def test_export_explicit_missing_anims_is_a_usage_error(synthetic_data_dir, tmp_path, logs):
+    missing = tmp_path / "nope"
+    rc = textures.main(["export", "--data", str(synthetic_data_dir), "--out", str(tmp_path / "o"),
+                        "--anims", str(missing)], root=tmp_path, log=logs.append)
+    assert rc == 2
+    assert any(line == f"error: {missing} is not a directory" for line in logs)
+    assert not (tmp_path / "o").exists()
+
+
+def test_export_default_missing_anims_is_a_notice(synthetic_data_dir, tmp_path, logs):
+    rc = textures.main(["export", "--data", str(synthetic_data_dir), "--out", str(tmp_path / "o")],
+                       root=tmp_path, log=logs.append)
+    assert rc == 0
+    assert any(line.startswith("no animations:") for line in logs)
+
+
+def test_export_explicit_anims_matching_default_absent_is_a_notice(synthetic_data_dir, tmp_path, logs):
+    # make export-textures always passes --anims explicitly (the Makefile default:
+    # anims ?= $(dest)), so an absent default folder must still get the friendly
+    # notice, not exit 2.
+    root = tmp_path
+    rc = textures.main(["export", "--data", str(synthetic_data_dir), "--out", str(root / "o"),
+                        "--anims", str(root / "Assets" / "backgrounds_hd")], root=root, log=logs.append)
+    assert rc == 0
+    assert any(line.startswith("no animations:") for line in logs)
+
+
+def test_import_dry_run_summary_says_animations_to_import(tmp_path, logs):
+    originals = tmp_path / "textures"
+    write_manifest(originals / "manifest.json", tmp_path, [],
+                   [make_job("CAMERA03_008", "backgrounds/CAMERA03_008.png", 2, (640, 400))])
+    ai = tmp_path / "ai"
+    frames = ai / "animations" / "CAMERA03_008" / "frames"
+    frames.mkdir(parents=True)
+    for i in (1, 2):
+        Image.new("RGB", (640, 400)).save(frames / f"frame_{i:04d}.png")
+    dest = tmp_path / "dest"
+    rc = textures.main(["import", "--src", str(ai), "--dest", str(dest), "--originals", str(originals),
+                        "--dry-run"], root=tmp_path, log=logs.append)
+    assert rc == 0
+    assert "  animations to import: 1 (2 frames)" in logs
+    assert not any("animations imported:" in line for line in logs)
+    assert not dest.exists()
+
+
 def test_import_summary_counts_animations_and_shadowed_stills(tmp_path, logs):
     originals = tmp_path / "textures"
     write_manifest(originals / "manifest.json", tmp_path, [],

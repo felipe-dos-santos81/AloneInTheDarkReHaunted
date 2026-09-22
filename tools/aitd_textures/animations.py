@@ -142,6 +142,10 @@ def replace_folder(final, files: Iterable[tuple[str, bytes]]) -> None:
     final = pathlib.Path(final)
     tmp = final.with_name(final.name + ".tmp")
     old = final.with_name(final.name + ".old")
+    if not final.exists() and old.exists():
+        # an earlier run died between the two renames below; recover the only
+        # copy of the clip before anything else can fail and lose it
+        os.replace(old, final)
     for leftover in (tmp, old):
         if leftover.exists():
             shutil.rmtree(leftover)

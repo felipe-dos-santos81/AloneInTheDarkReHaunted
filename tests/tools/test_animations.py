@@ -2,6 +2,7 @@
 import shutil
 
 import numpy as np
+import pytest
 from PIL import Image
 
 from aitd_textures.animations import (
@@ -155,6 +156,31 @@ def test_replace_folder_creates_a_missing_folder_and_clears_leftovers(tmp_path):
     replace_folder(hd / "anim_Y", [("frame_0001.png", b"a")])
     assert (hd / "anim_Y" / "frame_0001.png").read_bytes() == b"a"
     assert sorted(p.name for p in hd.iterdir()) == ["anim_Y"]
+
+
+def test_replace_folder_recovers_from_a_swap_interrupted_after_the_first_rename(tmp_path):
+    hd = tmp_path / "hd"
+    old = hd / "anim_Y.old"
+    old.mkdir(parents=True)
+    (old / "old.png").write_bytes(b"old")
+    replace_folder(hd / "anim_Y", [("frame_0001.png", b"a")])
+    assert sorted(p.name for p in (hd / "anim_Y").iterdir()) == ["frame_0001.png"]
+    assert sorted(p.name for p in hd.iterdir()) == ["anim_Y"]
+
+
+def test_replace_folder_restores_the_old_clip_before_a_failed_write(tmp_path):
+    hd = tmp_path / "hd"
+    old = hd / "anim_Y.old"
+    old.mkdir(parents=True)
+    (old / "old.png").write_bytes(b"old")
+
+    def bad_files():
+        yield ("frame_0001.png", b"a")
+        raise OSError("disk fell over")
+
+    with pytest.raises(OSError):
+        replace_folder(hd / "anim_Y", bad_files())
+    assert (hd / "anim_Y" / "old.png").read_bytes() == b"old"
 
 
 def test_write_menu_frames_removes_higher_numbers_only(tmp_path):

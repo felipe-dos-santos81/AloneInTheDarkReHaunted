@@ -72,7 +72,11 @@ def cmd_export(args, root: pathlib.Path, log) -> int:
         log(f"error: {exc}")
         return EXIT_USAGE
     out = args.out if args.out is not None else root / DEFAULTS["textures"]
-    anims = args.anims if args.anims is not None else root / DEFAULTS["anims"]
+    default_anims = root / DEFAULTS["anims"]
+    anims = args.anims if args.anims is not None else default_anims
+    if args.anims is not None and not anims.is_dir() and anims.resolve() != default_anims.resolve():
+        log(f"error: {anims} is not a directory")
+        return EXIT_USAGE
     try:
         result = export_all(data_dir, out, log, anims)
     except (DataNotFound, PakError, ValueError, OSError) as exc:
@@ -90,7 +94,8 @@ def summarize(result: ImportResult, dest: pathlib.Path, dry_run: bool, log) -> N
     log(f"  dark variants derived: {len(result.dark)}")
     log(f"  skipped (identical to original): {len(result.skipped)}")
     log(f"  not replaced (destination keeps its current file): {len(result.not_replaced)}")
-    log(f"  animations imported: {len(result.animations)} ({result.animation_frames} frames)")
+    anim_label = "animations to import" if dry_run else "animations imported"
+    log(f"  {anim_label}: {len(result.animations)} ({result.animation_frames} frames)")
     log(f"  shadowed by an animation: {sum(1 for f in result.warnings if f.kind == 'shadowed')}")
     log(f"  errors: {sum(by_kind.values())}" + (" (" + ", ".join(f"{k} {v}" for k, v in sorted(by_kind.items())) + ")" if by_kind else ""))
 
