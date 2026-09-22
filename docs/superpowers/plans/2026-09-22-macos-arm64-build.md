@@ -402,10 +402,20 @@ Then quit the game (close the window or `Cmd+Q`).
 
 Steps 0 and 0b are the only committed changes in this task. Do not commit build artifacts; confirm `git status` shows only the three source files staged.
 
+If neither fix is committed yet:
+
 ```bash
 cd /Users/felipe.dos.santos/code/mine/AloneInTheDarkReHaunted
 git add TatouSource/FitdLib/main.cpp TatouSource/cmake/copy_existing_files.cmake TatouSource/Fitd/CMakeLists.txt
 git commit -m "fix(macos): guard Windows-only console code and repair asset-copy step"
+```
+
+If Step 0's guard is already committed, commit the remaining Step 0b files on their own:
+
+```bash
+cd /Users/felipe.dos.santos/code/mine/AloneInTheDarkReHaunted
+git add TatouSource/cmake/copy_existing_files.cmake TatouSource/Fitd/CMakeLists.txt
+git commit -m "fix(macos): repair asset-copy POST_BUILD step"
 ```
 
 - [ ] **Step 7: Record the result**
