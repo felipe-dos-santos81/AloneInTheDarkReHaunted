@@ -116,23 +116,47 @@ cd /path/to/game-data
 
 ---
 
-## macOS (experimental)
+## macOS (Apple Silicon)
 
-> macOS support compiles but is less tested than Windows and Linux.
+> Targets `arm64` natively. Windowed mode and an unlocked mouse cursor are the defaults.
 
 ### 1. Install tools
 
 ```bash
-xcode-select --install          # Apple Clang
-brew install cmake ninja        # via Homebrew
+xcode-select --install              # Apple Clang
+brew install cmake ninja pkg-config # via Homebrew
 ```
 
-### 2. Build
+### 2. Build (CMake preset)
+
+Run from the `TatouSource` directory:
 
 ```bash
-mkdir -p build/macos && cd build/macos
-cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ../..
-cmake --build . --target Fitd
+cd TatouSource
+cmake --preset macos-arm64
+cmake --build --preset macos-arm64 --target Fitd
+```
+
+The app bundle is written to `TatouSource/build/macos-arm64/Fitd/Tatou.app`.
+
+### 3. Build and run (Makefile)
+
+The `TatouSource/Makefile` targets the same `build/macos-arm64` tree with
+`ARCH=arm64` by default:
+
+```bash
+cd TatouSource
+make build-fitd                                   # configure + build the game
+make run data=/path/to/writable/dir               # launch windowed
+```
+
+Game data is embedded in the binary, so no original PAK files are required.
+
+### 4. Verify the architecture
+
+```bash
+file TatouSource/build/macos-arm64/Fitd/Tatou.app/Contents/MacOS/Tatou
+# => Mach-O 64-bit executable arm64
 ```
 
 The CMake configuration automatically includes the Objective-C++ patch file (`bgfxPatch.mm`) on Darwin.
