@@ -190,6 +190,23 @@
                 "lhs": "${hostSystemName}",
                 "rhs": "Windows"
             }
+        },
+        {
+            "name": "macos-arm64",
+            "displayName": "macOS Apple Silicon (arm64) Release",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/macos-arm64",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_OSX_ARCHITECTURES": "arm64",
+                "CMAKE_OSX_DEPLOYMENT_TARGET": "11.3",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
         }
     ],
     "buildPresets": [
@@ -244,6 +261,10 @@
             "name": "uwp-arm64-release",
             "configurePreset": "uwp-arm64-release",
             "configuration": "Release"
+        },
+        {
+            "name": "macos-arm64",
+            "configurePreset": "macos-arm64"
         }
     ]
 }
