@@ -149,7 +149,7 @@ git commit -m "build: add macos-arm64 CMake presets"
 
 **Interfaces:**
 - Consumes: the binaryDir `build/macos-arm64` produced by Task 1's preset (both must use generator `Ninja` so they share one build tree).
-- Produces: `make configure` / `make build` / `make build-fitd` / `make run` on Darwin target arm64 in `build/macos-arm64`, with `ARCH ?= arm64` overridable (`make build ARCH=x86_64`). Task 4 uses `make build-fitd` and `make run`.
+- Produces: `make configure` / `make build` / `make build-fitd` / `make run` on Darwin target arm64 in `build/macos-arm64`. arm64 is hardcoded (arm64-only target); only `DEPLOY_TARGET` is overridable. Task 4 uses `make build-fitd` and `make run`.
 
 - [ ] **Step 1: Replace the variable block**
 
@@ -176,13 +176,14 @@ UNAME_S := $(shell uname -s)
 BUILD_TYPE ?= Release
 
 ifeq ($(UNAME_S),Darwin)
-# Apple Silicon: default to arm64, Ninja, and a platform-named build dir that
-# matches the "macos-arm64" CMake preset so both entry points share one tree.
-ARCH ?= arm64
+# Apple Silicon (arm64) native build. Shares the "macos-arm64" CMake preset's
+# build tree, so both entry points must use the same generator (Ninja).
+# arm64 is hardcoded: the target is arm64-only, and an arch-suffixed build dir
+# would collide with the tracked WSL cross-compile tree build/macos-x86_64.
 DEPLOY_TARGET ?= 11.3
 generator ?= Ninja
-BUILD_DIR ?= build/macos-$(ARCH)
-DARWIN_FLAGS = -DCMAKE_OSX_ARCHITECTURES="$(ARCH)" -DCMAKE_OSX_DEPLOYMENT_TARGET="$(DEPLOY_TARGET)"
+BUILD_DIR ?= build/macos-arm64
+DARWIN_FLAGS = -DCMAKE_OSX_ARCHITECTURES="arm64" -DCMAKE_OSX_DEPLOYMENT_TARGET="$(DEPLOY_TARGET)"
 else
 BUILD_DIR ?= build/$(BUILD_TYPE)
 DARWIN_FLAGS =
@@ -211,10 +212,13 @@ Expected: `arm64`, `11.3`, and `CMAKE_GENERATOR:INTERNAL=Ninja` (same tree Task 
 Run: `make -n run`
 Expected: the printed launch command ends with `/build/macos-arm64/Fitd/Tatou.app/Contents/MacOS/Tatou` (not `build/Release/...`, not `x86_64`).
 
-- [ ] **Step 4: Verify `ARCH` is overridable**
+- [ ] **Step 4: Verify the Darwin flags and `DEPLOY_TARGET` override**
 
-Run: `make -n configure ARCH=x86_64 | grep -o 'CMAKE_OSX_ARCHITECTURES="[^"]*"'`
-Expected: `CMAKE_OSX_ARCHITECTURES="x86_64"` — confirming the default is arm64 but can be overridden.
+Run: `make -n configure | grep -o 'CMAKE_OSX_ARCHITECTURES="[^"]*" -DCMAKE_OSX_DEPLOYMENT_TARGET="[^"]*"'`
+Expected: `CMAKE_OSX_ARCHITECTURES="arm64" -DCMAKE_OSX_DEPLOYMENT_TARGET="11.3"`.
+
+Run: `make -n configure DEPLOY_TARGET=12.0 | grep -o 'CMAKE_OSX_DEPLOYMENT_TARGET="[^"]*"'`
+Expected: `CMAKE_OSX_DEPLOYMENT_TARGET="12.0"` — confirming the override works.
 
 - [ ] **Step 5: Commit**
 
@@ -492,21 +496,26 @@ The app bundle is written to `TatouSource/build/macos-arm64/Fitd/Tatou.app`.
 
 ### 3. Build and run (Makefile)
 
-The `TatouSource/Makefile` targets the same `build/macos-arm64` tree with
-`ARCH=arm64` by default:
+The `TatouSource/Makefile` targets the same `build/macos-arm64` tree and
+builds arm64:
 
 ```bash
 cd TatouSource
 make build-fitd                                   # configure + build the game
-make run data=/path/to/writable/dir               # launch windowed
+make run data=/path/to/writable/dir               # build + launch windowed
 ```
 
 Game data is embedded in the binary, so no original PAK files are required.
 
+> A clean build regenerates the tracked Metal shader headers under
+> `TatouSource/FitdLib/shaders/generated/metal/`. If `git status` shows some of
+> them modified after a build and you did not intend to change them, restore
+> with `git checkout -- TatouSource/FitdLib/shaders/generated/metal`.
+
 ### 4. Verify the architecture
 
 ```bash
-file TatouSource/build/macos-arm64/Fitd/Tatou.app/Contents/MacOS/Tatou
+file build/macos-arm64/Fitd/Tatou.app/Contents/MacOS/Tatou
 # => Mach-O 64-bit executable arm64
 ```
 
