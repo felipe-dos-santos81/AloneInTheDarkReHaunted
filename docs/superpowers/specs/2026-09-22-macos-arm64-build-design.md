@@ -144,6 +144,10 @@ Replace the "macOS (experimental)" section with concrete Apple Silicon steps:
   preset; this will be handled during verification if it occurs.
 - **First build cost.** bgfx/SDL/soloud/zlib compile from source; the first
   configure+build is long but one-time.
+- **Vendored zlib 1.2.11 vs the modern macOS SDK.** `zutil.h` redefines
+  `fdopen` when `TARGET_OS_MAC` is defined, which the current SDK does;
+  this breaks compilation. Resolved by removing that legacy branch to match
+  upstream zlib (Apple still gets `OS_CODE 19` via `__APPLE__`).
 
 ## Files changed
 
@@ -152,3 +156,4 @@ Replace the "macOS (experimental)" section with concrete Apple Silicon steps:
 | `TatouSource/CMakePresets.json` | add `macos-arm64` configure + build presets |
 | `TatouSource/Makefile` | add `ARCH` and Darwin arch flag; commit the file |
 | `BUILDING.md`, `TatouSource/BUILDING.md`, `TatouSource/Docs/BUILDING.md` | replace experimental macOS section with arm64 steps (all three copies, to avoid drift) |
+| `TatouSource/ThirdParty/zlib/zutil.h` | drop the legacy `TARGET_OS_MAC` `fdopen` macro that fails to compile under the current macOS SDK (discovered during implementation; matches upstream zlib) |

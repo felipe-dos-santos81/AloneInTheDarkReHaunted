@@ -28,7 +28,7 @@
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: configure preset `macos-arm64` (generator `Ninja`, binaryDir `${sourceDir}/build/macos-arm64`, `CMAKE_OSX_ARCHITECTURES=arm64`, `CMAKE_OSX_DEPLOYMENT_TARGET=11.3`, `CMAKE_BUILD_TYPE=Release`, `CMAKE_EXPORT_COMPILE_COMMANDS=ON`) and a matching build preset `macos-arm64`. Task 2 and Task 3 rely on the binaryDir path `build/macos-arm64`.
+- Produces: configure preset `macos-arm64` (generator `Ninja`, binaryDir `${sourceDir}/build/macos-arm64`, `CMAKE_OSX_ARCHITECTURES=arm64`, `CMAKE_OSX_DEPLOYMENT_TARGET=11.3`, `CMAKE_BUILD_TYPE=Release`, `CMAKE_EXPORT_COMPILE_COMMANDS=ON`) and a matching build preset `macos-arm64`. Task 2 and Task 4 rely on the binaryDir path `build/macos-arm64`.
 
 - [ ] **Step 1: Add the configure preset**
 
@@ -149,7 +149,7 @@ git commit -m "build: add macos-arm64 CMake presets"
 
 **Interfaces:**
 - Consumes: the binaryDir `build/macos-arm64` produced by Task 1's preset (both must use generator `Ninja` so they share one build tree).
-- Produces: `make configure` / `make build` / `make build-fitd` / `make run` on Darwin target arm64 in `build/macos-arm64`, with `ARCH ?= arm64` overridable (`make build ARCH=x86_64`). Task 3 uses `make build-fitd` and `make run`.
+- Produces: `make configure` / `make build` / `make build-fitd` / `make run` on Darwin target arm64 in `build/macos-arm64`, with `ARCH ?= arm64` overridable (`make build ARCH=x86_64`). Task 4 uses `make build-fitd` and `make run`.
 
 - [ ] **Step 1: Replace the variable block**
 
@@ -225,13 +225,66 @@ git commit -m "build: add Apple Silicon arch support to Makefile"
 
 ---
 
-### Task 3: Build and verify the arm64 windowed, unlocked-cursor binary
+### Task 3: Fix vendored zlib `fdopen` clash for the modern macOS SDK
+
+**Files:**
+- Modify: `TatouSource/ThirdParty/zlib/zutil.h:133-145`
+
+**Interfaces:**
+- Consumes: nothing.
+- Produces: a `zlibstatic` target that compiles under the current macOS SDK, unblocking Task 4's build. Behavior is unchanged on every platform (Apple still gets `OS_CODE 19` from the existing `#ifdef __APPLE__` branch).
+
+- [ ] **Step 1: Replace the legacy macOS block**
+
+In `TatouSource/ThirdParty/zlib/zutil.h`, replace:
+
+```c
+#if defined(MACOS) || defined(TARGET_OS_MAC)
+#  define OS_CODE  7
+#  ifndef Z_SOLO
+#    if defined(__MWERKS__) && __dest_os != __be_os && __dest_os != __win32_os
+#      include <unix.h> /* for fdopen */
+#    else
+#      ifndef fdopen
+#        define fdopen(fd,mode) NULL /* No fdopen() */
+#      endif
+#    endif
+#  endif
+#endif
+```
+
+with:
+
+```c
+#if defined(MACOS)
+#  define OS_CODE  7
+#endif
+```
+
+This matches upstream zlib, which removed the `TARGET_OS_MAC`/`fdopen` branch. The current macOS SDK defines `TARGET_OS_MAC` and declares `fdopen` as a function in `<stdio.h>`; the removed macro mangled that declaration. `__APPLE__` still sets `OS_CODE 19` (`zutil.h:162`), so Apple behavior is unchanged.
+
+- [ ] **Step 2: Build the zlib target**
+
+Run: `cmake --build build/macos-arm64 --target zlibstatic`
+Expected: builds with no errors. (Pre-existing `-Wdeprecated-non-prototype` warnings from zlib's K&R-style declarations are expected and unrelated.)
+
+- [ ] **Step 3: Commit**
+
+```bash
+cd /Users/felipe.dos.santos/code/mine/AloneInTheDarkReHaunted
+git add TatouSource/ThirdParty/zlib/zutil.h
+git commit -m "fix(zlib): drop legacy TARGET_OS_MAC fdopen macro that breaks modern macOS SDK"
+```
+
+---
+
+### Task 4: Build and verify the arm64 windowed, unlocked-cursor binary
 
 **Files:**
 - None modified (verification only).
 
 **Interfaces:**
-- Consumes: `macos-arm64` preset (Task 1) and Makefile targets (Task 2).
+- Consumes: `macos-arm64` preset (Task 1), Makefile targets (Task 2), and the zlib fix (Task 3).
 - Produces: a verified `build/macos-arm64/Fitd/Tatou.app/Contents/MacOS/Tatou` reported as `arm64`, confirmed to launch windowed with a free cursor.
 
 - [ ] **Step 1: Build the game executable**
@@ -280,7 +333,7 @@ No commit. If the window appears fullscreen or the cursor is confined, STOP and 
 
 ---
 
-### Task 4: Document macOS arm64 build in all three `BUILDING.md` copies
+### Task 5: Document macOS arm64 build in all three `BUILDING.md` copies
 
 **Files:**
 - Modify: `BUILDING.md` (macOS section, currently lines 278-297)
