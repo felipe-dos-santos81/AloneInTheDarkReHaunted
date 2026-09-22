@@ -85,10 +85,12 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES Darwin)
 
     # Copy any assets that might not exist yet at configure time via a post-build step.
     # Missing optional assets should not make the executable link fail.
+    # Join with "|" so the shell cannot split the list on semicolons.
+    string(REPLACE ";" "|" MACOS_ASSETS_ARG "${MACOS_ASSETS}")
     add_custom_command(TARGET Fitd POST_BUILD
         COMMAND ${CMAKE_COMMAND}
             -DDESTINATION="$<TARGET_BUNDLE_CONTENT_DIR:Fitd>/Resources"
-            "-DFILES=${MACOS_ASSETS}"
+            "-DFILES=\"${MACOS_ASSETS_ARG}\""
             -P "${CMAKE_SOURCE_DIR}/cmake/copy_existing_files.cmake"
         COMMAND chmod +x
             "$<TARGET_BUNDLE_CONTENT_DIR:Fitd>/MacOS/Tatou"
