@@ -520,6 +520,12 @@ void HQR_Reset(hqrEntryStruct<T>* hqrPtr)
 template <typename T>
 void HQR_Free(hqrEntryStruct<T>* hqrPtr)
 {
+    // Freeing a resource that was never created is a no-op. cleanupAndExit()
+    // frees every resource unconditionally, but the engine can be quit from the
+    // startup options gate, before OpenProgram() has created them.
+    if (!hqrPtr)
+        return;
+
     HQR_Reset(hqrPtr);
 
     delete hqrPtr;
