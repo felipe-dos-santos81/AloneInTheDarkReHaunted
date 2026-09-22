@@ -20,6 +20,45 @@ AITD-R (also known as *Alone In The Dark Re-Haunted*) lets you play the original
 
 ---
 
+## About This Fork
+
+This repository is a fork of [spacefarergames/AloneInTheDarkReHaunted](https://github.com/spacefarergames/AloneInTheDarkReHaunted) that focuses on *Alone in the Dark 1*. It aims to:
+
+- **Improve game accessibility.**
+- **Provide a native macOS port** (Apple Silicon / arm64). See the [macOS section of BUILDING.md](BUILDING.md#macos-apple-silicon) for build steps.
+
+### Adding the Original Game Files
+
+The original game files are **not** included, so you still need to supply them. On macOS the engine does not search Steam, GOG or CD installs for you, so copy the files in by hand:
+
+1. Find the `INDARK` folder in your copy of *Alone in the Dark 1*. It holds the `.PAK` and `.ITD` files (`LISTBODY.PAK`, `ETAGE00.PAK`, `CAMERA00.PAK`, `OBJETS.ITD`, `VARS.ITD`, …).
+   - **GOG (macOS):** right-click `Alone in the Dark 1.app` → *Show Package Contents* → `Contents/Resources/game/INDARK/`
+   - **Steam / GOG (Windows):** `<install folder>/INDARK/`
+   - **CD-ROM:** `INDARK/` on the disc
+2. Copy everything in that folder into `data/aitd1/` at the root of this repository. Git ignores `data/`, so your game files will never be committed.
+
+   ```
+   AloneInTheDarkReHaunted/
+   └── data/
+       └── aitd1/
+           ├── CAMERA00.PAK
+           ├── ETAGE00.PAK
+           ├── LISTBODY.PAK
+           ├── OBJETS.ITD
+           └── …
+   ```
+
+3. Build the game and start it from that folder:
+
+   ```bash
+   make build-fitd
+   make run data=data/aitd1
+   ```
+
+The game loads its files from the folder you start it in and writes `aitd_remaster.cfg` there too, so that folder must be writable.
+
+---
+
 ## Screenshots (In-Game)
 ![573227923-7d49eb5a-8d31-4474-a939-ff9876fdc9df](https://github.com/user-attachments/assets/63ea6028-5b75-4003-9db5-a0e3c9040d87)
 
