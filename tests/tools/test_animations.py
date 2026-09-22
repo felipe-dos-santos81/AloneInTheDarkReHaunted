@@ -4,7 +4,15 @@ import shutil
 import numpy as np
 from PIL import Image
 
-from aitd_textures.animations import FRAME_RE, discover, export_animations, frame_name, make_job
+from aitd_textures.animations import (
+    FRAME_RE,
+    discover,
+    export_animations,
+    frame_name,
+    make_job,
+    replace_folder,
+    write_menu_frames,
+)
 from aitd_textures.manifest import ImageRecord
 
 
@@ -127,3 +135,35 @@ def test_folders_without_png_frames_are_skipped(tmp_path):
                               "anim_CAMERA01_001: non-PNG frames (f001.tga)"]
     assert any(line.startswith("warning: skipped anim_CAMERA01_000") for line in logs)
     assert not (tmp_path / "out" / "animations" / "CAMERA01_000").exists()
+
+
+def test_replace_folder_swaps_in_exactly_the_new_files(tmp_path):
+    final = tmp_path / "anim_X"
+    final.mkdir()
+    (final / "ezgif-frame-001.png").write_bytes(b"old")
+    replace_folder(final, [("frame_0001.png", b"a"), ("frame_0002.png", b"b")])
+    assert sorted(p.name for p in final.iterdir()) == ["frame_0001.png", "frame_0002.png"]
+    assert (final / "frame_0002.png").read_bytes() == b"b"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["anim_X"]
+
+
+def test_replace_folder_creates_a_missing_folder_and_clears_leftovers(tmp_path):
+    hd = tmp_path / "hd"
+    for leftover in ("anim_Y.tmp", "anim_Y.old"):
+        (hd / leftover).mkdir(parents=True)
+        (hd / leftover / "junk.png").write_bytes(b"x")
+    replace_folder(hd / "anim_Y", [("frame_0001.png", b"a")])
+    assert (hd / "anim_Y" / "frame_0001.png").read_bytes() == b"a"
+    assert sorted(p.name for p in hd.iterdir()) == ["anim_Y"]
+
+
+def test_write_menu_frames_removes_higher_numbers_only(tmp_path):
+    for n in range(1, 5):
+        (tmp_path / f"StartupMenuBackground_{n:03d}.png").write_bytes(b"old")
+    (tmp_path / "StartupMenuBackground.png").write_bytes(b"still")
+    (tmp_path / "StartupMenuBackgroundWithArt_003.png").write_bytes(b"art")
+    write_menu_frames(tmp_path, [b"a", b"b"])
+    assert sorted(p.name for p in tmp_path.iterdir()) == [
+        "StartupMenuBackground.png", "StartupMenuBackgroundWithArt_003.png",
+        "StartupMenuBackground_001.png", "StartupMenuBackground_002.png"]
+    assert (tmp_path / "StartupMenuBackground_002.png").read_bytes() == b"b"

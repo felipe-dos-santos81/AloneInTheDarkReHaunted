@@ -1,10 +1,11 @@
 import dataclasses
 
+import pytest
 from PIL import Image
 
 from aitd_textures import importer
 from aitd_textures.animations import make_job
-from aitd_textures.importer import validate_sequence
+from aitd_textures.importer import run_import, validate_sequence
 from aitd_textures.manifest import Manifest
 
 
@@ -127,3 +128,106 @@ def test_size_and_memory_warnings(tmp_path, monkeypatch):
     assert seq is not None
     assert sorted(f.kind for f in findings) == ["memory", "size"]
     assert all(f.severity == "warning" for f in findings)
+
+
+@pytest.fixture
+def tree(tmp_path):
+    src = tmp_path / "textures-ai"
+    dest = tmp_path / "backgrounds_hd"
+    dest.mkdir()
+    return src, dest
+
+
+def frames_dir(src, name):
+    return src / "animations" / name / "frames"
+
+
+def test_scene_animation_replaces_the_whole_folder(tree):
+    src, dest = tree
+    write_frames(frames_dir(src, "CAMERA07_004"), 2)
+    old = dest / "anim_CAMERA07_004"
+    old.mkdir()
+    for i in range(1, 4):
+        (old / f"ezgif-frame-{i:03d}.png").write_bytes(b"old")
+    (dest / "anim_CAMERA07_004_grassmask").mkdir()
+    (dest / "anim_CAMERA07_004_grassmask" / "grassmask_000.png").write_bytes(b"mask")
+    result = run_import(src, dest, manifest_for("CAMERA07_004"), log=_quiet)
+    assert result.errors == []
+    assert result.animations == [dest / "anim_CAMERA07_004"] and result.animation_frames == 2
+    assert sorted(p.name for p in old.iterdir()) == ["frame_0001.png", "frame_0002.png"]
+    assert (old / "frame_0002.png").read_bytes() == (
+        frames_dir(src, "CAMERA07_004") / "frame_0002.png").read_bytes()
+    assert sorted(p.name for p in dest.iterdir()) == ["anim_CAMERA07_004"]  # grassmask cache gone
+
+
+def test_a_rejected_sequence_leaves_the_destination_alone(tree):
+    src, dest = tree
+    d = write_frames(frames_dir(src, "CAMERA07_004"), 2)
+    Image.new("RGB", (320, 200)).save(d / "frame_0003.png")
+    old = dest / "anim_CAMERA07_004"
+    old.mkdir()
+    (old / "ezgif-frame-001.png").write_bytes(b"old")
+    result = run_import(src, dest, manifest_for("CAMERA07_004"), log=_quiet)
+    assert [f.kind for f in result.errors] == ["frames"]
+    assert result.animations == []
+    assert [p.name for p in old.iterdir()] == ["ezgif-frame-001.png"]
+    assert sorted(p.name for p in dest.iterdir()) == ["anim_CAMERA07_004"]
+
+
+def test_menu_frames_are_flat_and_stale_numbers_are_removed(tree):
+    src, dest = tree
+    write_frames(frames_dir(src, "StartupMenuBackground"), 3)
+    for i in range(1, 6):
+        (dest / f"StartupMenuBackground_{i:03d}.png").write_bytes(b"old")
+    (dest / "StartupMenuBackground.png").write_bytes(b"still")
+    (dest / "anim_StartupMenuBackground").mkdir()
+    result = run_import(src, dest, manifest_for("StartupMenuBackground"), log=_quiet)
+    assert result.errors == [] and result.animation_frames == 3
+    assert result.animations == [dest / "StartupMenuBackground_001.png"]
+    assert sorted(p.name for p in dest.glob("StartupMenuBackground_*.png")) == [
+        "StartupMenuBackground_001.png", "StartupMenuBackground_002.png", "StartupMenuBackground_003.png"]
+    assert (dest / "StartupMenuBackground_001.png").read_bytes() != b"old"
+    assert (dest / "StartupMenuBackground.png").read_bytes() == b"still"
+    assert (dest / "anim_StartupMenuBackground").is_dir()
+
+
+def test_mixed_modes_are_written_as_rgb(tree):
+    src, dest = tree
+    d = write_frames(frames_dir(src, "CAMERA03_008"), 1)
+    Image.new("RGBA", (640, 400), (10, 20, 30, 128)).save(d / "frame_0002.png")
+    result = run_import(src, dest, manifest_for("CAMERA03_008"), log=_quiet)
+    assert result.errors == []
+    for p in sorted((dest / "anim_CAMERA03_008").iterdir()):
+        with Image.open(p) as im:
+            assert im.mode == "RGB" and im.size == (640, 400)
+
+
+def test_animations_need_a_matching_job(tree):
+    src, dest = tree
+    write_frames(frames_dir(src, "CAMERA03_008"), 1)
+    result = run_import(src, dest, None, log=_quiet)
+    assert [f.kind for f in result.errors] == ["animation"]
+    assert "manifest" in result.errors[0].message
+    result = run_import(src, dest, manifest_for("CAMERA05_013"), log=_quiet)
+    assert [f.kind for f in result.errors] == ["animation"]
+    assert "CAMERA03_008" in result.errors[0].message
+    assert list(dest.iterdir()) == []
+
+
+def test_reference_and_still_are_never_imported(tree):
+    src, dest = tree
+    write_frames(src / "animations" / "ITD_RESS_002" / "reference", 2)
+    Image.new("RGB", (320, 200)).save(src / "animations" / "ITD_RESS_002" / "still.png")
+    result = run_import(src, dest, manifest_for("ITD_RESS_002"), log=_quiet)
+    assert result.findings == [] and result.animations == [] and list(dest.iterdir()) == []
+
+
+def test_dry_run_validates_animations_but_writes_nothing(tree):
+    src, dest = tree
+    write_frames(frames_dir(src, "CAMERA03_008"), 2)
+    write_frames(frames_dir(src, "StartupMenuBackground"), 2)
+    result = run_import(src, dest, manifest_for("CAMERA03_008", "StartupMenuBackground"),
+                        dry_run=True, log=_quiet)
+    assert result.errors == [] and result.animation_frames == 4
+    assert sorted(p.name for p in result.animations) == ["StartupMenuBackground_001.png", "anim_CAMERA03_008"]
+    assert list(dest.iterdir()) == []

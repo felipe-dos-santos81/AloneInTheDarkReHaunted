@@ -18,8 +18,13 @@ def atomic_write_bytes(path, data: bytes) -> None:
     os.replace(tmp, path)
 
 
-def save_png(path, pixels: np.ndarray) -> None:
-    """Write an (H, W, 3) uint8 array as an RGB PNG, atomically."""
+def png_bytes(pixels: np.ndarray) -> bytes:
+    """Encode an (H, W, 3) uint8 array as an RGB PNG."""
     buf = io.BytesIO()
     Image.fromarray(np.ascontiguousarray(pixels, dtype=np.uint8)).save(buf, format="PNG")
-    atomic_write_bytes(path, buf.getvalue())
+    return buf.getvalue()
+
+
+def save_png(path, pixels: np.ndarray) -> None:
+    """Write an (H, W, 3) uint8 array as an RGB PNG, atomically."""
+    atomic_write_bytes(path, png_bytes(pixels))

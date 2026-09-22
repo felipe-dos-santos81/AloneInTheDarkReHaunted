@@ -4,14 +4,31 @@ into the flat backgrounds_hd/ folder, deriving _DARK variants for cameras."""
 from __future__ import annotations
 
 import pathlib
+import shutil
 from dataclasses import dataclass, field
 
 import numpy as np
 from PIL import Image
 
-from .animations import FRAME_RE, frame_name
-from .catalog import DARK_SUFFIX, SOURCE_FOLDERS, kind_of_pak, parse_target, target_for_source
-from .files import atomic_write_bytes, save_png
+from .animations import (
+    ANIMATIONS_FOLDER,
+    FRAME_RE,
+    FRAMES_FOLDER,
+    frame_name,
+    replace_folder,
+    write_menu_frames,
+)
+from .catalog import (
+    DARK_SUFFIX,
+    GRASSMASK_SUFFIX,
+    SOURCE_FOLDERS,
+    anim_folder,
+    kind_of_pak,
+    menu_frame_name,
+    parse_target,
+    target_for_source,
+)
+from .files import atomic_write_bytes, png_bytes, save_png
 from .manifest import AnimationJob, Manifest, sha256_rgb
 
 DARK_POLICIES = ("mirror", "all", "none")
@@ -28,7 +45,7 @@ NAME_ERROR = ("unknown name; expected CAMERA0F_NNN.png or ITD_RESS_NNN.png, "
 @dataclass
 class Finding:
     path: pathlib.Path
-    kind: str  # name | invalid | aspect | too_large | unchanged | size
+    kind: str  # name | invalid | aspect | too_large | unchanged | size | frames | animation | seam | memory | shadowed
     severity: str  # error | warning
     message: str
 
@@ -48,6 +65,8 @@ class ImportResult:
     dark: list[pathlib.Path] = field(default_factory=list)
     skipped: list[pathlib.Path] = field(default_factory=list)  # unchanged originals
     not_replaced: list[str] = field(default_factory=list)  # manifest paths absent from src
+    animations: list[pathlib.Path] = field(default_factory=list)  # anim_<NAME> folders, or the menu's first frame
+    animation_frames: int = 0
     findings: list[Finding] = field(default_factory=list)
 
     @property
@@ -180,6 +199,56 @@ def validate_sequence(frames_dir, job: AnimationJob) -> tuple[Sequence | None, l
     return Sequence(job, entries, size, verbatim), findings
 
 
+def _rgb(path: pathlib.Path) -> np.ndarray:
+    with Image.open(path) as im:
+        return np.asarray(im.convert("RGB"))
+
+
+def _frame_bytes(path: pathlib.Path, verbatim: bool) -> bytes:
+    return path.read_bytes() if verbatim else png_bytes(_rgb(path))
+
+
+def _import_animations(src: pathlib.Path, dest: pathlib.Path, manifest: Manifest | None,
+                       dry_run: bool, log, result: ImportResult) -> set[str]:
+    """Validate and write every animations/<NAME>/frames/ sequence. Returns the
+    names imported (in a dry run: the names that would be)."""
+    jobs = manifest.jobs_by_name() if manifest is not None else {}
+    imported: set[str] = set()
+    for frames_dir in sorted((src / ANIMATIONS_FOLDER).glob(f"*/{FRAMES_FOLDER}")):
+        if not frames_dir.is_dir():
+            continue
+        name = frames_dir.parent.name
+        rel = frames_dir.relative_to(src).as_posix()
+        job = jobs.get(name)
+        if job is None:
+            why = (f"no animation job named {name} in the manifest" if manifest is not None
+                   else "animations need the export's manifest.json to know where frames go")
+            seq, findings = None, [Finding(frames_dir, "animation", "error", why)]
+        else:
+            seq, findings = validate_sequence(frames_dir, job)
+        result.findings += findings
+        for f in findings:
+            log(f"{f.severity}: {rel}: {f.message}")
+        if seq is None:
+            continue
+        frames = [(frame_name(n), path) for n, path in enumerate(seq.frames, 1)]
+        if job.kind == "menu":
+            target = dest / menu_frame_name(1)
+            if not dry_run:
+                write_menu_frames(dest, (_frame_bytes(path, seq.verbatim) for _, path in frames))
+        else:
+            target = dest / anim_folder(name)
+            if not dry_run:
+                replace_folder(target, ((n, _frame_bytes(path, seq.verbatim)) for n, path in frames))
+                grassmask = dest / (anim_folder(name) + GRASSMASK_SUFFIX)
+                if grassmask.is_dir():
+                    shutil.rmtree(grassmask)  # masks of the old frames
+        imported.add(name)
+        result.animations.append(target)
+        result.animation_frames += len(seq.frames)
+    return imported
+
+
 def derive_dark(pixels: np.ndarray, factor: float) -> np.ndarray:
     return np.clip(np.rint(pixels.astype(np.float32) * factor), 0, 255).astype(np.uint8)
 
@@ -235,4 +304,5 @@ def run_import(src, dest, manifest: Manifest | None = None, dark: str = "mirror"
                     save_png(dark_path, derive_dark(cand.pixels, dark_factor))
                 result.dark.append(dark_path)
     result.not_replaced = [r.path for r in records if r.target not in seen]
+    _import_animations(src, dest, manifest, dry_run, log, result)
     return result
