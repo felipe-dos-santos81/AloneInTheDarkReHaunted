@@ -4533,7 +4533,10 @@ static_assert(BX_COUNTOF(s_accessNames) == Access::Count, "Invalid s_accessNames
 										? MTLLoadActionClear
 										: MTLLoadActionLoad
 										;
-										depthAttachment.storeAction = NULL != m_mainFrameBuffer.m_swapChain->m_backBufferColorMsaa
+										// Only the backbuffer's depth may be discarded under MSAA. An
+										// offscreen framebuffer's depth can be sampled later (e.g. SSAO),
+										// so it must always be stored.
+										depthAttachment.storeAction = !isValid(fbh) && NULL != m_mainFrameBuffer.m_swapChain->m_backBufferColorMsaa
 										? MTLStoreActionDontCare
 										: MTLStoreActionStore
 										;
@@ -4548,7 +4551,7 @@ static_assert(BX_COUNTOF(s_accessNames) == Access::Count, "Invalid s_accessNames
 										? MTLLoadActionClear
 										: MTLLoadActionLoad
 										;
-									stencilAttachment.storeAction = NULL != m_mainFrameBuffer.m_swapChain->m_backBufferColorMsaa
+									stencilAttachment.storeAction = !isValid(fbh) && NULL != m_mainFrameBuffer.m_swapChain->m_backBufferColorMsaa
 										? MTLStoreActionDontCare
 										: MTLStoreActionStore
 										;
