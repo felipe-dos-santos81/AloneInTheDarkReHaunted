@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from PIL import Image
 
-from .catalog import kind_of_pak, parse_target
+from .catalog import SOURCE_FOLDERS, kind_of_pak, parse_target, target_for_source
 from .files import atomic_write_bytes, save_png
 from .manifest import Manifest, sha256_rgb
 
@@ -19,7 +19,8 @@ DEFAULT_DARK_FACTOR = 0.10  # DARK_ROOM_BRIGHTNESS in rendererBGFX.cpp
 ASPECT = 320 / 200
 ASPECT_TOLERANCE = 0.01  # relative
 MAX_SIDE = 8192
-SOURCE_FOLDERS = ("backgrounds", "screens")
+NAME_ERROR = ("unknown name; expected CAMERA0F_NNN.png or ITD_RESS_NNN.png, "
+              "or m-aitd's floorNN/cameraNNN.png or ressNN.png")
 
 
 @dataclass
@@ -69,13 +70,16 @@ def _load(path: pathlib.Path):
         return None, f"{type(exc).__name__}: {exc}"
 
 
-def validate_file(path, expected_sha: str | None = None) -> tuple[Candidate | None, list[Finding]]:
+def validate_file(path, expected_sha: str | None = None,
+                  target: str | None = None) -> tuple[Candidate | None, list[Finding]]:
+    """Check one upscaled PNG. `target` is the flat engine name it will be
+    written as; without it the file's own name must already be that name."""
     path = pathlib.Path(path)
-    parsed = parse_target(path.name)
+    parsed = parse_target(target or path.name)
     if parsed is None:
-        return None, [Finding(path, "name", "error",
-                              "unknown name; expected CAMERA0F_NNN.png or ITD_RESS_NNN.png")]
-    pak, _entry = parsed
+        return None, [Finding(path, "name", "error", NAME_ERROR)]
+    pak, entry = parsed
+    target = target or path.name
     im, err = _load(path)
     if im is None:
         return None, [Finding(path, "invalid", "error", err)]
@@ -91,7 +95,7 @@ def validate_file(path, expected_sha: str | None = None) -> tuple[Candidate | No
     if w % 320 or h % 200:
         findings.append(Finding(path, "size", "warning", f"{w}x{h} is not an integer multiple of 320x200"))
     verbatim = im.format == "PNG" and im.mode in ("RGB", "RGBA")
-    return Candidate(path, path.name, kind_of_pak(pak), pixels, verbatim), findings
+    return Candidate(path, target, kind_of_pak(pak), pixels, verbatim), findings
 
 
 def derive_dark(pixels: np.ndarray, factor: float) -> np.ndarray:
@@ -118,14 +122,17 @@ def run_import(src, dest, manifest: Manifest | None = None, dark: str = "mirror"
     src = pathlib.Path(src)
     dest = pathlib.Path(dest)
     result = ImportResult()
-    by_path = manifest.by_path() if manifest else {}
+    records = manifest.records if manifest else []
+    by_target = {r.target: r for r in records}
     seen: set[str] = set()
     for folder in SOURCE_FOLDERS:
-        for path in sorted((src / folder).glob("*.png")):
-            rel = f"{folder}/{path.name}"
-            seen.add(rel)
-            record = by_path.get(rel)
-            cand, findings = validate_file(path, record.sha256 if record else None)
+        for path in sorted((src / folder).rglob("*.png")):
+            rel = path.relative_to(src).as_posix()
+            target_name = target_for_source(rel)
+            record = by_target.get(target_name) if target_name else None
+            if target_name:
+                seen.add(target_name)
+            cand, findings = validate_file(path, record.sha256 if record else None, target_name)
             result.findings += findings
             for f in findings:
                 log(f"{f.severity}: {rel}: {f.message}")
@@ -145,5 +152,5 @@ def run_import(src, dest, manifest: Manifest | None = None, dark: str = "mirror"
                 if not dry_run:
                     save_png(dark_path, derive_dark(cand.pixels, dark_factor))
                 result.dark.append(dark_path)
-    result.not_replaced = [rel for rel in by_path if rel not in seen]
+    result.not_replaced = [r.path for r in records if r.target not in seen]
     return result

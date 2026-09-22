@@ -8,6 +8,7 @@ from aitd_textures.catalog import (
     kind_of_pak,
     parse_target,
     screen_specs,
+    target_for_source,
 )
 
 
@@ -53,3 +54,35 @@ def test_parse_target_accepts_engine_names_only():
 def test_kind_of_pak():
     assert kind_of_pak("CAMERA05") == "camera"
     assert kind_of_pak("ITD_RESS") == "screen"
+
+
+def test_target_for_source_accepts_the_exporters_own_layout():
+    assert target_for_source("backgrounds/CAMERA02_007.png") == "CAMERA02_007.png"
+    assert target_for_source("screens/ITD_RESS_013.png") == "ITD_RESS_013.png"
+
+
+def test_target_for_source_accepts_the_m_aitd_layout():
+    assert target_for_source("backgrounds/floor02/camera007.png") == "CAMERA02_007.png"
+    assert target_for_source("backgrounds/floor00/camera000.png") == "CAMERA00_000.png"
+    assert target_for_source("screens/ress06.png") == "ITD_RESS_006.png"
+    assert target_for_source("screens/ress13.png") == "ITD_RESS_013.png"
+
+
+def test_target_for_source_maps_alt_backgrounds_to_their_itd_ress_entry():
+    # AITD1.h: ITD_RESS 15..19 are CAM07000, CAM07001, CAM06000, CAM06005, CAM06008.
+    assert target_for_source("alt_backgrounds/floor06/camera000.png") == "ITD_RESS_017.png"
+    assert target_for_source("alt_backgrounds/floor06/camera005.png") == "ITD_RESS_018.png"
+    assert target_for_source("alt_backgrounds/floor06/camera008.png") == "ITD_RESS_019.png"
+    assert target_for_source("alt_backgrounds/floor07/camera000.png") == "ITD_RESS_015.png"
+    assert target_for_source("alt_backgrounds/floor07/camera001.png") == "ITD_RESS_016.png"
+
+
+def test_target_for_source_rejects_everything_else():
+    for bad in ("backgrounds/floor08/camera000.png",     # no CAMERA08 exists
+                "backgrounds/floor02/camera7.png",       # wrong digit count
+                "alt_backgrounds/floor06/camera001.png", # not a sorcerer variant
+                "screens/ress6.png",
+                "guides/floor00/camera000.png",          # not a source folder
+                "backgrounds/CAMERA02_007_DARK.png",
+                "backgrounds/deep/floor02/camera007.png"):
+        assert target_for_source(bad) is None, bad

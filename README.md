@@ -74,6 +74,12 @@ make run data=data/aitd1
 ```
 
 Files use the engine's own names (`CAMERA02_007.png`, `ITD_RESS_013.png`).
+`import-textures` also accepts a tree written by m-aitd's
+`tools/export_textures.py` — `backgrounds/floorNN/cameraNNN.png`,
+`screens/ressNN.png` and `alt_backgrounds/floorNN/cameraNNN.png` (the five
+cameras the game swaps once the sorcerer is dead) — so an upscale made from
+that exporter imports without renaming. Anything beside those three folders
+(`guides/`, `.quality/`, `palette.png`, …) is ignored.
 Any resolution with a 16:10 aspect works; integer multiples of 320x200 are
 recommended. A file that is missing from `data/textures-ai` leaves the
 existing HD art in place; a file identical to the original is skipped. Dark

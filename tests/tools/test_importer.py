@@ -188,3 +188,47 @@ def test_validate_file_reports_each_rule_once(tmp_path):
     assert cand.pixels.shape == (800, 1280, 3)
     cand, findings = validate_file(tmp_path / "missing.png")
     assert cand is None and findings[0].kind == "name"
+
+
+def test_m_aitd_layout_is_imported_under_engine_names(tree):
+    src, dest = tree
+    make_png(src / "backgrounds" / "floor02" / "camera007.png")
+    make_png(src / "screens" / "ress13.png")
+    make_png(src / "alt_backgrounds" / "floor06" / "camera000.png")
+    result = run_import(src, dest, log=_quiet)
+    assert result.errors == []
+    assert sorted(p.name for p in result.imported) == [
+        "CAMERA02_007.png", "ITD_RESS_013.png", "ITD_RESS_017.png"]
+    assert (dest / "CAMERA02_007.png").is_file()
+
+
+def test_unknown_nested_names_are_still_errors(tree):
+    src, dest = tree
+    make_png(src / "backgrounds" / "floor09" / "camera000.png")
+    result = run_import(src, dest, log=_quiet)
+    assert [f.kind for f in result.errors] == ["name"]
+    assert list(dest.iterdir()) == []
+
+
+def test_folders_beside_the_source_folders_are_ignored(tree):
+    src, dest = tree
+    make_png(src / "guides" / "floor00" / "camera000.png")
+    make_png(src / ".quality" / "screens" / "ress13.png" / "attempt-1.png")
+    make_png(src / "palette.png", size=(256, 1))
+    result = run_import(src, dest, log=_quiet)
+    assert result.findings == [] and result.imported == []
+
+
+def test_unchanged_check_matches_m_aitd_names_against_the_manifest(synthetic_data_dir, tmp_path):
+    originals = tmp_path / "textures"
+    export_all(synthetic_data_dir, originals, log=_quiet)
+    manifest = read_manifest(originals / MANIFEST_NAME)
+    src = tmp_path / "textures-ai"
+    (src / "backgrounds" / "floor00").mkdir(parents=True)
+    (src / "backgrounds" / "floor00" / "camera000.png").write_bytes(
+        (originals / "backgrounds" / "CAMERA00_000.png").read_bytes())
+    result = run_import(src, tmp_path / "dest", manifest, log=_quiet)
+    assert result.errors == []
+    assert [f.kind for f in result.warnings] == ["unchanged"]
+    assert result.imported == []
+    assert "backgrounds/CAMERA00_000.png" not in result.not_replaced
