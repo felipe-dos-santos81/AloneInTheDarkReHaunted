@@ -1,5 +1,5 @@
 """Runs only when the GOG/Steam INDARK folder is present under data/aitd1.
-Pure-Python explode of 157 plates takes about a minute."""
+Pure-Python explode of 157 plates takes about two seconds."""
 import pathlib
 
 import numpy as np

@@ -64,13 +64,13 @@ def build_parser() -> argparse.ArgumentParser:
 def cmd_export(args, root: pathlib.Path, log) -> int:
     try:
         data_dir = find_data_dir(args.data if args.data is not None else root / DEFAULTS["data"])
-    except DataNotFound as exc:
+    except (DataNotFound, PakError, ValueError, OSError) as exc:
         log(f"error: {exc}")
         return EXIT_USAGE
     out = args.out if args.out is not None else root / DEFAULTS["textures"]
     try:
         result = export_all(data_dir, out, log)
-    except (PakError, OSError) as exc:
+    except (DataNotFound, PakError, ValueError, OSError) as exc:
         log(f"error: {exc}")
         return EXIT_USAGE
     return EXIT_FINDINGS if result.skipped else EXIT_OK
@@ -89,9 +89,10 @@ def summarize(result: ImportResult, dest: pathlib.Path, dry_run: bool, log) -> N
 
 
 def cmd_import(args, root: pathlib.Path, log) -> int:
-    src = args.src if args.src is not None else root / DEFAULTS["textures_ai"]
+    default_src = root / DEFAULTS["textures_ai"]
+    src = args.src if args.src is not None else default_src
     if not src.is_dir():
-        if args.src is None:
+        if args.src is None or src.resolve() == default_src.resolve():
             log(f"nothing to import: {src} does not exist")
             return EXIT_OK
         log(f"error: {src} is not a directory")
