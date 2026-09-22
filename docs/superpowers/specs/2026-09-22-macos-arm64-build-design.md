@@ -95,10 +95,11 @@ build/run flow is reproducible rather than machine-local.
 
 ### 3. Windowed mode
 
-No code change. The default configuration is windowed. The run step must use a
-working directory that does not contain a stale `aitd_remaster.cfg` with
-`graphics.fullscreen = true`; with no such file, the engine creates one with
-the windowed default.
+No code change. The default configuration is windowed
+(`configRemaster.cpp:39`). The run step must use a working directory that does
+not contain an `aitd_remaster.cfg` with `graphics.fullscreen = true`. If no
+such file exists, `loadRemasterConfig` uses the in-memory windowed defaults and
+does not write a file (`configRemaster.cpp:131-141`).
 
 ### 4. Mouse cursor
 
@@ -150,4 +151,4 @@ Replace the "macOS (experimental)" section with concrete Apple Silicon steps:
 |------|--------|
 | `TatouSource/CMakePresets.json` | add `macos-arm64` configure + build presets |
 | `TatouSource/Makefile` | add `ARCH` and Darwin arch flag; commit the file |
-| `BUILDING.md` | replace experimental macOS section with arm64 steps |
+| `BUILDING.md`, `TatouSource/BUILDING.md`, `TatouSource/Docs/BUILDING.md` | replace experimental macOS section with arm64 steps (all three copies, to avoid drift) |
