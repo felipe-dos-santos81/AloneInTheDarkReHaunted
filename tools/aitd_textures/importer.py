@@ -209,7 +209,8 @@ def _frame_bytes(path: pathlib.Path, verbatim: bool) -> bytes:
 
 
 def _import_animations(src: pathlib.Path, dest: pathlib.Path, manifest: Manifest | None,
-                       dry_run: bool, log, result: ImportResult) -> set[str]:
+                       dark: str, dark_factor: float, dry_run: bool, log,
+                       result: ImportResult) -> set[str]:
     """Validate and write every animations/<NAME>/frames/ sequence. Returns the
     names imported (in a dry run: the names that would be)."""
     jobs = manifest.jobs_by_name() if manifest is not None else {}
@@ -243,10 +244,30 @@ def _import_animations(src: pathlib.Path, dest: pathlib.Path, manifest: Manifest
                 grassmask = dest / (anim_folder(name) + GRASSMASK_SUFFIX)
                 if grassmask.is_dir():
                     shutil.rmtree(grassmask)  # masks of the old frames
+        dark_dir = dest / anim_folder(name + DARK_SUFFIX)
+        if job.kind == "camera" and _wants_dark(dark, dark_dir):
+            if not dry_run:
+                replace_folder(dark_dir, ((n, png_bytes(derive_dark(_rgb(path), dark_factor)))
+                                          for n, path in frames))
+            result.dark.append(dark_dir)
         imported.add(name)
         result.animations.append(target)
         result.animation_frames += len(seq.frames)
     return imported
+
+
+def _report_shadowed(dest: pathlib.Path, result: ImportResult, animated: set[str], log) -> None:
+    """The engine plays anim_<NAME>/ before it looks for <NAME>.png, so a still
+    imported for a slot that keeps its animation is never shown."""
+    for path in result.imported:
+        stem = path.name[: -len(".png")]
+        folder = anim_folder(stem)
+        if stem in animated or not (dest / folder).is_dir():
+            continue
+        finding = Finding(path, "shadowed", "warning",
+                          f"{folder}/ exists, so the engine plays that animation instead of this still")
+        result.findings.append(finding)
+        log(f"{finding.severity}: {path.name}: {finding.message}")
 
 
 def derive_dark(pixels: np.ndarray, factor: float) -> np.ndarray:
@@ -257,12 +278,9 @@ def dark_name(target: str) -> str:
     return target[: -len(".png")] + DARK_SUFFIX + ".png"
 
 
-def _wants_dark(policy: str, dest: pathlib.Path, target: str) -> bool:
-    if policy == "all":
-        return True
-    if policy == "none":
-        return False
-    return (dest / dark_name(target)).exists()
+def _wants_dark(policy: str, dark_path: pathlib.Path) -> bool:
+    """`dark_path` is the variant's file or folder; mirror derives only where it exists."""
+    return policy == "all" or (policy == "mirror" and dark_path.exists())
 
 
 def run_import(src, dest, manifest: Manifest | None = None, dark: str = "mirror",
@@ -298,11 +316,12 @@ def run_import(src, dest, manifest: Manifest | None = None, dark: str = "mirror"
                 else:
                     save_png(target, cand.pixels)
             result.imported.append(target)
-            if cand.kind == "camera" and _wants_dark(dark, dest, cand.target):
+            if cand.kind == "camera" and _wants_dark(dark, dest / dark_name(cand.target)):
                 dark_path = dest / dark_name(cand.target)
                 if not dry_run:
                     save_png(dark_path, derive_dark(cand.pixels, dark_factor))
                 result.dark.append(dark_path)
     result.not_replaced = [r.path for r in records if r.target not in seen]
-    _import_animations(src, dest, manifest, dry_run, log, result)
+    animated = _import_animations(src, dest, manifest, dark, dark_factor, dry_run, log, result)
+    _report_shadowed(dest, result, animated, log)
     return result

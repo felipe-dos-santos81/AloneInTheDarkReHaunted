@@ -1,4 +1,5 @@
 import dataclasses
+import shutil
 
 import pytest
 from PIL import Image
@@ -231,3 +232,66 @@ def test_dry_run_validates_animations_but_writes_nothing(tree):
     assert result.errors == [] and result.animation_frames == 4
     assert sorted(p.name for p in result.animations) == ["StartupMenuBackground_001.png", "anim_CAMERA03_008"]
     assert list(dest.iterdir()) == []
+
+
+def test_dark_mirror_derives_a_dark_folder_only_where_one_exists(tree):
+    src, dest = tree
+    write_frames(frames_dir(src, "CAMERA02_007"), 2, colors=[(200, 100, 50), (200, 100, 50)])
+    write_frames(frames_dir(src, "CAMERA02_008"), 1)
+    stale = dest / "anim_CAMERA02_007_DARK"
+    stale.mkdir()
+    (stale / "ezgif-frame-001.png").write_bytes(b"stale")
+    result = run_import(src, dest, manifest_for("CAMERA02_007", "CAMERA02_008"), dark="mirror", log=_quiet)
+    assert result.dark == [stale]
+    assert sorted(p.name for p in stale.iterdir()) == ["frame_0001.png", "frame_0002.png"]
+    with Image.open(stale / "frame_0001.png") as im:
+        assert im.getpixel((0, 0)) == (20, 10, 5)
+    assert not (dest / "anim_CAMERA02_008_DARK").exists()
+
+
+def test_dark_all_skips_screens_and_none_derives_nothing(tree):
+    src, dest = tree
+    write_frames(frames_dir(src, "CAMERA02_007"), 1, colors=[(100, 100, 100)])
+    write_frames(frames_dir(src, "ITD_RESS_011"), 1)
+    m = manifest_for("CAMERA02_007", "ITD_RESS_011")
+    result = run_import(src, dest, m, dark="all", dark_factor=0.5, log=_quiet)
+    assert result.dark == [dest / "anim_CAMERA02_007_DARK"]
+    with Image.open(dest / "anim_CAMERA02_007_DARK" / "frame_0001.png") as im:
+        assert im.getpixel((0, 0)) == (50, 50, 50)
+    shutil.rmtree(dest / "anim_CAMERA02_007_DARK")
+    result = run_import(src, dest, m, dark="none", log=_quiet)
+    assert result.dark == [] and not (dest / "anim_CAMERA02_007_DARK").exists()
+
+
+def test_dry_run_reports_dark_folders_without_writing(tree):
+    src, dest = tree
+    write_frames(frames_dir(src, "CAMERA02_007"), 1)
+    result = run_import(src, dest, manifest_for("CAMERA02_007"), dark="all", dry_run=True, log=_quiet)
+    assert result.dark == [dest / "anim_CAMERA02_007_DARK"]
+    assert list(dest.iterdir()) == []
+
+
+def test_a_still_shadowed_by_an_animation_is_reported(tree):
+    src, dest = tree
+    (src / "backgrounds").mkdir(parents=True)
+    Image.new("RGB", (640, 400)).save(src / "backgrounds" / "CAMERA00_000.png")
+    Image.new("RGB", (640, 400)).save(src / "backgrounds" / "CAMERA00_001.png")
+    (dest / "anim_CAMERA00_000").mkdir()
+    logs = []
+    result = run_import(src, dest, log=logs.append)
+    assert result.errors == []
+    shadowed = [f for f in result.warnings if f.kind == "shadowed"]
+    assert [f.path for f in shadowed] == [dest / "CAMERA00_000.png"]
+    assert "anim_CAMERA00_000/" in shadowed[0].message
+    assert any(line.startswith("warning: CAMERA00_000.png:") for line in logs)
+
+
+def test_no_shadow_notice_when_the_animation_is_imported_too(tree):
+    src, dest = tree
+    (src / "backgrounds").mkdir(parents=True)
+    Image.new("RGB", (640, 400)).save(src / "backgrounds" / "CAMERA00_000.png")
+    write_frames(frames_dir(src, "CAMERA00_000"), 1)
+    (dest / "anim_CAMERA00_000").mkdir()
+    result = run_import(src, dest, manifest_for("CAMERA00_000"), log=_quiet)
+    assert result.errors == []
+    assert [f for f in result.warnings if f.kind == "shadowed"] == []

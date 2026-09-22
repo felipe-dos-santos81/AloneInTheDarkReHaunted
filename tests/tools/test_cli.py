@@ -6,7 +6,8 @@ from PIL import Image
 
 import helpers
 import textures
-from aitd_textures.manifest import read_manifest
+from aitd_textures.animations import make_job
+from aitd_textures.manifest import read_manifest, write_manifest
 
 
 def _upscale(src_png, dst_png, factor=2):
@@ -159,3 +160,24 @@ def test_export_anims_flag_overrides_the_default_and_a_skip_exits_1(synthetic_da
                         "--anims", str(custom)], root=tmp_path, log=logs.append)
     assert rc == 1
     assert any("anim_CAMERA00_000: no PNG frames" in line for line in logs)
+
+
+def test_import_summary_counts_animations_and_shadowed_stills(tmp_path, logs):
+    originals = tmp_path / "textures"
+    write_manifest(originals / "manifest.json", tmp_path, [],
+                   [make_job("CAMERA03_008", "backgrounds/CAMERA03_008.png", 2, (640, 400))])
+    ai = tmp_path / "ai"
+    frames = ai / "animations" / "CAMERA03_008" / "frames"
+    frames.mkdir(parents=True)
+    for i in (1, 2):
+        Image.new("RGB", (640, 400)).save(frames / f"frame_{i:04d}.png")
+    (ai / "backgrounds").mkdir()
+    Image.new("RGB", (640, 400)).save(ai / "backgrounds" / "CAMERA00_000.png")
+    dest = tmp_path / "dest"
+    (dest / "anim_CAMERA00_000").mkdir(parents=True)
+    rc = textures.main(["import", "--src", str(ai), "--dest", str(dest), "--originals", str(originals)],
+                       root=tmp_path, log=logs.append)
+    assert rc == 0
+    assert "  animations imported: 1 (2 frames)" in logs
+    assert "  shadowed by an animation: 1" in logs
+    assert (dest / "anim_CAMERA03_008" / "frame_0002.png").is_file()
