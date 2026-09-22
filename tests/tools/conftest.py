@@ -16,3 +16,8 @@ import helpers  # noqa: E402  (tests/tools/ is on sys.path: no __init__.py here)
 @pytest.fixture
 def pak_bytes():
     return helpers.pak_bytes
+
+
+@pytest.fixture
+def synthetic_data_dir(tmp_path):
+    return helpers.write_synthetic_data_dir(tmp_path / "INDARK")
