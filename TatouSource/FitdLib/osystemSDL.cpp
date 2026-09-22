@@ -192,6 +192,11 @@ int FitdInit(int argc, char* argv[])
 
     gWindowBGFX = SDL_CreateWindow("FITD", resolution[0], resolution[1], flags);
 
+    // Prepare the native window handle for bgfx here, on the main thread that owns
+    // the window. On macOS this attaches the window's CAMetalLayer, which AppKit
+    // only permits from the main thread (the game thread runs FitdMain).
+    createBgfxInitParams();
+
 #ifdef _WIN32
     // Now that the main window is visible, show the console window
     // positioned so it doesn't overlap the game window
@@ -319,6 +324,17 @@ int FitdInit(int argc, char* argv[])
         {
             g_pendingFullscreenToggle = false;
             toggleFullscreen();
+        }
+
+        // Process deferred window raise on the main/window thread. macOS only
+        // permits window ordering (makeKeyAndOrderFront:) from the main thread.
+        if (g_pendingRaiseWindow)
+        {
+            g_pendingRaiseWindow = false;
+            if (gWindowBGFX)
+            {
+                SDL_RaiseWindow(gWindowBGFX);
+            }
         }
 
         SDL_SignalSemaphore(startOfRender);

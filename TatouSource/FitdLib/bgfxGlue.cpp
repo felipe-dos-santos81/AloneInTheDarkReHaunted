@@ -37,6 +37,7 @@
 #if BX_PLATFORM_OSX
 extern "C" {
 	void* cbSetupMetalLayer(void*);
+	void cbActivateApp(void);
 }
 #elif BX_PLATFORM_WINDOWS
 #include <windows.h>
@@ -54,6 +55,7 @@ float gVolume = 1.f;
 
 bool gIsFullscreen = false;
 bool g_pendingFullscreenToggle = false;
+bool g_pendingRaiseWindow = false;
 
 // For dust particle system - we need the current floor
 extern s16 g_currentFloor;
@@ -422,6 +424,11 @@ void createBgfxInitParams()
 #elif BX_PLATFORM_OSX
     initparam.platformData.ndt = NULL;
     initparam.platformData.nwh = cbSetupMetalLayer((void*)SDL_GetPointerProperty(SDL_GetWindowProperties(gWindowBGFX), SDL_PROP_WINDOW_COCOA_WINDOW_POINTER, NULL));
+
+    // macOS only delivers key events to the active application, and this process
+    // is normally started from a terminal. Without this the window never becomes
+    // key and the game receives no keyboard input.
+    cbActivateApp();
 #elif BX_PLATFORM_WINDOWS
     initparam.platformData.ndt = NULL;
     initparam.platformData.nwh = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(gWindowBGFX), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
@@ -430,8 +437,6 @@ void createBgfxInitParams()
 
 int initBgfxGlue(int argc, char* argv[])
 {
-    createBgfxInitParams();
-
     // Check for renderer command-line argument
     bool rendererSpecified = false;
     for (int i = 1; i < argc; i++)

@@ -6,6 +6,7 @@
 
 extern "C" {
 void *cbSetupMetalLayer(void *wnd);
+void cbActivateApp(void);
 }
 
 void *cbSetupMetalLayer(void *wnd) {
@@ -15,4 +16,11 @@ void *cbSetupMetalLayer(void *wnd) {
   CAMetalLayer *res = [CAMetalLayer layer];
   [contentView setLayer:res];
   return (__bridge void*)res;
+}
+
+// macOS only delivers keyboard input to the active application. This process is
+// normally started from a terminal, so it must activate itself or the game
+// window never becomes key and no key events arrive.
+void cbActivateApp(void) {
+  [NSApp activateIgnoringOtherApps:YES];
 }

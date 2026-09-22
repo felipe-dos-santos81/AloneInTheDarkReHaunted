@@ -14,6 +14,9 @@
 int initBgfxGlue(int argc, char* argv[]);
 void deleteBgfxGlue();
 
+// Must be called on the main thread, right after the window is created.
+void createBgfxInitParams();
+
 void StartFrame();
 void EndFrame();
 void renderFrameWithText();
@@ -27,5 +30,6 @@ extern SDL_Window* gWindowBGFX;
 
 extern bool gIsFullscreen;
 extern bool g_pendingFullscreenToggle;
+extern bool g_pendingRaiseWindow;
 void toggleFullscreen();
 

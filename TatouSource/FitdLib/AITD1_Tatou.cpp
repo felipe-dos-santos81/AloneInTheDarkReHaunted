@@ -92,11 +92,9 @@ int make3dTatou(void)
 	osystem_CopyBlockPhys(frontBuffer,0,0,320,200);
 
 	// Bring the game window to the foreground so the console
-	// doesn't obscure the animation.
-	if (gWindowBGFX)
-	{
-		SDL_RaiseWindow(gWindowBGFX);
-	}
+	// doesn't obscure the animation. Deferred to the main/window
+	// thread, which is the only thread allowed to raise the window.
+	g_pendingRaiseWindow = true;
 
 	// If fullscreen is saved in the remaster config, apply it now
 	if (g_remasterConfig.graphics.fullscreen && !gIsFullscreen)
