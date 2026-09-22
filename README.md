@@ -87,6 +87,17 @@ rooms use `<name>_DARK.png`, which `import-textures` derives from your
 upscale (`dark=all` for every camera, `dark=none` to skip). `data/` is
 git-ignored, so neither the game files nor the exports are ever committed.
 
+Some rooms and screens play a looping clip instead of a still: whenever
+`anim_<NAME>/` exists in `Assets/backgrounds_hd`, the engine plays it and
+never shows `<NAME>.png` (`import-textures` warns when that hides one of
+your stills). `export-textures` turns each clip into a job under
+`data/textures/animations/<NAME>/` and lists it in `manifest.json`; an
+upscaler that follows [docs/texture-contract.md](docs/texture-contract.md)
+writes new frames to `animations/<NAME>/frames/`, and `import-textures`
+validates them and replaces the engine's clip (the start menu's frames go
+to `StartupMenuBackground_NNN.png`). Every clip plays at 12.5 frames a
+second.
+
 ---
 
 ## Screenshots (In-Game)

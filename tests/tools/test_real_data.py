@@ -13,6 +13,8 @@ from aitd_textures.manifest import MANIFEST_NAME, read_manifest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 ENGINE_DUMP = ROOT / "TatouSource/build/macos-arm64/Fitd/Tatou.app/Contents/Resources/backgrounds_dump"
+ASSETS_HD = ROOT / "Assets" / "backgrounds_hd"
+NO_PLATE = {"ITD_RESS_002", "ITD_RESS_002_NOTATOU", "ITD_RESS_012_DISABLED", "StartupMenuBackground"}
 
 
 def _quiet(*_args, **_kwargs):
@@ -26,7 +28,7 @@ def real_export(tmp_path_factory):
     except DataNotFound:
         pytest.skip("no AITD1 game data under data/aitd1")
     out = tmp_path_factory.mktemp("textures")
-    return out, export_all(data_dir, out, log=_quiet)
+    return out, export_all(data_dir, out, log=_quiet, anims_dir=ASSETS_HD)
 
 
 def test_real_export_counts(real_export):
@@ -56,3 +58,21 @@ def test_real_originals_are_reported_unchanged(real_export, tmp_path):
     assert result.errors == []
     assert result.imported == []
     assert len(result.skipped) == 157
+
+
+def test_real_animation_jobs(real_export):
+    if not ASSETS_HD.is_dir():
+        pytest.skip("no Assets/backgrounds_hd")
+    out, result = real_export
+    assert len(result.animations) == 21
+    synthesized = {j.name for j in result.animations if j.still.endswith("/still.png")}
+    assert synthesized == NO_PLATE and result.synthesized == 4
+    for name in NO_PLATE:
+        with Image.open(out / "animations" / name / "still.png") as im:
+            assert im.size == (320, 200)
+    for job in result.animations:
+        clip = ASSETS_HD / f"anim_{job.name}"
+        assert job.reference_frames == sum(1 for p in clip.iterdir() if p.suffix.lower() == ".png")
+    menu = next(j for j in result.animations if j.name == "StartupMenuBackground")
+    assert (menu.kind, menu.max_frames) == ("menu", 512)
+    assert next(j for j in result.animations if j.name == "ITD_RESS_012_DISABLED").active is False
