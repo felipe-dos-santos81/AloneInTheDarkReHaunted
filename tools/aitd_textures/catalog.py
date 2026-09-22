@@ -102,3 +102,53 @@ def target_for_source(rel: str) -> str | None:
     if floor not in CAMERA_FLOORS:
         return None
     return f"{camera_pak_name(floor)}_{camera:03d}.png"
+
+
+# Animated backgrounds (hdBackground.cpp, loadHDBackground): the engine plays
+# every image in anim_<NAME>/, path-sorted, 0.08 s a frame, looping, before it
+# looks for the still <NAME>.png. The start menu is the exception:
+# rendererBGFX.cpp reads flat StartupMenuBackground_001.png ... (at most 512)
+# from the HD root and never opens anim_StartupMenuBackground/.
+ANIM_PREFIX = "anim_"
+GRASSMASK_SUFFIX = "_grassmask"  # bgAnimGrassMask.cpp's per-frame mask cache
+DARK_SUFFIX = "_DARK"
+DISABLED_SUFFIX = "_DISABLED"  # no caller asks for it; the folder is inert
+MENU_ANIMATION = "StartupMenuBackground"
+MENU_MAX_FRAMES = 512
+MENU_FRAME_RE = re.compile(r"^StartupMenuBackground_(\d{3})\.png$")
+ENGINE_FPS = 12.5
+CAMERA_NAME_RE = re.compile(r"^CAMERA0([0-7])_\d{3}$")
+
+
+def animation_kind(name: str) -> str:
+    if name == MENU_ANIMATION:
+        return "menu"
+    return "camera" if CAMERA_NAME_RE.match(name) else "screen"
+
+
+def animation_floor(name: str) -> int | None:
+    m = CAMERA_NAME_RE.match(name)
+    return int(m.group(1)) if m else None
+
+
+def animation_engine(name: str) -> str:
+    """Where import writes this animation's frames, as the manifest records it."""
+    if name == MENU_ANIMATION:
+        return f"{MENU_ANIMATION}_NNN.png"
+    return f"{anim_folder(name)}/"
+
+
+def animation_max_frames(name: str) -> int | None:
+    return MENU_MAX_FRAMES if name == MENU_ANIMATION else None
+
+
+def animation_active(name: str) -> bool:
+    return not name.endswith(DISABLED_SUFFIX)
+
+
+def anim_folder(name: str) -> str:
+    return f"{ANIM_PREFIX}{name}"
+
+
+def menu_frame_name(number: int) -> str:
+    return f"{MENU_ANIMATION}_{number:03d}.png"

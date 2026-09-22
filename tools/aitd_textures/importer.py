@@ -9,12 +9,11 @@ from dataclasses import dataclass, field
 import numpy as np
 from PIL import Image
 
-from .catalog import SOURCE_FOLDERS, kind_of_pak, parse_target, target_for_source
+from .catalog import DARK_SUFFIX, SOURCE_FOLDERS, kind_of_pak, parse_target, target_for_source
 from .files import atomic_write_bytes, save_png
 from .manifest import Manifest, sha256_rgb
 
 DARK_POLICIES = ("mirror", "all", "none")
-DARK_SUFFIX = "_DARK"
 DEFAULT_DARK_FACTOR = 0.10  # DARK_ROOM_BRIGHTNESS in rendererBGFX.cpp
 ASPECT = 320 / 200
 ASPECT_TOLERANCE = 0.01  # relative

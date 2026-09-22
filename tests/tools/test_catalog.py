@@ -1,11 +1,19 @@
 from aitd_textures.catalog import (
+    MENU_FRAME_RE,
     PALETTE_ENTRY,
     PALETTE_PAK,
     TITRE_ENTRY,
     ImageSpec,
+    anim_folder,
+    animation_active,
+    animation_engine,
+    animation_floor,
+    animation_kind,
+    animation_max_frames,
     camera_pak_name,
     camera_specs,
     kind_of_pak,
+    menu_frame_name,
     parse_target,
     screen_specs,
     target_for_source,
@@ -86,3 +94,22 @@ def test_target_for_source_rejects_everything_else():
                 "backgrounds/CAMERA02_007_DARK.png",
                 "backgrounds/deep/floor02/camera007.png"):
         assert target_for_source(bad) is None, bad
+
+
+def test_animation_name_rules():
+    assert [animation_kind(n) for n in ("CAMERA03_008", "ITD_RESS_002_NOTATOU", "StartupMenuBackground")] == [
+        "camera", "screen", "menu"]
+    assert animation_floor("CAMERA07_004") == 7
+    assert animation_floor("ITD_RESS_011") is None and animation_floor("StartupMenuBackground") is None
+    assert animation_engine("CAMERA03_008") == "anim_CAMERA03_008/"
+    assert animation_engine("ITD_RESS_002_NOTATOU") == "anim_ITD_RESS_002_NOTATOU/"
+    assert animation_engine("StartupMenuBackground") == "StartupMenuBackground_NNN.png"
+    assert animation_max_frames("StartupMenuBackground") == 512
+    assert animation_max_frames("CAMERA03_008") is None
+    assert animation_active("ITD_RESS_012_DISABLED") is False
+    assert animation_active("ITD_RESS_002_NOTATOU") is True
+    assert anim_folder("CAMERA07_004") == "anim_CAMERA07_004"
+    assert menu_frame_name(7) == "StartupMenuBackground_007.png"
+    assert MENU_FRAME_RE.match("StartupMenuBackground_512.png")
+    assert not MENU_FRAME_RE.match("StartupMenuBackground.png")
+    assert not MENU_FRAME_RE.match("StartupMenuBackgroundWithArt_001.png")
