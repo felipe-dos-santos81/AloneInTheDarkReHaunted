@@ -7,3 +7,6 @@ TatouSource/build/vs2026/ThirdParty/bgfx.cmake/cmake/bgfx/shaderc.dir/Debug/shad
 docs/superpowers/
 /data/
 .DS_Store
+tools/.venv/
+__pycache__/
+.pytest_cache/

@@ -37,6 +37,9 @@ src ?= Assets/backgrounds_hd
 out ?= $(notdir $(src)).hda
 archive ?= backgrounds_hd.hda
 
+# Texture tools (tools/textures.py). Prefer the project venv when present.
+PYTHON ?= $(if $(wildcard tools/.venv/bin/python),tools/.venv/bin/python,python3)
+
 # First existing path across the single-config and multi-config output layouts.
 BINARY = $(firstword $(wildcard \
 	$(BUILD_DIR)/Fitd/Tatou \
@@ -50,7 +53,8 @@ UNPACK_TOOL = $(firstword $(wildcard \
 	$(BUILD_DIR)/tools/$(BUILD_TYPE)/unpack_hda_archive.exe))
 
 .PHONY: help deps configure build build-fitd build-tools run \
-        hda-pack hda-unpack clean distclean rebuild
+        hda-pack hda-unpack clean distclean rebuild \
+        tools-deps test-tools
 
 # ── Environment ──────────────────────────────────────────────────────────────
 
@@ -95,6 +99,15 @@ hda-pack: build-tools ## [STEP 4] Build an .hda archive (usage: make hda-pack [s
 hda-unpack: build-tools ## [STEP 4] Extract an .hda archive (usage: make hda-unpack [archive=backgrounds_hd.hda] [out=dir])
 	@test -x "$(UNPACK_TOOL)" || { echo "error: unpack_hda_archive not found - run 'make build-tools'"; exit 1; }
 	"$(UNPACK_TOOL)" "$(archive)" "$(out)"
+
+# ── Stage 5 · Textures (export originals / import upscales) ──────────────────
+
+tools-deps: ## [STEP 5] Create tools/.venv with the texture tool dependencies
+	python3 -m venv tools/.venv
+	tools/.venv/bin/pip install -q -r tools/requirements-dev.txt
+
+test-tools: ## Run the texture tool test-suite
+	$(PYTHON) -m pytest tests/tools -q
 
 # ── Development ───────────────────────────────────────────────────────────────
 
