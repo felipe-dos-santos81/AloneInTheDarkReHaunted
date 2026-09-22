@@ -6,6 +6,7 @@ from PIL import Image
 
 import helpers
 import textures
+from aitd_textures.manifest import read_manifest
 
 
 def _upscale(src_png, dst_png, factor=2):
@@ -137,3 +138,24 @@ def test_bad_dark_policy_is_rejected_by_argparse(tmp_path):
 
 def test_default_root_is_the_repo(tmp_path):
     assert textures.default_root() == pathlib.Path(textures.__file__).resolve().parents[1]
+
+
+def test_export_reads_animations_from_the_default_assets_folder(synthetic_data_dir, tmp_path, logs):
+    root = tmp_path / "repo"
+    clip = root / "Assets" / "backgrounds_hd" / "anim_ITD_RESS_011"
+    clip.mkdir(parents=True)
+    Image.new("RGB", (640, 400)).save(clip / "a.png")
+    rc = textures.main(["export", "--data", str(synthetic_data_dir)], root=root, log=logs.append)
+    assert rc == 0
+    m = read_manifest(root / "data" / "textures" / "manifest.json")
+    assert [j.name for j in m.animations] == ["ITD_RESS_011"]
+    assert m.animations[0].still == "screens/ITD_RESS_011.png"
+
+
+def test_export_anims_flag_overrides_the_default_and_a_skip_exits_1(synthetic_data_dir, tmp_path, logs):
+    custom = tmp_path / "custom"
+    (custom / "anim_CAMERA00_000").mkdir(parents=True)
+    rc = textures.main(["export", "--data", str(synthetic_data_dir), "--out", str(tmp_path / "o"),
+                        "--anims", str(custom)], root=tmp_path, log=logs.append)
+    assert rc == 1
+    assert any("anim_CAMERA00_000: no PNG frames" in line for line in logs)

@@ -17,8 +17,13 @@ def make_run(*args):
 
 
 def test_export_textures_target():
-    out = make_n("export-textures", "gamedata=/g", "textures=/t")
-    assert 'tools/textures.py export --data "/g" --out "/t"' in out
+    out = make_n("export-textures", "gamedata=/g", "textures=/t", "anims=/x")
+    assert 'tools/textures.py export --data "/g" --out "/t" --anims "/x"' in out
+
+
+def test_export_textures_reads_animations_from_dest_by_default():
+    assert '--anims "Assets/backgrounds_hd"' in make_n("export-textures")
+    assert '--anims "/d"' in make_n("export-textures", "dest=/d")
 
 
 def test_check_textures_is_import_dry_run():

@@ -69,3 +69,39 @@ def test_export_skips_entries_of_the_wrong_size(synthetic_data_dir, tmp_path):
     assert (result.cameras, result.screens) == (8, 13)
     assert not (out / "backgrounds" / "CAMERA04_000.png").exists()
     assert "backgrounds/CAMERA04_000.png" not in read_manifest(out / MANIFEST_NAME).by_path()
+
+
+def _clip(folder, color=(9, 9, 9)):
+    folder.mkdir(parents=True)
+    Image.new("RGB", (1280, 800), color).save(folder / "ezgif-frame-001.png")
+
+
+def test_export_adds_animation_jobs_to_the_manifest(synthetic_data_dir, tmp_path):
+    anims = tmp_path / "hd"
+    _clip(anims / "anim_CAMERA00_001")
+    _clip(anims / "anim_StartupMenuBackground")
+    out = tmp_path / "textures"
+    logs = []
+    result = export_all(synthetic_data_dir, out, log=logs.append, anims_dir=anims)
+    assert [j.name for j in result.animations] == ["CAMERA00_001", "StartupMenuBackground"]
+    assert result.synthesized == 1 and result.skipped == []
+    m = read_manifest(out / MANIFEST_NAME)
+    assert m.animations == result.animations
+    assert m.animations[0].still == "backgrounds/CAMERA00_001.png"
+    assert m.animations[1].still == "animations/StartupMenuBackground/still.png"
+    assert any("2 animations (1 synthesized stills)" in line for line in logs)
+
+
+def test_export_without_an_anims_folder_writes_no_jobs(synthetic_data_dir, tmp_path):
+    logs = []
+    result = export_all(synthetic_data_dir, tmp_path / "t", log=logs.append, anims_dir=tmp_path / "missing")
+    assert result.animations == [] and result.skipped == []
+    assert read_manifest(tmp_path / "t" / MANIFEST_NAME).animations == []
+    assert any(line.startswith("no animations:") for line in logs)
+
+
+def test_an_unusable_clip_is_reported_as_skipped(synthetic_data_dir, tmp_path):
+    (tmp_path / "hd" / "anim_CAMERA00_000").mkdir(parents=True)
+    result = export_all(synthetic_data_dir, tmp_path / "t", log=_quiet, anims_dir=tmp_path / "hd")
+    assert result.skipped == ["anim_CAMERA00_000: no PNG frames"]
+    assert (result.cameras, result.screens) == (9, 13)

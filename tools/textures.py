@@ -2,12 +2,13 @@
 # SPDX-License-Identifier: GPL-2.0-only
 """Export original AITD1 textures and import upscaled replacements.
 
-    tools/textures.py export [--data DIR] [--out DIR]
+    tools/textures.py export [--data DIR] [--out DIR] [--anims DIR]
     tools/textures.py import [--src DIR] [--dest DIR] [--originals DIR]
                              [--dark mirror|all|none] [--dark-factor F] [--dry-run]
 
 Defaults are relative to the repository root: data/aitd1, data/textures,
-data/textures-ai and Assets/backgrounds_hd.
+data/textures-ai and Assets/backgrounds_hd (also where export finds the
+engine's anim_<NAME>/ clips).
 """
 from __future__ import annotations
 
@@ -33,6 +34,7 @@ DEFAULTS = {
     "textures": "data/textures",
     "textures_ai": "data/textures-ai",
     "dest": "Assets/backgrounds_hd",
+    "anims": "Assets/backgrounds_hd",
 }
 
 
@@ -48,6 +50,8 @@ def build_parser() -> argparse.ArgumentParser:
     exp = sub.add_parser("export", help="write the original 320x200 plates and screens as PNG")
     exp.add_argument("--data", type=pathlib.Path, help=f"INDARK folder or any folder above it (default {DEFAULTS['data']})")
     exp.add_argument("--out", type=pathlib.Path, help=f"output folder (default {DEFAULTS['textures']})")
+    exp.add_argument("--anims", type=pathlib.Path,
+                     help=f"folder holding the engine's anim_<NAME>/ clips (default {DEFAULTS['anims']})")
 
     imp = sub.add_parser("import", help="validate upscaled PNGs and copy them into backgrounds_hd")
     imp.add_argument("--src", type=pathlib.Path, help=f"upscaled tree (default {DEFAULTS['textures_ai']})")
@@ -68,8 +72,9 @@ def cmd_export(args, root: pathlib.Path, log) -> int:
         log(f"error: {exc}")
         return EXIT_USAGE
     out = args.out if args.out is not None else root / DEFAULTS["textures"]
+    anims = args.anims if args.anims is not None else root / DEFAULTS["anims"]
     try:
-        result = export_all(data_dir, out, log)
+        result = export_all(data_dir, out, log, anims)
     except (DataNotFound, PakError, ValueError, OSError) as exc:
         log(f"error: {exc}")
         return EXIT_USAGE

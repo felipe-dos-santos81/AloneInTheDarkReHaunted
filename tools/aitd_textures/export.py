@@ -5,6 +5,7 @@ from __future__ import annotations
 import pathlib
 from dataclasses import dataclass, field
 
+from .animations import export_animations
 from .catalog import (
     CAMERA_FLOORS,
     PALETTE_ENTRY,
@@ -17,7 +18,7 @@ from .catalog import (
 from .decode import PALETTE_BYTES, SCREEN_HEIGHT, SCREEN_PIXELS, SCREEN_WIDTH, decode_image, decode_palette
 from .explode import ExplodeError
 from .files import save_png
-from .manifest import MANIFEST_NAME, ImageRecord, sha256_rgb, write_manifest
+from .manifest import MANIFEST_NAME, AnimationJob, ImageRecord, sha256_rgb, write_manifest
 from .pak import Pak, PakError
 
 
@@ -25,6 +26,8 @@ from .pak import Pak, PakError
 class ExportResult:
     records: list[ImageRecord] = field(default_factory=list)
     skipped: list[str] = field(default_factory=list)  # "<PAK> entry <n>: <reason>"
+    animations: list[AnimationJob] = field(default_factory=list)
+    synthesized: int = 0  # animation stills made from a reference frame
 
     @property
     def cameras(self) -> int:
@@ -44,8 +47,9 @@ def _specs(data_dir: pathlib.Path, paks: dict[str, Pak]) -> list[ImageSpec]:
     return specs + screen_specs()
 
 
-def export_all(data_dir, out_dir, log=print) -> ExportResult:
-    """Decode every catalogued entry under `data_dir` into `out_dir`.
+def export_all(data_dir, out_dir, log=print, anims_dir=None) -> ExportResult:
+    """Decode every catalogued entry under `data_dir` into `out_dir`, and turn
+    each anim_<NAME>/ clip in `anims_dir` into an animation job.
     Raises PakError when a required PAK is missing; a bad entry is skipped."""
     data_dir = pathlib.Path(data_dir)
     out_dir = pathlib.Path(out_dir)
@@ -71,8 +75,19 @@ def export_all(data_dir, out_dir, log=print) -> ExportResult:
         result.records.append(ImageRecord(spec.rel_path, spec.target, spec.kind, spec.pak,
                                           spec.entry, spec.floor, (SCREEN_WIDTH, SCREEN_HEIGHT),
                                           sha256_rgb(pixels)))
-    write_manifest(out_dir / MANIFEST_NAME, data_dir, result.records)
+    if anims_dir is not None:
+        anims_dir = pathlib.Path(anims_dir)
+        if anims_dir.is_dir():
+            anim = export_animations(anims_dir, out_dir, result.records, log)
+            result.animations = anim.jobs
+            result.synthesized = anim.synthesized
+            result.skipped += anim.skipped
+        else:
+            log(f"no animations: {anims_dir} does not exist")
+    write_manifest(out_dir / MANIFEST_NAME, data_dir, result.records, result.animations)
     summary = f"exported {result.cameras} cameras and {result.screens} screens to {out_dir}"
+    if result.animations:
+        summary += f", {len(result.animations)} animations ({result.synthesized} synthesized stills)"
     if result.skipped:
         summary += f", {len(result.skipped)} skipped"
     log(summary)

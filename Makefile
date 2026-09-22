@@ -45,6 +45,7 @@ gamedata ?= data/aitd1
 textures ?= data/textures
 textures_ai ?= data/textures-ai
 dest ?= Assets/backgrounds_hd
+anims ?= $(dest)
 dark ?= mirror
 HD_ARCHIVE = $(SRC_DIR)/backgrounds_hd.hda
 ifeq ($(UNAME_S),Darwin)
@@ -123,8 +124,8 @@ tools-deps: ## [STEP 5] Create tools/.venv with the texture tool dependencies
 test-tools: ## Run the texture tool test-suite
 	$(PYTHON) -m pytest tests/tools -q
 
-export-textures: ## [STEP 5] Export original 320x200 plates and screens (usage: make export-textures [gamedata=DIR] [textures=DIR])
-	$(PYTHON) tools/textures.py export --data "$(gamedata)" --out "$(textures)"
+export-textures: ## [STEP 5] Export original plates, screens and animation jobs (usage: make export-textures [gamedata=DIR] [textures=DIR] [anims=DIR])
+	$(PYTHON) tools/textures.py export --data "$(gamedata)" --out "$(textures)" --anims "$(anims)"
 
 check-textures: ## [STEP 5] Validate upscaled textures without writing (usage: make check-textures [textures_ai=DIR] [dest=DIR] [dark=mirror|all|none])
 	$(PYTHON) tools/textures.py import --src "$(textures_ai)" --dest "$(dest)" --originals "$(textures)" --dark "$(dark)" --dry-run
