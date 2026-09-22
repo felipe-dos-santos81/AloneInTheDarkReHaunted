@@ -5527,9 +5527,11 @@ int FitdMain(int argc, char* argv[])
     // bgfx frames, but game boot is gated until the dialog is dismissed.
     if (g_remasterConfig.ui.showOptionsAtStartup)
     {// Hide the console window at startup; it will be shown after the main window is created
+#ifdef _WIN32
         HWND hConsole = GetConsoleWindow();
         if (hConsole)
             ShowWindow(hConsole, SW_HIDE);
+#endif
         remasterOptionsBeginStartupGate();
         do
         {
