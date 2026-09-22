@@ -160,3 +160,5 @@ Replace the "macOS (experimental)" section with concrete Apple Silicon steps:
 | `BUILDING.md`, `TatouSource/BUILDING.md`, `TatouSource/Docs/BUILDING.md` | replace experimental macOS section with arm64 steps (all three copies, to avoid drift) |
 | `TatouSource/ThirdParty/zlib/zutil.h` | drop the legacy `TARGET_OS_MAC` `fdopen` macro that fails to compile under the current macOS SDK (discovered during implementation; matches upstream zlib) |
 | `TatouSource/FitdLib/main.cpp` | wrap the Windows-only `GetConsoleWindow()`/`ShowWindow(..., SW_HIDE)` block in `#ifdef _WIN32`; it was the only remaining macOS compile error (discovered during implementation) |
+| `TatouSource/cmake/copy_existing_files.cmake` | add the missing script the macOS asset-copy POST_BUILD step invokes (never existed in git) |
+| `TatouSource/Fitd/CMakeLists.txt` | pass the asset list to that script joined with `\|` instead of a raw semicolon list the shell splits (made `make build-fitd` exit 127) |

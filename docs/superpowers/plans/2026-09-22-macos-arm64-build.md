@@ -14,7 +14,7 @@
 - Build type: `Release`. Generator: `Ninja`. Deployment target: `11.3` (matches `TatouSource/Fitd/Info.plist` `LSMinimumSystemVersion`).
 - macOS build output is the bundle `build/macos-arm64/Fitd/Tatou.app`; the runnable binary is `Contents/MacOS/Tatou`.
 - Windowed mode and unlocked cursor must remain the default behavior — **do not** add `SDL_SetWindowFullscreen`, `SDL_SetWindowRelativeMouseMode`, `SDL_SetWindowMouseGrab`, or `SDL_SetWindowGrab` calls.
-- Do **not** modify game/engine behavior. The only permitted engine-source change is the platform guard for Windows-only console code in Task 4 (Step 0); it is a no-op on non-Windows and behavior-preserving on Windows.
+- Do **not** modify game/engine behavior. The only permitted engine-source changes are the two macOS build fixes in Task 4 (Steps 0 and 0b): the platform guard for Windows-only console code, and the broken macOS asset-copy POST_BUILD step. Both are behavior-preserving (the POST_BUILD lives inside the Darwin-only block).
 - Do **not** change Windows, Linux, Switch, UWP, iOS, or tvOS build paths.
 - All shell commands in this plan run from `TatouSource/` unless stated otherwise:
   `cd /Users/felipe.dos.santos/code/mine/AloneInTheDarkReHaunted/TatouSource`
@@ -283,6 +283,8 @@ git commit -m "fix(zlib): drop legacy TARGET_OS_MAC fdopen macro that breaks mod
 
 **Files:**
 - Modify: `TatouSource/FitdLib/main.cpp:5529-5532` (platform guard only)
+- Create: `TatouSource/cmake/copy_existing_files.cmake`
+- Modify: `TatouSource/Fitd/CMakeLists.txt:86-96` (asset-copy argument only)
 
 **Interfaces:**
 - Consumes: `macos-arm64` preset (Task 1), Makefile targets (Task 2), and the zlib fix (Task 3).
@@ -306,6 +308,55 @@ Wrap only those lines in `#ifdef _WIN32`, matching the existing guarded copies i
 ```
 
 Behavior on Windows is unchanged; on non-Windows the block was never compiled before.
+
+- [ ] **Step 0b: Repair the macOS asset-copy POST_BUILD step**
+
+`Fitd/CMakeLists.txt:88-96` runs a POST_BUILD step that copies optional assets into `Tatou.app/Contents/Resources`. It is broken two ways: it runs `cmake -P "${CMAKE_SOURCE_DIR}/cmake/copy_existing_files.cmake"`, a script that has never existed in git; and it passes `"-DFILES=${MACOS_ASSETS}"` where `MACOS_ASSETS` is a list, so the emitted shell command contains unquoted `;` and the shell tries to execute each path as a command. Result: `make build-fitd` exits 127 *after* the binary links successfully, and no `Resources` directory is produced.
+
+Create `TatouSource/cmake/copy_existing_files.cmake`:
+
+```cmake
+# Copy the files listed in FILES into DESTINATION, skipping any that do not
+# exist. Invoked via `cmake -P` from the Fitd macOS POST_BUILD step.
+#
+# FILES is a single "|"-separated string so the shell cannot split the list on
+# semicolons.
+
+if(NOT DEFINED DESTINATION)
+    message(FATAL_ERROR "copy_existing_files.cmake: DESTINATION is required")
+endif()
+
+if(NOT DEFINED FILES OR FILES STREQUAL "")
+    return()
+endif()
+
+file(MAKE_DIRECTORY "${DESTINATION}")
+
+string(REPLACE "|" ";" _files "${FILES}")
+foreach(_file IN LISTS _files)
+    if(EXISTS "${_file}")
+        file(COPY "${_file}" DESTINATION "${DESTINATION}")
+    endif()
+endforeach()
+```
+
+In `Fitd/CMakeLists.txt`, make exactly two edits: add the `string(REPLACE ...)` line immediately before `add_custom_command`, and change the `"-DFILES=${MACOS_ASSETS}"` argument to `"-DFILES=${MACOS_ASSETS_ARG}"`. The resulting block is:
+
+```cmake
+    # Copy any assets that might not exist yet at configure time via a post-build step.
+    # Missing optional assets should not make the executable link fail.
+    # Join with "|" so the shell cannot split the list on semicolons.
+    string(REPLACE ";" "|" MACOS_ASSETS_ARG "${MACOS_ASSETS}")
+    add_custom_command(TARGET Fitd POST_BUILD
+        COMMAND ${CMAKE_COMMAND}
+            -DDESTINATION="$<TARGET_BUNDLE_CONTENT_DIR:Fitd>/Resources"
+            "-DFILES=${MACOS_ASSETS_ARG}"
+            -P "${CMAKE_SOURCE_DIR}/cmake/copy_existing_files.cmake"
+        COMMAND chmod +x
+            "$<TARGET_BUNDLE_CONTENT_DIR:Fitd>/MacOS/Tatou"
+        COMMENT "Copying game assets into Tatou.app/Contents/Resources"
+    )
+```
 
 - [ ] **Step 1: Build the game executable**
 
@@ -347,14 +398,14 @@ Expected, observed manually:
 
 Then quit the game (close the window or `Cmd+Q`).
 
-- [ ] **Step 6: Commit the platform guard**
+- [ ] **Step 6: Commit the two macOS build fixes**
 
-The guard from Step 0 is the only committed change in this task. Do not commit build artifacts; confirm `git status` shows only `TatouSource/FitdLib/main.cpp` staged.
+Steps 0 and 0b are the only committed changes in this task. Do not commit build artifacts; confirm `git status` shows only the three source files staged.
 
 ```bash
 cd /Users/felipe.dos.santos/code/mine/AloneInTheDarkReHaunted
-git add TatouSource/FitdLib/main.cpp
-git commit -m "fix(macos): guard Windows-only console code in FitdMain"
+git add TatouSource/FitdLib/main.cpp TatouSource/cmake/copy_existing_files.cmake TatouSource/Fitd/CMakeLists.txt
+git commit -m "fix(macos): guard Windows-only console code and repair asset-copy step"
 ```
 
 - [ ] **Step 7: Record the result**
