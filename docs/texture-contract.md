@@ -13,7 +13,7 @@ data/textures/
   backgrounds/CAMERA0F_NNN.png        144 camera plates, 320x200 RGB
   screens/ITD_RESS_NNN.png            13 full-screen images, 320x200 RGB
   animations/<NAME>/
-    reference/frame_0001.png …        the engine's current clip for <NAME>
+    reference/frame_0001.png …        the clip found at the first export for <NAME> (write-once)
     still.png                         only when no plate above is named <NAME>.png
   manifest.json
 ```
@@ -31,7 +31,7 @@ data/textures/
 | `kind` | `camera`, `screen` or `menu` |
 | `floor` | Camera floor 0–7, else `null`; use it as the colour-match group |
 | `still` | The 320x200 still to render and animate |
-| `reference` | Folder of `frame_NNNN.png`: the current clip, for motion guidance only |
+| `reference` | Folder of `frame_NNNN.png`: the clip found at the first export, kept afterward for motion guidance only — it is not updated by a later export; delete `data/textures/animations/<NAME>/reference/` to have the next export copy the engine's current clip again |
 | `reference_frames`, `reference_size` | Its frame count and size |
 | `frames_dir` | Where to write the new frames |
 | `fps` | `12.5`: the engine plays every clip at 0.08 s a frame, looping |
@@ -49,7 +49,11 @@ data/textures/
    1. Render `still` like an image. When `still` is also an `images[]` path,
       reuse that render, so the animation starts from the room's still.
    2. For `kind: camera`, colour-match within the group given by `floor`,
-      not by parsing paths.
+      not by parsing paths. The five alt-camera screens the game swaps in
+      once the sorcerer is dead have `kind: screen` and `floor: null`;
+      colour-match each against the floor of the camera it replaces:
+      `ITD_RESS_015` and `016` against floor 7 (cameras 0 and 1), and
+      `ITD_RESS_017`, `018` and `019` against floor 6 (cameras 0, 5 and 8).
    3. Animate the rendered still with an image-to-video model, using it as
       both first and last frame so the clip loops without a jump.
       `reference` shows what moves (fire, rain, curtains); never copy its
@@ -67,7 +71,9 @@ data/textures/
 ## What import checks
 
 Images: the name maps to an engine file, the PNG decodes, 16:10 within 1%,
-at most 8192 px per side; a file identical to the original is skipped.
+at most 8192 px per side; a file identical to the original is skipped. A
+size that is not an integer multiple of 320x200 is a warning; the file is
+still imported.
 
 Animations, all before anything is written:
 
@@ -80,6 +86,9 @@ Animations, all before anything is written:
 | frame 1 not 16:10, or over 8192 px per side | |
 
 An accepted scene clip replaces `anim_<NAME>/` in `Assets/backgrounds_hd`
-completely; the menu's frames become `StartupMenuBackground_NNN.png`.
+completely; the menu's frames become `StartupMenuBackground_NNN.png`, shown
+only when `graphics.useArtwork = false` in `aitd_remaster.cfg` (artwork is
+on by default) — an upscaler may decide the menu job is not worth rendering
+if that is not the target configuration.
 A still imported for a slot that keeps its `anim_<NAME>/` is reported as
 shadowed: the engine plays the animation instead.

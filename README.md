@@ -95,8 +95,11 @@ your stills). `export-textures` turns each clip into a job under
 upscaler that follows [docs/texture-contract.md](docs/texture-contract.md)
 writes new frames to `animations/<NAME>/frames/`, and `import-textures`
 validates them and replaces the engine's clip (the start menu's frames go
-to `StartupMenuBackground_NNN.png`). Every clip plays at 12.5 frames a
-second.
+to `StartupMenuBackground_NNN.png`, which is only shown with
+`graphics.useArtwork = false` in `aitd_remaster.cfg` — artwork is on by
+default). Every clip plays at 12.5 frames a second. For an animated
+camera, `dark=all` also derives a full-size `anim_<NAME>_DARK/` clip;
+`mirror` refreshes only the `_DARK` clips that already exist.
 
 ---
 
