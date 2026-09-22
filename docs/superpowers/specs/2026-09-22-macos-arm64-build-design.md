@@ -52,8 +52,10 @@ In scope:
 
 Out of scope:
 
-- Any change to game/engine source code (windowed mode and cursor behavior are
-  already correct by default; no enforcement code is added).
+- Game/engine **behavior** changes. Windowed mode and cursor behavior are
+  already correct by default; no enforcement code is added. The one permitted
+  engine-source edit is a platform guard for Windows-only console code that
+  otherwise fails to compile on macOS (see Files changed).
 - Changes to Windows, Linux, Switch, UWP, iOS, or tvOS build paths.
 - Committing build artifacts (the `build/` tree stays ignored/untracked).
 
@@ -157,3 +159,4 @@ Replace the "macOS (experimental)" section with concrete Apple Silicon steps:
 | `TatouSource/Makefile` | add `ARCH` and Darwin arch flag; commit the file |
 | `BUILDING.md`, `TatouSource/BUILDING.md`, `TatouSource/Docs/BUILDING.md` | replace experimental macOS section with arm64 steps (all three copies, to avoid drift) |
 | `TatouSource/ThirdParty/zlib/zutil.h` | drop the legacy `TARGET_OS_MAC` `fdopen` macro that fails to compile under the current macOS SDK (discovered during implementation; matches upstream zlib) |
+| `TatouSource/FitdLib/main.cpp` | wrap the Windows-only `GetConsoleWindow()`/`ShowWindow(..., SW_HIDE)` block in `#ifdef _WIN32`; it was the only remaining macOS compile error (discovered during implementation) |

@@ -14,7 +14,7 @@
 - Build type: `Release`. Generator: `Ninja`. Deployment target: `11.3` (matches `TatouSource/Fitd/Info.plist` `LSMinimumSystemVersion`).
 - macOS build output is the bundle `build/macos-arm64/Fitd/Tatou.app`; the runnable binary is `Contents/MacOS/Tatou`.
 - Windowed mode and unlocked cursor must remain the default behavior — **do not** add `SDL_SetWindowFullscreen`, `SDL_SetWindowRelativeMouseMode`, `SDL_SetWindowMouseGrab`, or `SDL_SetWindowGrab` calls.
-- Do **not** modify game/engine source under `FitdLib/` or `Fitd/`.
+- Do **not** modify game/engine behavior. The only permitted engine-source change is the platform guard for Windows-only console code in Task 4 (Step 0); it is a no-op on non-Windows and behavior-preserving on Windows.
 - Do **not** change Windows, Linux, Switch, UWP, iOS, or tvOS build paths.
 - All shell commands in this plan run from `TatouSource/` unless stated otherwise:
   `cd /Users/felipe.dos.santos/code/mine/AloneInTheDarkReHaunted/TatouSource`
@@ -282,11 +282,30 @@ git commit -m "fix(zlib): drop legacy TARGET_OS_MAC fdopen macro that breaks mod
 ### Task 4: Build and verify the arm64 windowed, unlocked-cursor binary
 
 **Files:**
-- None modified (verification only).
+- Modify: `TatouSource/FitdLib/main.cpp:5529-5532` (platform guard only)
 
 **Interfaces:**
 - Consumes: `macos-arm64` preset (Task 1), Makefile targets (Task 2), and the zlib fix (Task 3).
 - Produces: a verified `build/macos-arm64/Fitd/Tatou.app/Contents/MacOS/Tatou` reported as `arm64`, confirmed to launch windowed with a free cursor.
+
+- [ ] **Step 0: Guard the Windows-only console code**
+
+`FitdLib/main.cpp:5529-5532` calls `GetConsoleWindow()` / `ShowWindow(..., SW_HIDE)` with no platform guard, which fails to compile off Windows (`unknown type name 'HWND'`, `use of undeclared identifier 'GetConsoleWindow'`, `use of undeclared identifier 'SW_HIDE'`). This is the only remaining compile error in the `Fitd` target — verified with `ninja -C build/macos-arm64 -k 0 Fitd`.
+
+Wrap only those lines in `#ifdef _WIN32`, matching the existing guarded copies in `Fitd/fitd.cpp:98-104` and `FitdLib/osystemSDL.cpp:195`:
+
+```cpp
+    if (g_remasterConfig.ui.showOptionsAtStartup)
+    {// Hide the console window at startup; it will be shown after the main window is created
+#ifdef _WIN32
+        HWND hConsole = GetConsoleWindow();
+        if (hConsole)
+            ShowWindow(hConsole, SW_HIDE);
+#endif
+        remasterOptionsBeginStartupGate();
+```
+
+Behavior on Windows is unchanged; on non-Windows the block was never compiled before.
 
 - [ ] **Step 1: Build the game executable**
 
@@ -328,9 +347,19 @@ Expected, observed manually:
 
 Then quit the game (close the window or `Cmd+Q`).
 
-- [ ] **Step 6: Record the result**
+- [ ] **Step 6: Commit the platform guard**
 
-No commit. If the window appears fullscreen or the cursor is confined, STOP and report — do not patch source; the fix belongs in the build/config path and must be re-designed.
+The guard from Step 0 is the only committed change in this task. Do not commit build artifacts; confirm `git status` shows only `TatouSource/FitdLib/main.cpp` staged.
+
+```bash
+cd /Users/felipe.dos.santos/code/mine/AloneInTheDarkReHaunted
+git add TatouSource/FitdLib/main.cpp
+git commit -m "fix(macos): guard Windows-only console code in FitdMain"
+```
+
+- [ ] **Step 7: Record the result**
+
+If the window appears fullscreen or the cursor is confined, STOP and report — do not patch further; the fix belongs in the build/config path and must be re-designed.
 
 ---
 
