@@ -6,6 +6,9 @@
 
 UNAME_S := $(shell uname -s)
 
+# The CMake project lives here; all build output stays under it.
+SRC_DIR ?= TatouSource
+
 BUILD_TYPE ?= Release
 JOBS ?= $(shell sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)
 CMAKE = cmake
@@ -15,11 +18,11 @@ ifeq ($(UNAME_S),Darwin)
 # arm64 is fixed: an arch-suffixed dir would collide with build/macos-x86_64.
 DEPLOY_TARGET ?= 11.3
 generator ?= Ninja
-BUILD_DIR ?= build/macos-arm64
+BUILD_DIR ?= $(SRC_DIR)/build/macos-arm64
 DARWIN_FLAGS = -DCMAKE_OSX_ARCHITECTURES="arm64" \
                -DCMAKE_OSX_DEPLOYMENT_TARGET="$(DEPLOY_TARGET)"
 else
-BUILD_DIR ?= build/$(BUILD_TYPE)
+BUILD_DIR ?= $(SRC_DIR)/build/$(BUILD_TYPE)
 DARWIN_FLAGS =
 endif
 
@@ -30,7 +33,7 @@ CONFIGURE_FLAGS = -DCMAKE_BUILD_TYPE="$(BUILD_TYPE)" \
                   $(if $(generator),-G "$(generator)")
 
 data ?= .
-src ?= ../Assets/backgrounds_hd
+src ?= Assets/backgrounds_hd
 out ?= $(notdir $(src)).hda
 archive ?= backgrounds_hd.hda
 
@@ -58,12 +61,12 @@ help: ## Print this help message
 		{printf "  \033[36m%-26s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 deps: ## [STEP 0] Install build dependencies for this platform
-	@./install_deps.sh
+	@$(SRC_DIR)/install_deps.sh
 
 # ── Stage 1 · Configure (CMake) ───────────────────────────────────────────────
 
 configure: ## [STEP 1] Generate build files in the build directory (usage: make configure [BUILD_TYPE=Debug] [generator=Ninja])
-	$(CMAKE) -S . -B "$(BUILD_DIR)" $(CONFIGURE_FLAGS)
+	$(CMAKE) -S "$(SRC_DIR)" -B "$(BUILD_DIR)" $(CONFIGURE_FLAGS)
 
 # ── Stage 2 · Build (game + tools) ────────────────────────────────────────────
 
@@ -85,7 +88,7 @@ run: build ## [STEP 3] Launch the game from a game-data directory (usage: make r
 
 # ── Stage 4 · Assets (HDA archives) ───────────────────────────────────────────
 
-hda-pack: build-tools ## [STEP 4] Build an .hda archive (usage: make hda-pack [src=../Assets/backgrounds_hd] [out=backgrounds_hd.hda])
+hda-pack: build-tools ## [STEP 4] Build an .hda archive (usage: make hda-pack [src=Assets/backgrounds_hd] [out=backgrounds_hd.hda])
 	@test -x "$(HDA_TOOL)" || { echo "error: build_hda_archive not found - run 'make build-tools'"; exit 1; }
 	"$(HDA_TOOL)" "$(src)" "$(out)"
 
@@ -100,7 +103,7 @@ clean: ## Remove the current build directory
 	@echo "Cleanup complete."
 
 distclean: ## Remove every build directory (all configurations)
-	rm -rf build
+	rm -rf "$(SRC_DIR)/build"
 	@echo "Full cleanup complete."
 
 rebuild: clean build ## Clean then build from scratch

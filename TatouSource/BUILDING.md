@@ -130,15 +130,14 @@ cmake --preset macos-arm64
 cmake --build --preset macos-arm64 --target Fitd
 ```
 
-The app bundle is written to `TatouSource/build/macos-arm64/Fitd/Tatou.app`.
+The app bundle is written to `build/macos-arm64/Fitd/Tatou.app`.
 
 ### 3. Build and run (Makefile)
 
-The `TatouSource/Makefile` targets the same `build/macos-arm64` tree and
-builds arm64:
+The root `Makefile` drives the same `TatouSource/build/macos-arm64` tree and
+builds arm64. Run these from the repository root:
 
 ```bash
-cd TatouSource
 make build-fitd                                   # configure + build the game
 make run data=/path/to/writable/dir               # build + launch windowed
 ```
@@ -153,7 +152,7 @@ Game data is embedded in the binary, so no original PAK files are required.
 ### 4. Verify the architecture
 
 ```bash
-file build/macos-arm64/Fitd/Tatou.app/Contents/MacOS/Tatou
+file TatouSource/build/macos-arm64/Fitd/Tatou.app/Contents/MacOS/Tatou
 # => Mach-O 64-bit executable arm64
 ```
 
