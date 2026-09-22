@@ -8,11 +8,11 @@ if(NOT DEFINED DESTINATION)
     message(FATAL_ERROR "copy_existing_files.cmake: DESTINATION is required")
 endif()
 
+file(MAKE_DIRECTORY "${DESTINATION}")
+
 if(NOT DEFINED FILES OR FILES STREQUAL "")
     return()
 endif()
-
-file(MAKE_DIRECTORY "${DESTINATION}")
 
 string(REPLACE "|" ";" _files "${FILES}")
 foreach(_file IN LISTS _files)

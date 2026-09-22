@@ -300,21 +300,26 @@ The app bundle is written to `TatouSource/build/macos-arm64/Fitd/Tatou.app`.
 
 ### 3. Build and run (Makefile)
 
-The `TatouSource/Makefile` targets the same `build/macos-arm64` tree with
-`ARCH=arm64` by default:
+The `TatouSource/Makefile` targets the same `build/macos-arm64` tree and
+builds arm64:
 
 ```bash
 cd TatouSource
 make build-fitd                                   # configure + build the game
-make run data=/path/to/writable/dir               # launch windowed
+make run data=/path/to/writable/dir               # build + launch windowed
 ```
 
 Game data is embedded in the binary, so no original PAK files are required.
 
+> A clean build regenerates the tracked Metal shader headers under
+> `TatouSource/FitdLib/shaders/generated/metal/`. If `git status` shows some of
+> them modified after a build and you did not intend to change them, restore
+> with `git checkout -- TatouSource/FitdLib/shaders/generated/metal`.
+
 ### 4. Verify the architecture
 
 ```bash
-file TatouSource/build/macos-arm64/Fitd/Tatou.app/Contents/MacOS/Tatou
+file build/macos-arm64/Fitd/Tatou.app/Contents/MacOS/Tatou
 # => Mach-O 64-bit executable arm64
 ```
 

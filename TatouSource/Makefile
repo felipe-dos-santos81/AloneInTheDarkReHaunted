@@ -9,13 +9,14 @@ UNAME_S := $(shell uname -s)
 BUILD_TYPE ?= Release
 
 ifeq ($(UNAME_S),Darwin)
-# Apple Silicon: default to arm64, Ninja, and a platform-named build dir that
-# matches the "macos-arm64" CMake preset so both entry points share one tree.
-ARCH ?= arm64
+# Apple Silicon (arm64) native build. Shares the "macos-arm64" CMake preset's
+# build tree, so both entry points must use the same generator (Ninja).
+# arm64 is hardcoded: the target is arm64-only, and an arch-suffixed build dir
+# would collide with the tracked WSL cross-compile tree build/macos-x86_64.
 DEPLOY_TARGET ?= 11.3
 generator ?= Ninja
-BUILD_DIR ?= build/macos-$(ARCH)
-DARWIN_FLAGS = -DCMAKE_OSX_ARCHITECTURES="$(ARCH)" -DCMAKE_OSX_DEPLOYMENT_TARGET="$(DEPLOY_TARGET)"
+BUILD_DIR ?= build/macos-arm64
+DARWIN_FLAGS = -DCMAKE_OSX_ARCHITECTURES="arm64" -DCMAKE_OSX_DEPLOYMENT_TARGET="$(DEPLOY_TARGET)"
 else
 BUILD_DIR ?= build/$(BUILD_TYPE)
 DARWIN_FLAGS =
