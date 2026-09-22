@@ -1,38 +1,40 @@
-# Makefile for Alone In The Dark: Re-Haunted — FITD engine
-# Targets are numbered by pipeline stage:
-#   env → 1 configure → 2 build → 3 run → 4 assets → dev
-SERVICE = Alone In The Dark: Re-Haunted
+# Makefile for Alone In The Dark: Re-Haunted — FITD engine.
+# Stages: deps → configure → build → run → hda-pack / hda-unpack.
+# Run `make help` for every target and its arguments.
 
-# Variables
+# ── Variables ────────────────────────────────────────────────────────────────
+
 UNAME_S := $(shell uname -s)
 
 BUILD_TYPE ?= Release
+JOBS ?= $(shell sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)
+CMAKE = cmake
 
 ifeq ($(UNAME_S),Darwin)
-# Apple Silicon (arm64) native build. Shares the "macos-arm64" CMake preset's
-# build tree, so both entry points must use the same generator (Ninja).
-# arm64 is hardcoded: the target is arm64-only, and an arch-suffixed build dir
-# would collide with the tracked WSL cross-compile tree build/macos-x86_64.
+# Native Apple Silicon build, sharing the "macos-arm64" CMake preset's tree.
+# arm64 is fixed: an arch-suffixed dir would collide with build/macos-x86_64.
 DEPLOY_TARGET ?= 11.3
 generator ?= Ninja
 BUILD_DIR ?= build/macos-arm64
-DARWIN_FLAGS = -DCMAKE_OSX_ARCHITECTURES="arm64" -DCMAKE_OSX_DEPLOYMENT_TARGET="$(DEPLOY_TARGET)"
+DARWIN_FLAGS = -DCMAKE_OSX_ARCHITECTURES="arm64" \
+               -DCMAKE_OSX_DEPLOYMENT_TARGET="$(DEPLOY_TARGET)"
 else
 BUILD_DIR ?= build/$(BUILD_TYPE)
 DARWIN_FLAGS =
 endif
 
-JOBS ?= $(shell sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)
-CMAKE = cmake
+# Per-invocation overrides, e.g. make build BUILD_TYPE=Debug generator=Ninja
+CONFIGURE_FLAGS = -DCMAKE_BUILD_TYPE="$(BUILD_TYPE)" \
+                  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+                  $(DARWIN_FLAGS) \
+                  $(if $(generator),-G "$(generator)")
 
-# Optional per-invocation args
-CONFIGURE_FLAGS = -DCMAKE_BUILD_TYPE="$(BUILD_TYPE)" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $(DARWIN_FLAGS) $(if $(generator),-G "$(generator)")
 data ?= .
 src ?= ../Assets/backgrounds_hd
 out ?= $(notdir $(src)).hda
 archive ?= backgrounds_hd.hda
 
-# Resolve outputs across single-config and multi-config generators.
+# First existing path across the single-config and multi-config output layouts.
 BINARY = $(firstword $(wildcard \
 	$(BUILD_DIR)/Fitd/Tatou \
 	$(BUILD_DIR)/Fitd/Tatou.app/Contents/MacOS/Tatou \
@@ -45,45 +47,18 @@ UNPACK_TOOL = $(firstword $(wildcard \
 	$(BUILD_DIR)/tools/$(BUILD_TYPE)/unpack_hda_archive.exe))
 
 .PHONY: help deps configure build build-fitd build-tools run \
-        hda-pack hda-unpack \
-        clean distclean rebuild
+        hda-pack hda-unpack clean distclean rebuild
 
 # ── Environment ──────────────────────────────────────────────────────────────
 
 help: ## Print this help message
-	@printf '\033[01;32m${SERVICE} — FITD engine\033[00;37m\n\n'
-	@printf "\033[33mUsage:\033[0m\n  make [target] [arg=\"val\"...]\n\n\033[33mTargets:\033[0m\n"
-	@grep -E '^[-a-zA-Z0-9_\.\/]+:.*?## .*$$' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; \
-		{printf "  \033[36m%-26s\033[0m %s\n", $$1, $$2}'
+	@printf '\033[1;32mAlone In The Dark: Re-Haunted — FITD engine\033[0m\n\n'
+	@printf '\033[33mUsage:\033[0m make [target] [arg=value ...]\n\n\033[33mTargets:\033[0m\n'
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_.\/-]+:.*## / \
+		{printf "  \033[36m%-26s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-deps: ## [STEP 0] Install system build dependencies (apt/dnf/pacman/brew)
-	@case "$$(uname -s)" in \
-		Linux) \
-			if command -v apt-get >/dev/null 2>&1; then \
-				sudo apt-get update && sudo apt-get install -y \
-					build-essential git cmake ninja-build pkg-config \
-					libx11-dev libxext-dev libxrandr-dev libxinerama-dev libxcursor-dev \
-					libxi-dev libgl-dev libglu1-mesa-dev libasound2-dev libpulse-dev \
-					libwayland-dev libxkbcommon-dev libpipewire-0.3-dev; \
-			elif command -v dnf >/dev/null 2>&1; then \
-				sudo dnf install -y gcc-c++ git cmake ninja-build pkgconfig \
-					libX11-devel libXext-devel libXrandr-devel libXinerama-devel \
-					libXcursor-devel libXi-devel mesa-libGL-devel mesa-libGLU-devel \
-					alsa-lib-devel pulseaudio-libs-devel wayland-devel \
-					libxkbcommon-devel pipewire-devel; \
-			elif command -v pacman >/dev/null 2>&1; then \
-				sudo pacman -S --needed base-devel git cmake ninja pkgconf \
-					libx11 libxext libxrandr libxinerama libxcursor libxi \
-					mesa glu alsa-lib libpulse wayland libxkbcommon pipewire; \
-			else \
-				echo "Unsupported Linux distribution - see BUILDING.md"; exit 1; \
-			fi ;; \
-		Darwin) \
-			brew install cmake ninja pkg-config ;; \
-		*) \
-			echo "Unsupported platform $$(uname -s) - see BUILDING.md"; exit 1 ;; \
-	esac
+deps: ## [STEP 0] Install build dependencies for this platform
+	@./install_deps.sh
 
 # ── Stage 1 · Configure (CMake) ───────────────────────────────────────────────
 
@@ -116,7 +91,7 @@ hda-pack: build-tools ## [STEP 4] Build an .hda archive (usage: make hda-pack [s
 
 hda-unpack: build-tools ## [STEP 4] Extract an .hda archive (usage: make hda-unpack [archive=backgrounds_hd.hda] [out=dir])
 	@test -x "$(UNPACK_TOOL)" || { echo "error: unpack_hda_archive not found - run 'make build-tools'"; exit 1; }
-	"$(UNPACK_TOOL)" "$(archive)" $(out)
+	"$(UNPACK_TOOL)" "$(archive)" "$(out)"
 
 # ── Development ───────────────────────────────────────────────────────────────
 
