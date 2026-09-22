@@ -9,15 +9,18 @@ from dataclasses import dataclass, field
 import numpy as np
 from PIL import Image
 
+from .animations import FRAME_RE, frame_name
 from .catalog import DARK_SUFFIX, SOURCE_FOLDERS, kind_of_pak, parse_target, target_for_source
 from .files import atomic_write_bytes, save_png
-from .manifest import Manifest, sha256_rgb
+from .manifest import AnimationJob, Manifest, sha256_rgb
 
 DARK_POLICIES = ("mirror", "all", "none")
 DEFAULT_DARK_FACTOR = 0.10  # DARK_ROOM_BRIGHTNESS in rendererBGFX.cpp
 ASPECT = 320 / 200
 ASPECT_TOLERANCE = 0.01  # relative
 MAX_SIDE = 8192
+SEAM_THRESHOLD = 8.0  # mean |last - first| over RGB, 0..255: above it the loop visibly jumps
+MEMORY_BUDGET = 1 << 30  # bytes the engine keeps decoded: width * height * 3 * frames
 NAME_ERROR = ("unknown name; expected CAMERA0F_NNN.png or ITD_RESS_NNN.png, "
               "or m-aitd's floorNN/cameraNNN.png or ressNN.png")
 
@@ -69,6 +72,15 @@ def _load(path: pathlib.Path):
         return None, f"{type(exc).__name__}: {exc}"
 
 
+def _shape_error(w: int, h: int) -> tuple[str, str] | None:
+    """The engine's size rules for an HD image: (kind, message), or None if it passes."""
+    if abs(w / h - ASPECT) / ASPECT > ASPECT_TOLERANCE:
+        return "aspect", f"{w}x{h} is not 16:10; the engine would stretch it"
+    if w > MAX_SIDE or h > MAX_SIDE:
+        return "too_large", f"{w}x{h} exceeds {MAX_SIDE} px per side"
+    return None
+
+
 def validate_file(path, expected_sha: str | None = None,
                   target: str | None = None) -> tuple[Candidate | None, list[Finding]]:
     """Check one upscaled PNG. `target` is the flat engine name it will be
@@ -83,10 +95,10 @@ def validate_file(path, expected_sha: str | None = None,
     if im is None:
         return None, [Finding(path, "invalid", "error", err)]
     w, h = im.size
-    if abs(w / h - ASPECT) / ASPECT > ASPECT_TOLERANCE:
-        return None, [Finding(path, "aspect", "error", f"{w}x{h} is not 16:10; the engine would stretch it")]
-    if w > MAX_SIDE or h > MAX_SIDE:
-        return None, [Finding(path, "too_large", "error", f"{w}x{h} exceeds {MAX_SIDE} px per side")]
+    shape_error = _shape_error(w, h)
+    if shape_error is not None:
+        kind, message = shape_error
+        return None, [Finding(path, kind, "error", message)]
     pixels = np.asarray(im.convert("RGB"))
     if expected_sha is not None and sha256_rgb(pixels) == expected_sha:
         return None, [Finding(path, "unchanged", "warning", "identical to the original; not upscaled, skipped")]
@@ -95,6 +107,77 @@ def validate_file(path, expected_sha: str | None = None,
         findings.append(Finding(path, "size", "warning", f"{w}x{h} is not an integer multiple of 320x200"))
     verbatim = im.format == "PNG" and im.mode in ("RGB", "RGBA")
     return Candidate(path, target, kind_of_pak(pak), pixels, verbatim), findings
+
+
+@dataclass
+class Sequence:
+    job: AnimationJob
+    frames: list[pathlib.Path]  # frame_0001.png, frame_0002.png, ... in play order
+    size: tuple[int, int]
+    verbatim: bool  # every frame is an RGB PNG, so its bytes can be copied as-is
+
+
+def _rejected(path, kind: str, message: str) -> tuple[None, list[Finding]]:
+    return None, [Finding(path, kind, "error", message)]
+
+
+def validate_sequence(frames_dir, job: AnimationJob) -> tuple[Sequence | None, list[Finding]]:
+    """Check an upscaler's frames/ folder the way the engine will play it. Any
+    error rejects the whole sequence: the engine drops a frame whose size or
+    channel count differs from frame 1, and a half-replaced clip plays wrong."""
+    frames_dir = pathlib.Path(frames_dir)
+    entries = sorted(frames_dir.iterdir(), key=lambda p: p.name)
+    stray = [p.name for p in entries if not (p.is_file() and FRAME_RE.match(p.name))]
+    if stray:
+        return _rejected(frames_dir, "frames", "only frame_NNNN.png files belong here; found "
+                         + ", ".join(stray[:3]))
+    if not entries:
+        return _rejected(frames_dir, "frames", "no frames")
+    for number, path in enumerate(entries, 1):
+        if path.name != frame_name(number):
+            return _rejected(frames_dir, "frames", "frames must be numbered from frame_0001.png "
+                             f"without gaps; expected {frame_name(number)}, found {path.name}")
+    if job.max_frames is not None and len(entries) > job.max_frames:
+        return _rejected(frames_dir, "frames",
+                         f"{len(entries)} frames exceed the engine's limit of {job.max_frames}")
+    size = None
+    verbatim = True
+    first = last = None
+    for path in entries:
+        im, err = _load(path)
+        if im is None:
+            return _rejected(path, "invalid", err)
+        with im:
+            w, h = im.size
+            if size is None:
+                size = (w, h)
+                shape_error = _shape_error(w, h)
+                if shape_error is not None:
+                    kind, message = shape_error
+                    return _rejected(path, kind, message)
+            elif (w, h) != size:
+                return _rejected(path, "frames", f"{w}x{h} differs from frame 1's {size[0]}x{size[1]}")
+            verbatim = verbatim and im.format == "PNG" and im.mode == "RGB"
+            if path is entries[0]:
+                first = np.asarray(im.convert("RGB"), dtype=np.int16)
+            if path is entries[-1]:
+                last = np.asarray(im.convert("RGB"), dtype=np.int16)
+    w, h = size
+    findings: list[Finding] = []
+    if w % 320 or h % 200:
+        findings.append(Finding(frames_dir, "size", "warning", f"{w}x{h} is not an integer multiple of 320x200"))
+    if len(entries) > 1:
+        seam = float(np.abs(last - first).mean())
+        if seam > SEAM_THRESHOLD:
+            findings.append(Finding(frames_dir, "seam", "warning",
+                                    f"the last frame differs from the first by {seam:.1f} on average; "
+                                    "the loop will visibly jump"))
+    decoded = w * h * 3 * len(entries)
+    if decoded > MEMORY_BUDGET:
+        findings.append(Finding(frames_dir, "memory", "warning",
+                                f"{len(entries)} frames of {w}x{h} decode to {decoded / (1 << 30):.2f} GiB, "
+                                "all held in memory by the engine"))
+    return Sequence(job, entries, size, verbatim), findings
 
 
 def derive_dark(pixels: np.ndarray, factor: float) -> np.ndarray:
