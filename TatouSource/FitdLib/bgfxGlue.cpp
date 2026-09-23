@@ -552,6 +552,14 @@ int initBgfxGlue(int argc, char* argv[])
         ImGui_ImplSDL3_InitForOther(gWindowBGFX);
     }
 
+    // The SDL3 backend's ImGui_ImplSDL3_UpdateMouseCursor() calls SDL_ShowCursor()
+    // and SDL_SetCursor() every frame from the game thread (ThirdParty/imgui/backends/
+    // imgui_impl_sdl3.cpp ~653), which fights the 2 s auto-hide and gameplay's own
+    // cursor shape (mouseInputEndMainFrame, the only place allowed to call them).
+    // ImGuiConfigFlags_NoMouseCursorChange makes that function return before any
+    // SDL cursor call (imgui_impl_sdl3.cpp ~634-635).
+    io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+
     // Initialize TTF font system
     // Note: This adds fonts after imguiCreate() has already built the font atlas.
     // The atlas will need to be rebuilt, which happens automatically on first ImGui_ImplXXX_NewFrame()

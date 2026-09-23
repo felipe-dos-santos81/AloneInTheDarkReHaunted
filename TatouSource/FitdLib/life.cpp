@@ -2480,6 +2480,7 @@ void processLife(int lifeNum, bool callFoundLife)
 
                 //soundFunc(0);
 
+                mouseWorldTakeOver(); // entered mid-frame from play (I2)
                 g_menuActive = true;
                 do
                 {
@@ -2905,6 +2906,7 @@ void processLife(int lifeNum, bool callFoundLife)
             case LM_WAIT_GAME_OVER:
             {
                 appendFormated("LM_WAIT_GAME_OVER ");
+                mouseWorldTakeOver(); // entered mid-frame from play (I2)
                 while (key || JoyD || Click)
                 {
                     process_events();

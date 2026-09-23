@@ -44,6 +44,7 @@ void life_Picture(int pictureIndex, int delay, int sampleId)
     startChrono(&chrono);
     playSound(sampleId);
 
+    mouseWorldTakeOver(); // entered mid-frame from play (I2)
     do
     {
         process_events();
@@ -66,6 +67,7 @@ void life_Picture(int pictureIndex, int delay, int sampleId)
 
 void life_WaitGameOver()
 {
+    mouseWorldTakeOver(); // entered mid-frame from play (I2)
     while (key || JoyD || Click)
         process_events();
     while (!key && !JoyD && !Click)

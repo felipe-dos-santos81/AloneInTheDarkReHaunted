@@ -222,6 +222,7 @@ static unsigned char* tryLoadHDSequenceFrame(const char* seqName, int frameId, i
 
 void playSequence(int sequenceIdx, int fadeStart, int fadeOutVar)
 {
+    mouseWorldTakeOver(); // entered mid-frame from play (I2)
 
     int frames=0;                   /* Number of frames displayed */
 

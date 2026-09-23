@@ -455,16 +455,26 @@ struct World
     int intentFloor = -1;
     mouse::ClickResult hover;
     std::optional<mouse::Point> hoverPos;
+    bool wroteJoyD = false; // localJoyD was written by the mouse this frame (M1)
 };
 
 World s_world;
+
+// Write localJoyD and record that the mouse drove it this frame, so a
+// mid-frame takeover (e.g. FoundObjet opened while arriving) can zero a
+// stale value before PlayWorld's tank controls read it (M1).
+void setJoyD(int value)
+{
+    localJoyD = value;
+    s_world.wroteJoyD = true;
+}
 
 // ---- held push (port of m-aitd playworld/held_push.py) -------------------------
 
 constexpr int kPlayerStandAnim = 4;         // AITD1 hero stand animation
 constexpr int kPlayerPushAnim = 5;          // AITD1 hero push animation
-constexpr int kPlayerLifeForwardAnim = 254; // what the hero's LIFE re-queues while walking (Step 1)
-constexpr bool kForcePushAnim = true;       // decided in Step 1
+constexpr int kPlayerLifeForwardAnim = 254; // m-aitd's value; unverified here until checklist row 29
+constexpr bool kForcePushAnim = true;       // m-aitd's value; unverified here until checklist row 29
 
 // Run InitAnim on the hero (InitAnim works on the "current processed" actor).
 void initHeroAnim(int anim, int type, int info)
@@ -478,7 +488,7 @@ void initHeroAnim(int anim, int type, int info)
     currentProcessedActorIdx = savedIdx;
 }
 
-// Stop the hero where it stands and put it back in its stand pose (FITD anim.cpp:238-253
+// Stop the hero where it stands and put it back in its stand pose (FITD anim.cpp:256-267
 // commits the pending step when this transition applies).
 void stopHero()
 {
@@ -596,7 +606,7 @@ bool tickAttack(uint32_t now)
     }
     ++s_world.attackFrames;
     s_world.hasDecision = false;
-    localJoyD = 1;
+    setJoyD(1);
     localClick = 1; // PlayWorld turns this into action = 0x2000
     return true;
 }
@@ -899,24 +909,24 @@ void handleArrival()
             if (refreshHeldTarget())
             {
                 s_world.hasDecision = false;
-                localJoyD = 0;
+                setJoyD(0);
             }
             return;
         }
         cancelIntent(); // pushed as far as it goes, or stuck
-        localJoyD = 0;
+        setJoyD(0);
         return;
     }
     if (d.arrived && pushIntoTarget(in))
     {
         s_world.hasDecision = false;
-        localJoyD = 0;
+        setJoyD(0);
         return;
     }
     const int target = in.targetObject;
     s_world.intent.reset();
     s_world.hasDecision = false;
-    localJoyD = 0;
+    setJoyD(0);
     if (d.arrived && target >= 0)
         dispatchTarget(target);
 }
@@ -947,7 +957,7 @@ void tickNavigation(uint32_t now)
     env.capObjet = [](int x1, int z1, int beta, int x2, int z2) { return CapObjet(x1, z1, beta, x2, z2); };
     s_world.decision = mouse::decide(in, heroPose(), env, now, !in.engaged);
     s_world.hasDecision = true;
-    localJoyD = s_world.decision.joyd; // LIFE scripts reading the stick see a live one
+    setJoyD(s_world.decision.joyd); // LIFE scripts reading the stick see a live one
     if (s_world.decision.arrived || s_world.decision.abandoned)
         handleArrival();
 }
@@ -1002,7 +1012,16 @@ void mouseWorldTakeOver()
     s_worldActive = false;
     s_screenGate.arm();
     releaseAll();
+    if (s_world.wroteJoyD)
+    {
+        // A mid-frame takeover (e.g. FoundObjet opened by dispatchTarget while
+        // tickNavigation/tickAttack still hold the hero) must not leave the
+        // stick live for the tank controls this same frame reads it (M1).
+        localJoyD = 0;
+        s_world.wroteJoyD = false;
+    }
     mouseInputRequestCursor(mouse::CursorShape::Default);
+    menuRestoreCursorForMenu(); // every screen opened from play shows the cursor (I1)
 }
 
 bool mouseWorldIsActive()
@@ -1102,6 +1121,7 @@ void mouseWorldDrawDebugOverlay()
 
 void mouseWorldFrame(int allowSystemMenu)
 {
+    s_world.wroteJoyD = false; // M1: cleared at the start of every frame
     s_allowSystemMenu = allowSystemMenu;
     mouse::Frame frame;
     const bool haveFrame = mouseInputTakeFrame(&frame);
