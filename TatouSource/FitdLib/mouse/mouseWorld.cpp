@@ -7,11 +7,14 @@
 #include "menuMouse.h"
 #include "mouseWorld.h"
 #include "mouseGate.h"
+#include "mouseGesture.h"
+#include "mouseHudLayout.h"
 #include "mouseNav.h"
 #include "mousePick.h"
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <map>
 #include <tuple>
 
@@ -161,6 +164,280 @@ mouse::HeroPose heroPose()
     const tObject& h = hero();
     return mouse::HeroPose{ h.room, mouse::XZ{ h.roomX + h.stepX, h.roomZ + h.stepZ }, h.beta };
 }
+
+// ---- actors (port of m-aitd interaction/combat.py and router.py) --------------
+
+int s_allowSystemMenu = 0;
+
+bool isCombatTarget(int idx)
+{
+    if (idx < 0 || idx >= NUM_MAX_OBJECT || idx == currentCameraTargetActor)
+        return false;
+    const tObject& a = ListObjets[idx];
+    return a.indexInWorld >= 0 && (a.objectType & AF_ANIMATED);
+}
+
+bool isInteractable(int idx)
+{
+    const tObject& a = ListObjets[idx];
+    if (a.indexInWorld < 0 || a.indexInWorld >= (int)ListWorldObjets.size())
+        return false;
+    if (a.objectType & AF_FOUNDABLE)
+        return true;
+    return ListWorldObjets[a.indexInWorld].foundLife != -1;
+}
+
+// Scripted or movable scenery that is not picked up: held to push. AITD1 only
+// (the push animation numbers are AITD1's).
+bool isHoldActionTarget(int idx)
+{
+    if (g_gameId != AITD1 || idx < 0 || idx >= NUM_MAX_OBJECT || idx == currentCameraTargetActor)
+        return false;
+    const tObject& a = ListObjets[idx];
+    if (a.indexInWorld < 0 || a.indexInWorld >= (int)ListWorldObjets.size() || a.bodyNum == -1 || !(a.dynFlags & 1))
+        return false;
+    const tWorldObject& w = ListWorldObjets[a.indexInWorld];
+    if (w.objIndex != idx || w.stage != g_currentFloor)
+        return false;
+    if (a.objectType & AF_FOUNDABLE)
+        return false;
+    return (a.objectType & AF_MOVABLE) || a.life != -1;
+}
+
+// A click on an enemy swings only from an idle hero with something in hand
+// (keyboard Action with an empty hand does nothing either).
+bool canStrike(bool requireIdle)
+{
+    if (!heroAvailable())
+        return false;
+    if (requireIdle && hero().animActionType != 0)
+        return false;
+    return currentInventory >= 0 && currentInventory < NUM_MAX_INVENTORY && inHandTable[currentInventory] != -1;
+}
+
+bool hudIconAllowed(mouse::HudIcon icon)
+{
+    if (!s_allowSystemMenu)
+        return false;
+    switch (icon)
+    {
+    case mouse::HudIcon::Inventory:
+        return statusScreenAllowed && numObjInInventoryTable[currentInventory] > 0;
+    case mouse::HudIcon::Map:
+        return statusScreenAllowed != 0;
+    case mouse::HudIcon::Menu:
+        return true;
+    }
+    return false;
+}
+
+mouse::ClickKind hudKindOf(mouse::HudIcon icon)
+{
+    switch (icon)
+    {
+    case mouse::HudIcon::Inventory: return mouse::ClickKind::HudInventory;
+    case mouse::HudIcon::Map:       return mouse::ClickKind::HudMap;
+    default:                        return mouse::ClickKind::HudMenu;
+    }
+}
+
+// The hero's footprint with its Y band re-framed into `room`.
+mouse::Agent agentIn(int room)
+{
+    mouse::Agent agent = agentOf(hero());
+    if (room != hero().room)
+    {
+        agent.y1 = mouse::reframeY(agent.y1, originOf(hero().room), originOf(room));
+        agent.y2 = mouse::reframeY(agent.y2, originOf(hero().room), originOf(room));
+    }
+    return agent;
+}
+
+// Topmost drawn actor whose screen box (exact, or forgiving) holds p.
+int pickActorAt(mouse::Point p, bool forgiving)
+{
+    for (int k = NbAffObjets - 1; k >= 0; --k) // Index is far-to-near painter order
+    {
+        const int idx = Index[k];
+        if (idx < 0 || idx >= NUM_MAX_OBJECT || idx == currentCameraTargetActor)
+            continue;
+        const tObject& a = ListObjets[idx];
+        if (a.indexInWorld < 0 || a.bodyNum == -1 || a.screenXMax < 0 || a.screenYMax < 0)
+            continue;
+        mouse::Rect box{ a.screenXMin, a.screenYMin, a.screenXMax, a.screenYMax };
+        if (forgiving)
+            box = mouse::forgivingBox(box);
+        if (mouse::contains(box, p))
+            return idx;
+    }
+    return -1;
+}
+
+// Where to stand to push `targetIdx`: the nearest walkable spot beside one of its faces.
+std::optional<mouse::Payload> holdActionApproach(int targetIdx)
+{
+    if (!isHoldActionTarget(targetIdx) || !heroAvailable())
+        return std::nullopt;
+    const tObject& h = hero();
+    const tObject& t = ListObjets[targetIdx];
+    if (h.room != t.room)
+        return std::nullopt;
+    const mouse::Agent agent = agentOf(h);
+    const mouse::Grid* grid = gridFor(t.room, agent);
+    if (!grid)
+        return std::nullopt;
+    const int clearance = agent.half + grid->step;
+    const mouse::XZ from = heroPose().at;
+    auto clampTo = [](int v, int lo, int hi) { return std::max(lo, std::min(v, hi)); };
+    const mouse::XZ candidates[4] = {
+        { t.zv.ZVX1 - clearance, clampTo(from.z, t.zv.ZVZ1, t.zv.ZVZ2) },
+        { t.zv.ZVX2 + clearance, clampTo(from.z, t.zv.ZVZ1, t.zv.ZVZ2) },
+        { clampTo(from.x, t.zv.ZVX1, t.zv.ZVX2), t.zv.ZVZ1 - clearance },
+        { clampTo(from.x, t.zv.ZVX1, t.zv.ZVX2), t.zv.ZVZ2 + clearance },
+    };
+    std::optional<mouse::XZ> best;
+    int bestCost = 0;
+    for (const mouse::XZ& c : candidates)
+    {
+        if (auto spot = mouse::nearestWalkable(*grid, c))
+        {
+            const int cost = std::abs(spot->x - from.x) + std::abs(spot->z - from.z);
+            if (!best || cost < bestCost)
+            {
+                best = spot;
+                bestCost = cost;
+            }
+        }
+    }
+    if (!best)
+        return std::nullopt;
+    return mouse::Payload{ best->x, best->z, t.room, t.indexInWorld };
+}
+
+// Stand next to an interactable object, on the side the hero comes from.
+mouse::ClickResult targetFor(int actorIdx)
+{
+    const tObject& t = ListObjets[actorIdx];
+    const tObject& h = hero();
+    mouse::XZ dest{ t.roomX, t.roomZ };
+    if (const mouse::Grid* grid = gridFor(t.room, agentIn(t.room)))
+    {
+        mouse::XZ from = heroPose().at;
+        if (h.room != t.room)
+            from = mouse::reframe(from, originOf(h.room), originOf(t.room));
+        if (auto spot = mouse::approachCell(*grid, dest, from))
+            dest = *spot;
+    }
+    return mouse::ClickResult{ mouse::ClickKind::Target, mouse::Payload{ dest.x, dest.z, t.room, t.indexInWorld } };
+}
+
+// A pixel with no reachable floor still names a direction to walk in.
+mouse::ClickResult steerToward(mouse::Point p)
+{
+    const tObject& h = hero();
+    mouse::Camera camera;
+    const auto* fits = fitsFor(h.room, h.roomY);
+    if (!fits || !cameraForRoom(h.room, &camera))
+        return {};
+    auto target = mouse::steerPoint(camera, *fits, h.roomY, heroPose().at, p);
+    if (!target)
+        return {}; // the hero's feet are off screen, or the pointer is on the hero
+    return mouse::ClickResult{ mouse::ClickKind::Steer, mouse::Payload{ target->x, target->z, h.room, -1 } };
+}
+
+mouse::ClickResult pickFloorOrSteer(mouse::Point p)
+{
+    const tObject& h = hero();
+    const mouse::RoomOrigin heroOrigin = originOf(h.room);
+    std::vector<int> rooms{ h.room };
+    const int cam = currentFloorCamera();
+    if (cam >= 0)
+        for (const cameraViewedRoomStruct& viewed : g_currentFloorCameraData[cam].viewedRoomTable)
+            if (viewed.viewedRoomIdx != h.room && roomValid(viewed.viewedRoomIdx))
+                rooms.push_back(viewed.viewedRoomIdx);
+
+    for (int room : rooms)
+    {
+        const int floorY = mouse::reframeY(h.roomY, heroOrigin, originOf(room));
+        const auto* fits = fitsFor(room, floorY);
+        if (!fits)
+            continue;
+        auto hit = mouse::pickFloor(*fits, p);
+        if (!hit)
+            continue;
+        mouse::XZ dest = *hit;
+        const mouse::Grid* grid = gridFor(room, agentIn(room));
+        if (grid && grid->any())
+        {
+            mouse::Camera camera;
+            if (!cameraForRoom(room, &camera))
+                return steerToward(p);
+            auto snapped = mouse::nearestWalkable(*grid, dest, 6, [&](mouse::XZ c) {
+                auto s = mouse::projectPoint(camera, c.x, floorY, c.z);
+                return s && s->x >= 0.0 && s->x < mouse::kLogicalW && s->y >= 0.0 && s->y < mouse::kLogicalH &&
+                       std::fabs(s->x - p.x) <= mouse::kSnapBudgetPx && std::fabs(s->y - p.y) <= mouse::kSnapBudgetPx;
+            });
+            if (!snapped)
+                return steerToward(p);
+            dest = *snapped;
+        }
+        return mouse::ClickResult{ mouse::ClickKind::Walk, mouse::Payload{ dest.x, dest.z, room, -1 } };
+    }
+    return steerToward(p);
+}
+
+// What a click at p would do. One resolver behind both the cursor and the click.
+mouse::ClickResult resolveAt(mouse::Point p)
+{
+    if (NumCamera < 0 || !heroAvailable())
+        return {};
+    if (auto icon = mouse::hudIconAt(p))
+    {
+        if (!hudIconAllowed(*icon))
+            return {};
+        return mouse::ClickResult{ hudKindOf(*icon), {} };
+    }
+    int actor = pickActorAt(p, false);
+    if (actor < 0)
+        actor = pickActorAt(p, true);
+    if (actor >= 0 && isCombatTarget(actor))
+    {
+        if (!canStrike(true))
+            return {}; // aimed at the enemy: never a fall-through to a walk
+        return mouse::ClickResult{ mouse::ClickKind::Attack, mouse::Payload{ 0, 0, -1, actor } };
+    }
+    if (actor >= 0 && !isInteractable(actor))
+    {
+        if (isHoldActionTarget(actor))
+            if (auto payload = holdActionApproach(actor))
+                return mouse::ClickResult{ mouse::ClickKind::Push, *payload };
+        actor = -1; // inert scenery: the pixel means what the floor behind it means
+    }
+    if (actor >= 0)
+        return targetFor(actor);
+    return pickFloorOrSteer(p);
+}
+
+mouse::ClickResult resolveClick(mouse::Point p)
+{
+    return s_worldActive ? resolveAt(p) : mouse::ClickResult{};
+}
+
+const char* kindName(mouse::ClickKind kind)
+{
+    switch (kind)
+    {
+    case mouse::ClickKind::Walk:         return "walk";
+    case mouse::ClickKind::Steer:        return "steer";
+    case mouse::ClickKind::Target:       return "target";
+    case mouse::ClickKind::Push:         return "push";
+    case mouse::ClickKind::Attack:       return "attack";
+    case mouse::ClickKind::HudInventory: return "hud:inventory";
+    case mouse::ClickKind::HudMap:       return "hud:map";
+    case mouse::ClickKind::HudMenu:      return "hud:menu";
+    default:                             return "blocked";
+    }
+}
 }
 
 void mouseWorldTakeOver()
@@ -195,6 +472,17 @@ void mouseWorldDrawDebugOverlay()
     if (!cameraForRoom(h.room, &camera))
         return;
     ImDrawList* dl = ImGui::GetForegroundDrawList();
+
+    // What a click under the pointer would do (resolver, ignoring the world-active gate).
+    {
+        ImVec2 at = menuGetGameMouse();
+        if (at.x >= 0.0f)
+        {
+            const mouse::ClickResult r = resolveAt(mouse::Point{ (int)at.x, (int)at.y });
+            dl->AddText(ImVec2(ImGui::GetIO().MousePos.x + 14, ImGui::GetIO().MousePos.y + 14),
+                        IM_COL32(255, 255, 255, 255), kindName(r.kind));
+        }
+    }
 
     // Walkable cells of the hero's room at the hero's floor height.
     if (const mouse::Grid* grid = gridFor(h.room, agentOf(h)))
