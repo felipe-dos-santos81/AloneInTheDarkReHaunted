@@ -6,6 +6,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <functional>
 #include <optional>
@@ -79,5 +80,73 @@ std::optional<XZ> nearestWalkable(const Grid& grid, XZ p, int maxCells = 6, cons
 std::optional<XZ> approachCell(const Grid& grid, XZ target, XZ from, int maxCells = 12, const Accept& accept = {});
 // A* (8-connected, no corner cutting) then string-pulled; last waypoint is goal.
 std::optional<std::vector<XZ>> findPath(const Grid& grid, XZ start, XZ goal);
+
+constexpr int kArriveDistance = 400;   // DISTANCE_TO_POINT_TRESSHOLD (track.cpp)
+constexpr int kWaypointDistance = 400; // an intermediate hop counts as reached
+constexpr int kGiveUpDistance = 800;   // a stall this close still counts as arrival
+constexpr uint32_t kStallMs = 6000;    // no new best distance for this long = stalled
+
+// Replica of the engine's GiveDistance2D (main.cpp), s16 result as int.
+int giveDistance2D(int x1, int z1, int x2, int z2);
+// Joystick bits mirroring the physical turn for LIFE scripts reading the stick:
+// forward, plus bit 8 when CapObjet > 0 (beta decreases), bit 4 when < 0.
+int joydMirror(int capResult);
+
+// One live mouse walk. Coordinates are in `room`'s frame.
+struct NavIntent
+{
+    XZ dest;
+    int room = -1;
+    int targetObject = -1; // world object, -1 for a floor walk
+    bool requiresHold = false; // held push
+    bool run = false;
+    bool steering = false;
+    bool engaged = false;      // held push: in contact
+    std::vector<XZ> waypoints;
+    bool planned = false;
+    int pathRoom = -1;
+    bool hasStallTarget = false;
+    XZ stallTarget;
+    int stallBest = 0;
+    uint32_t stallSinceMs = 0;
+    // held push
+    char pushAxis = 0; // 0, 'x' or 'z'
+    int pushLateral = 0;
+    bool hasApproachPose = false;
+    std::array<int, 11> approachPose{};
+    int originFloor = -1;
+    int originRoom = -1;
+};
+
+struct NavDecision
+{
+    int joyd = 0;
+    XZ target;
+    bool advance = false;
+    bool arrived = false;
+    bool abandoned = false;
+    bool run = false;
+};
+
+struct HeroPose
+{
+    int room = -1;
+    XZ at;  // roomX + stepX, roomZ + stepZ
+    int beta = 0;
+};
+
+struct NavEnv
+{
+    const Grid* grid = nullptr;                                   // the hero room's grid
+    std::function<XZ(int fromRoom, int toRoom)> linkMidpoint;     // doorway midpoint, fromRoom frame
+    std::function<XZ(XZ p, int fromRoom, int toRoom)> reframe;    // room-frame conversion
+    std::function<int(int x1, int z1, int beta, int x2, int z2)> capObjet;
+};
+
+// One frame of steering for a live intent.
+NavDecision decide(NavIntent& intent, const HeroPose& hero, const NavEnv& env,
+                   uint32_t nowMs, bool stopAtDestination);
+// Forget stall progress (after a retarget).
+void resetStall(NavIntent& intent);
 
 } // namespace mouse

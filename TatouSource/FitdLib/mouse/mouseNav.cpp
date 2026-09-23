@@ -333,4 +333,114 @@ std::optional<std::vector<XZ>> findPath(const Grid& g, XZ start, XZ goal)
     return stringPull(g, cells, goal);
 }
 
+int giveDistance2D(int x1, int z1, int x2, int z2)
+{
+    x1 -= x2;
+    if ((int16_t)x1 < 0)
+        x1 = -(int16_t)x1;
+    z1 -= z2;
+    if ((int16_t)z1 < 0)
+        z1 = -(int16_t)z1;
+    if ((x1 + z1) > 0xFFFF)
+        return 0x7D00;
+    return (int)(int16_t)(x1 + z1);
+}
+
+int joydMirror(int capResult)
+{
+    // _turn_toward: beta - angle*256; GereManualRot: bit 4 -> beta + 0x100,
+    // bit 8 -> beta - 0x100. Equivalence is direction == -angle.
+    if (capResult > 0)
+        return 1 | 8;
+    if (capResult < 0)
+        return 1 | 4;
+    return 1;
+}
+
+void resetStall(NavIntent& intent)
+{
+    intent.hasStallTarget = false;
+    intent.stallBest = 0;
+    intent.stallSinceMs = 0;
+}
+
+namespace
+{
+void repath(NavIntent& in, const HeroPose& hero, const NavEnv& env)
+{
+    in.pathRoom = hero.room;
+    in.planned = true;
+    if (in.steering)
+    {
+        // A steer names a direction: re-frame it into the room just entered.
+        if (in.room != hero.room)
+        {
+            in.dest = env.reframe(in.dest, in.room, hero.room);
+            in.room = hero.room;
+        }
+        in.waypoints = { in.dest };
+        return;
+    }
+    if (in.room != hero.room)
+    {
+        // One hop: the doorway linking us to the target room (AITD1 follow mode).
+        in.waypoints = { env.linkMidpoint(hero.room, in.room) };
+        return;
+    }
+    if (env.grid)
+    {
+        if (auto path = findPath(*env.grid, hero.at, in.dest))
+        {
+            in.waypoints = *path;
+            return;
+        }
+    }
+    in.waypoints = { in.dest }; // degraded: let the engine's collision slide
+}
+
+bool stalled(NavIntent& in, XZ target, int distance, uint32_t nowMs)
+{
+    if (!in.hasStallTarget || in.stallTarget != target || distance < in.stallBest)
+    {
+        in.hasStallTarget = true;
+        in.stallTarget = target;
+        in.stallBest = distance;
+        in.stallSinceMs = nowMs;
+        return false;
+    }
+    return nowMs - in.stallSinceMs >= kStallMs;
+}
+}
+
+NavDecision decide(NavIntent& in, const HeroPose& hero, const NavEnv& env,
+                   uint32_t nowMs, bool stopAtDestination)
+{
+    if (!in.planned || in.pathRoom != hero.room || in.waypoints.empty())
+        repath(in, hero, env);
+    while (in.waypoints.size() > 1 &&
+           giveDistance2D(hero.at.x, hero.at.z, in.waypoints.front().x, in.waypoints.front().z) < kWaypointDistance)
+        in.waypoints.erase(in.waypoints.begin());
+
+    NavDecision d;
+    d.target = in.waypoints.front();
+    const int distance = giveDistance2D(hero.at.x, hero.at.z, d.target.x, d.target.z);
+    // Only the destination room reports arrival: a cross-room waypoint is the doorway.
+    if (stopAtDestination && in.room == hero.room && in.waypoints.size() == 1 && distance < kArriveDistance)
+    {
+        d.arrived = true;
+        return d;
+    }
+    if (stalled(in, d.target, distance, nowMs))
+    {
+        const bool close = distance < kGiveUpDistance;
+        d.arrived = close;
+        d.abandoned = !close;
+        return d;
+    }
+    d.joyd = joydMirror(env.capObjet(hero.at.x, hero.at.z, hero.beta, d.target.x, d.target.z));
+    d.advance = true;
+    d.run = in.run;
+    return d;
+}
+
 } // namespace mouse

@@ -144,3 +144,114 @@ TEST_CASE("floorDiv floors negative numbers")
     CHECK(floorDiv(-15, 10) == -2);
     CHECK(floorDiv(-10, 10) == -1);
 }
+
+namespace
+{
+NavEnv envWith(const Grid* grid, int cap = 1)
+{
+    NavEnv env;
+    env.grid = grid;
+    env.linkMidpoint = [](int, int) { return XZ{ 5000, 5000 }; };
+    env.reframe = [](XZ p, int, int) { return XZ{ p.x - 100, p.z + 100 }; };
+    env.capObjet = [cap](int, int, int, int, int) { return cap; };
+    return env;
+}
+
+NavIntent walkTo(XZ dest, int room)
+{
+    NavIntent in;
+    in.dest = dest;
+    in.room = room;
+    return in;
+}
+}
+
+TEST_CASE("giveDistance2D mirrors the engine's Manhattan distance")
+{
+    CHECK(giveDistance2D(0, 0, 300, -400) == 700);
+    CHECK(giveDistance2D(100, 100, 100, 100) == 0);
+}
+
+TEST_CASE("joydMirror reproduces the physical turn: CapObjet > 0 is bit 8, < 0 is bit 4")
+{
+    CHECK(joydMirror(1) == (1 | 8));
+    CHECK(joydMirror(-1) == (1 | 4));
+    CHECK(joydMirror(0) == 1);
+}
+
+TEST_CASE("decide walks, then reports arrival within the arrival distance in the destination room")
+{
+    auto grid = buildGrid({ kRoom }, {}, kHero);
+    REQUIRE(grid);
+    NavEnv env = envWith(&*grid, -1);
+    NavIntent in = walkTo(XZ{ 900, 500 }, 2);
+    in.run = true;
+
+    NavDecision far = decide(in, HeroPose{ 2, XZ{ 100, 100 }, 0 }, env, 0, true);
+    CHECK(far.advance);
+    CHECK(far.run);
+    CHECK(far.joyd == (1 | 4));
+    CHECK(far.target == XZ{ 900, 500 });
+
+    NavDecision near = decide(in, HeroPose{ 2, XZ{ 800, 450 }, 0 }, env, 10, true);
+    CHECK(near.arrived);
+    CHECK_FALSE(near.advance);
+}
+
+TEST_CASE("decide aims a cross-room destination at the room link and never arrives there")
+{
+    auto grid = buildGrid({ kRoom }, {}, kHero);
+    NavEnv env = envWith(&*grid);
+    NavIntent in = walkTo(XZ{ 5000, 5000 }, 7);
+    NavDecision d = decide(in, HeroPose{ 2, XZ{ 4900, 4900 }, 0 }, env, 0, true);
+    CHECK(d.target == XZ{ 5000, 5000 });
+    CHECK(d.advance);
+    CHECK_FALSE(d.arrived);
+}
+
+TEST_CASE("decide without a grid, or without a path, steers straight at the destination")
+{
+    NavEnv env = envWith(nullptr);
+    NavIntent in = walkTo(XZ{ 3000, 3000 }, 2);
+    NavDecision d = decide(in, HeroPose{ 2, XZ{ 0, 0 }, 0 }, env, 0, true);
+    CHECK(d.target == XZ{ 3000, 3000 });
+    CHECK(d.advance);
+}
+
+TEST_CASE("a steer intent re-frames its bearing when the hero changes room")
+{
+    NavEnv env = envWith(nullptr);
+    NavIntent in = walkTo(XZ{ 12000, 0 }, 2);
+    in.steering = true;
+    decide(in, HeroPose{ 2, XZ{ 0, 0 }, 0 }, env, 0, true);
+    NavDecision d = decide(in, HeroPose{ 3, XZ{ 0, 0 }, 0 }, env, 20, true);
+    CHECK(in.room == 3);
+    CHECK(d.target == XZ{ 12000 - 100, 0 + 100 });
+}
+
+TEST_CASE("the stall guard abandons a far target and accepts a near one after 6 s")
+{
+    NavEnv env = envWith(nullptr);
+    NavIntent far = walkTo(XZ{ 3000, 0 }, 2);
+    HeroPose stuck{ 2, XZ{ 0, 0 }, 0 };
+    CHECK(decide(far, stuck, env, 0, true).advance);
+    CHECK(decide(far, stuck, env, kStallMs - 1, true).advance);
+    NavDecision gaveUp = decide(far, stuck, env, kStallMs, true);
+    CHECK(gaveUp.abandoned);
+    CHECK_FALSE(gaveUp.arrived);
+
+    NavIntent near = walkTo(XZ{ 600, 0 }, 2);
+    decide(near, stuck, env, 0, true);
+    NavDecision close = decide(near, stuck, env, kStallMs, true);
+    CHECK(close.arrived);
+    CHECK_FALSE(close.abandoned);
+}
+
+TEST_CASE("progress resets the stall clock")
+{
+    NavEnv env = envWith(nullptr);
+    NavIntent in = walkTo(XZ{ 5000, 0 }, 2);
+    decide(in, HeroPose{ 2, XZ{ 0, 0 }, 0 }, env, 0, true);
+    decide(in, HeroPose{ 2, XZ{ 100, 0 }, 0 }, env, kStallMs - 1, true);
+    CHECK(decide(in, HeroPose{ 2, XZ{ 100, 0 }, 0 }, env, kStallMs + 10, true).advance);
+}
