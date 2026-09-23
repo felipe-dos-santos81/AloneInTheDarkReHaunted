@@ -287,6 +287,8 @@ void processControlsMenu(bool hdMode)
 	int backEntry = ACTION_COUNT;
 	int defaultsEntry = ACTION_COUNT + 1;
 
+	mouseWorldTakeOver();
+
 	// Drain stale input from system menu (Enter key that selected Controls)
 	AntiRebond = 1;
 

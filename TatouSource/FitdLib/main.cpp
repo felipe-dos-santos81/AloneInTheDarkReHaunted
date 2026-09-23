@@ -5142,6 +5142,8 @@ int parseAllSaves(int arg)
     int initialDelay = 15; // Frames to wait before accepting Enter/click to prevent accidental selection
     static Uint64 s_saveMenuSelTime = 0; // For pulsing highlight effect
 
+    mouseWorldTakeOver();
+
     // Suppress lantern glow when opening save/restore screen
     setLanternMenuActive(true);
 
