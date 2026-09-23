@@ -166,6 +166,9 @@ int makeIntroScreens(void)
     {
         process_events();
 
+        if (menuMouseClicked())
+            break;
+
         if (evalChrono(&chrono) >= 0x80)
             break;
 
@@ -194,6 +197,9 @@ int makeIntroScreens(void)
         int time;
 
         process_events();
+
+        if (menuMouseClicked())
+            break;
 
         time = evalChrono(&chrono);
 

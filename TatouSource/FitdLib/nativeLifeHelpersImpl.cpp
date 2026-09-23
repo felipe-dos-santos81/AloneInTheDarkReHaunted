@@ -12,6 +12,7 @@
 #include "pak.h"
 #include "hdBackground.h"
 #include "hdBackgroundRenderer.h"
+#include "menuMouse.h"
 
 extern bool g_currentBackgroundIsHD;
 void recreateBackgroundTexture(int width, int height);
@@ -46,6 +47,8 @@ void life_Picture(int pictureIndex, int delay, int sampleId)
     do
     {
         process_events();
+        if (menuMouseClicked())
+            break;
         osystem_startFrame();
         osystem_drawBackground();
         osystem_stopFrame();
@@ -66,6 +69,10 @@ void life_WaitGameOver()
     while (key || JoyD || Click)
         process_events();
     while (!key && !JoyD && !Click)
+    {
         process_events();
+        if (menuMouseClicked())
+            break;
+    }
     FlagGameOver = 1;
 }

@@ -28,6 +28,8 @@
 #include <sys/stat.h>
 #endif
 
+#include "menuMouse.h"
+
 const char* sequenceListAITD2[]=
 {
     "BATL",
@@ -345,12 +347,15 @@ void playSequence(int sequenceIdx, int fadeStart, int fadeOutVar)
 
             currentFrameId++;
 
+			bool mouseSkip = false;
 			for(int i=0;i<5;i++) // display the frame 5 times (original seems to wait 5 sync)
 			{
 				process_events();
+				if (menuMouseClicked())
+					mouseSkip = true;
 			}
 
-			if(key)
+			if(key || mouseSkip)
 			{
 				//stopSample();
 				quitPlayback = 1;

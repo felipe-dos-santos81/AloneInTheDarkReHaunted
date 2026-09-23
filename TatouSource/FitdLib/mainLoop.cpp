@@ -344,6 +344,10 @@ void PlayWorld(int allowSystemMenu, int deltaTime)
 		localJoyD = JoyD;
 		localClick = Click;
 
+		// Cutscenes and intros: a left click skips exactly like the Action key.
+		if (!allowSystemMenu && menuMouseClicked())
+			localClick = 1;
+
         if(localKey)
         {
             if(localKey == 0x1B)

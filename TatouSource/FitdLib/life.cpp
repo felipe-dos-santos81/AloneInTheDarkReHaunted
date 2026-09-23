@@ -18,6 +18,7 @@
 #include "nativeLife.h"
 #include "bytecodePatches.h"
 #include "lanternLighting.h"
+#include "menuMouse.h"
 
 // HD background state (from hdBackgroundRenderer)
 extern bool g_currentBackgroundIsHD;
@@ -2485,6 +2486,9 @@ void processLife(int lifeNum, bool callFoundLife)
                     unsigned int time;
                     process_events();
 
+                    if (menuMouseClicked())
+                        break;
+
                     osystem_startFrame();
                     osystem_drawBackground();
                     osystem_stopFrame();
@@ -2908,6 +2912,8 @@ void processLife(int lifeNum, bool callFoundLife)
                 while (!key && !JoyD && !Click)
                 {
                     process_events();
+                    if (menuMouseClicked())
+                        break;
                 }
                 FlagGameOver = 1;
                 exitLife = 1;

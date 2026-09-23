@@ -17,6 +17,7 @@
 #include "configRemaster.h"
 #include "modelAtlas.h"
 #include "renderer.h"
+#include "menuMouse.h"
 
 void clearScreenTatou(void)
 {
@@ -28,6 +29,7 @@ void clearScreenTatou(void)
 
 int make3dTatou(void)
 {
+    bool mouseSkip = false;
     int zoom;
     int deltaTime;
     int beta;
@@ -176,6 +178,12 @@ int make3dTatou(void)
 
                 process_events();
 
+                if (menuMouseClicked())
+                {
+                    mouseSkip = true;
+                    break;
+                }
+
                 zoom += deltaTime;
 
                 if(zoom>16000)
@@ -209,7 +217,7 @@ int make3dTatou(void)
     free(tatou2d);
     free(tatouPalRaw);
 
-    if(key || Click || JoyD)
+    if(key || Click || JoyD || mouseSkip)
     {
         while(key)
         {
