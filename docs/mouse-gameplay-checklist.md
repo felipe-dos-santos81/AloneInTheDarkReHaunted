@@ -40,5 +40,10 @@ with a one-line note. Build: `make build-fitd`; run: `make run data=DIR`.
 | 31 | Hover an enemy (crosshair), then let a cutscene start or untick "Mouse gameplay": the cursor returns to the normal arrow | | |
 | 32 | While walking by mouse, a scripted turn (e.g. a fight stance) does not spin the hero twice as fast as with the keyboard | | |
 | 33 | Set `debug.mouseNavOverlay = true` in aitd_remaster.cfg: green dots cover the visible floor and avoid furniture and walls, the red cross sits under the pointer, the label names what a click would do, and the console never prints "mouse: projection replica differs"; set it back to false afterwards | | |
+| 34 | Hold on an animated prop or a door (not an enemy): it neither starts an attack nor blocks walking to the spot behind it in a way the keyboard would allow | | |
+| 35 | Hold on an object that has a found script but cannot be picked up (large furniture): the hero reaches it and its script runs within about a second, without a 6 s stall | | |
+| 36 | While holding a walk, trigger a picture or message screen (e.g. read a note by walking into it): after closing it the hero does not resume the old walk until a new press | | |
+| 37 | Play by keyboard, stay idle 2 s (cursor hides), then walk into an item: the found screen shows the mouse cursor and Take/Leave work by mouse | | |
+| 38 | Click the hero's own body: the cursor shows "not allowed" and the hero does not move | | |
 
 Signed off by: ______  Date: ______  Build: `git rev-parse --short HEAD` = ______
