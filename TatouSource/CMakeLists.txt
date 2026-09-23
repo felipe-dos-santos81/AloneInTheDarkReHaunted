@@ -108,6 +108,13 @@ if(WIN32)
     add_subdirectory( DOSBoxStub )
 endif()
 
+# Engine unit tests: engine-free modules only (no bgfx, no SDL video). `make test-engine`.
+option(FITD_BUILD_ENGINE_TESTS "Build the engine unit tests (doctest)" ON)
+if(FITD_BUILD_ENGINE_TESTS AND NOT NINTENDO_SWITCH AND NOT UWP)
+    enable_testing()
+    add_subdirectory( tests/engine )
+endif()
+
 #set(USE_SANITIZER ON)
 if(USE_SANITIZER)
     IF(MSVC)
