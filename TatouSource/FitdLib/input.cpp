@@ -44,6 +44,9 @@ ControllerState g_controllerState = {
 // Window resize flag - set when window dimensions change
 bool g_windowWasResized = false;
 
+// Last mouse click that activated a menu item (menuMouse.h menuNoteItemClick).
+Uint32 g_menuItemClickMs = 0;
+
 void resetWindowResizeFlag()
 {
     g_windowWasResized = false;

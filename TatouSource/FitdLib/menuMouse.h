@@ -12,6 +12,18 @@
 #include "imguiBGFX.h"
 #include <SDL.h>
 
+#include "mouse/mouseWorld.h"
+
+// SDL_GetTicks() of the last mouse click that activated a menu item. The
+// fullscreen double-click (input.cpp) is refused shortly after one.
+extern Uint32 g_menuItemClickMs;
+
+// Call wherever a mouse click activates a menu item.
+inline void menuNoteItemClick()
+{
+    g_menuItemClickMs = (Uint32)SDL_GetTicks();
+}
+
 // ---------------------------------------------------------------------------
 // Gameplay cursor auto-hide
 // Call menuUpdateGameplayCursor() once per gameplay frame (not in menus).
@@ -116,10 +128,13 @@ inline bool menuMouseMoved(ImVec2& lastPos, bool hasInput)
     return moved;
 }
 
-// Returns true when the left mouse button was just pressed this frame.
+// Returns true when the left mouse button was just pressed this frame, except
+// right after a screen opened: the press that opened it is swallowed until the
+// button has been released (mouseWorldTakeOver arms the gate).
 inline bool menuMouseClicked()
 {
-    return ImGui::GetIO().MouseClicked[0];
+    ImGuiIO& io = ImGui::GetIO();
+    return mouseScreenClickFilter(io.MouseClicked[0], io.MouseDown[0]);
 }
 
 // Hit-test a vertical list of equal-height items.

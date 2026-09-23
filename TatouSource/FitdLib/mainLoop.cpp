@@ -15,6 +15,7 @@
 #include "jobSystem.h"
 #include "lanternLighting.h"
 #include "menuMouse.h"
+#include "mouse/mouseWorld.h"
 
 #ifndef WIN32
 #include <sys/time.h>
@@ -364,6 +365,7 @@ void PlayWorld(int allowSystemMenu, int deltaTime)
                 pauseCurrentAnimatedHDBackground();
 
                 // Ensure cursor is visible in menu
+                mouseWorldTakeOver();
                 menuRestoreCursorForMenu();
 
                 // Notify TTF that we're entering the menu
@@ -404,6 +406,7 @@ void PlayWorld(int allowSystemMenu, int deltaTime)
                     pauseCurrentAnimatedHDBackground();
 
                     // Ensure cursor is visible in map
+                    mouseWorldTakeOver();
                     menuRestoreCursorForMenu();
 
                     // Notify TTF that we're entering the map screen
@@ -449,6 +452,7 @@ void PlayWorld(int allowSystemMenu, int deltaTime)
                     pauseCurrentAnimatedHDBackground();
 
                     // Ensure cursor is visible in inventory
+                    mouseWorldTakeOver();
                     menuRestoreCursorForMenu();
 
                     // Notify TTF that we're entering the inventory/status screen
@@ -714,6 +718,7 @@ void PlayWorld(int allowSystemMenu, int deltaTime)
     shakingAmplitude = 0;
 
     stopShaking();
+    mouseWorldTakeOver();
     g_playWorldActive = false;
     //  stopSounds();
 }

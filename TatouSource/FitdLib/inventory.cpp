@@ -11,6 +11,7 @@
 #include "consoleLog.h"
 #include "fontTTF.h"
 #include "input.h"
+#include "menuMouse.h"
 #include <SDL.h>
 #include <math.h>
 
@@ -756,6 +757,7 @@ void FoundObjet(int objIdx, int param)
     }
 
     objPtr->trackNumber = 0;
+    mouseWorldTakeOver();
 
     // When HD backgrounds are active, use HD inventory background overlay
     // Otherwise fall back to standard rendering

@@ -864,6 +864,7 @@ int Lire(int index, int startx, int top, int endx, int bottom, int demoMode, int
 
     // Stop lantern lighting while reading book
     setLanternMenuActive(true);
+    mouseWorldTakeOver();
 
     SetFont(PtrFont, color);
 
