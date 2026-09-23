@@ -1223,15 +1223,17 @@ int Lire(int index, int startx, int top, int endx, int bottom, int demoMode, int
                         quit = 1;
                         break;
                     }
-                    if (clicked && overPrev && canPrev)
+                    if (clicked && overPrev)
                     {
-                        menuNoteItemClick();
-                        mousePrev = true;
+                        menuNoteItemClick(); // M4: stamp even while disabled (page 1)
+                        if (canPrev)
+                            mousePrev = true;
                     }
-                    if (clicked && overNext && canNext)
+                    if (clicked && overNext)
                     {
-                        menuNoteItemClick();
-                        mouseNext = true;
+                        menuNoteItemClick(); // M4: stamp even while disabled (last page)
+                        if (canNext)
+                            mouseNext = true;
                     }
                 }
 

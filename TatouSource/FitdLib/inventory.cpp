@@ -299,6 +299,9 @@ void processInventory(void)
         return;
 
     mouseWorldTakeOver();
+    // M5: a local, not a function-static, so it starts at the sentinel every
+    // time the inventory opens; a reopen's first move never jumps the selection.
+    ImVec2 s_invMouse = { -1.0f, -1.0f };
 
     // Play inventory open sound
     playMenuSound("Expand.wav");
@@ -444,7 +447,6 @@ void processInventory(void)
         // Mouse: hovering a row selects it, clicking the selected row confirms,
         // the arrows scroll and the X leaves (menuMouse.h).
         {
-            static ImVec2 s_invMouse = { -1.0f, -1.0f };
             ImVec2 gm = menuGetGameMouse();
             bool moved = menuMouseMoved(s_invMouse, localKey || localJoyD);
             bool clicked = menuMouseClicked();
@@ -501,6 +503,8 @@ void processInventory(void)
                     int hovered = firstObjectDisplayedIdx + objRow;
                     if ((moved || clicked) && hovered != selectedObjectIdx)
                     {
+                        if (clicked)
+                            menuNoteItemClick(); // M4: a click that only selects the row still stamps
                         playMenuSound("Navigation.wav");
                         selectedObjectIdx = hovered;
                         s_invObjSelTime = (u32)SDL_GetTicks();
