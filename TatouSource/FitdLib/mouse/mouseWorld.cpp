@@ -561,8 +561,8 @@ void faceToward(mouse::XZ target)
 // Accept a click on an enemy: stop, face it, and hold Action until the swing ends.
 void armAttack(int actorIdx)
 {
-    if (!isCombatTarget(actorIdx) || !canStrike(true))
-        return;
+    if (!isCombatTarget(actorIdx) || !canStrike(true) || hero().trackMode != 1)
+        return; // never start a swing while a script owns the hero
     const tObject& h = hero();
     const tObject& t = ListObjets[actorIdx];
     mouse::XZ target{ t.roomX, t.roomZ };
