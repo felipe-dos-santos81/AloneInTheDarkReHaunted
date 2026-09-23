@@ -433,8 +433,11 @@ NavDecision decide(NavIntent& in, const HeroPose& hero, const NavEnv& env,
     if (stalled(in, d.target, distance, nowMs))
     {
         const bool close = distance < kGiveUpDistance;
-        d.arrived = close;
-        d.abandoned = !close;
+        // A stall this close still counts as arrival only in the destination
+        // room: a cross-room waypoint is the doorway, and a foundable behind a
+        // closed door in a neighbouring room must never dispatch (I5).
+        d.arrived = close && in.room == hero.room;
+        d.abandoned = !d.arrived;
         return d;
     }
     d.joyd = joydMirror(env.capObjet(hero.at.x, hero.at.z, hero.beta, d.target.x, d.target.z));

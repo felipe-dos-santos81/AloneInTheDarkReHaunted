@@ -247,6 +247,20 @@ TEST_CASE("the stall guard abandons a far target and accepts a near one after 6 
     CHECK_FALSE(close.abandoned);
 }
 
+TEST_CASE("a stall close to a target through a closed door in another room abandons, never arrives")
+{
+    // The link midpoint is fixed at (5000, 5000) regardless of args; put the
+    // hero within kGiveUpDistance of it but never let it move, and target a
+    // room that is not the hero's room (I5).
+    NavEnv env = envWith(nullptr);
+    NavIntent in = walkTo(XZ{ 5000, 5000 }, 7);
+    HeroPose stuck{ 2, XZ{ 4900, 4900 }, 0 };
+    CHECK(decide(in, stuck, env, 0, true).advance);
+    NavDecision gaveUp = decide(in, stuck, env, kStallMs, true);
+    CHECK(gaveUp.abandoned);
+    CHECK_FALSE(gaveUp.arrived);
+}
+
 TEST_CASE("progress resets the stall clock")
 {
     NavEnv env = envWith(nullptr);
