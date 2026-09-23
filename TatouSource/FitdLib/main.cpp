@@ -5383,7 +5383,10 @@ int parseAllSaves(int arg)
             {
                 int hit = menuMouseHitList(gm.x, gm.y, 28, 160, 30, 16, NUM_SAVE_SLOTS);
                 if (hit >= 0)
+                {
+                    menuNoteItemClick();
                     localClick = 1; // treat as confirm on the hovered slot
+                }
             }
         }
 

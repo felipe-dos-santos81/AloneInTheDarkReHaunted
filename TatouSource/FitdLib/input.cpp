@@ -17,6 +17,7 @@
 #include "bgfxGlue.h"
 #include "debugger.h"
 #include "remasterOptions.h"
+#include "mouse/mouseWorld.h"
 
 extern float nearVal;
 extern float farVal;
@@ -46,6 +47,9 @@ bool g_windowWasResized = false;
 
 // Last mouse click that activated a menu item (menuMouse.h menuNoteItemClick).
 Uint32 g_menuItemClickMs = 0;
+
+// A double-click this soon after a menu item click is that item's, not fullscreen's.
+static const Uint32 kMenuItemDoubleClickGuardMs = 1000;
 
 void resetWindowResizeFlag()
 {
@@ -108,8 +112,11 @@ void readKeyboard(void)
             cleanupAndExit();
             break;
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
-            // Double-click toggles fullscreen
-            if (!remasterOptionsIsOpen() && event.button.clicks == 2 && event.button.button == SDL_BUTTON_LEFT)
+            // Double-click toggles fullscreen outside the mouse-driven world (where a
+            // double-click-and-hold runs), and never when it activated a menu item.
+            if (!remasterOptionsIsOpen() && event.button.clicks == 2 && event.button.button == SDL_BUTTON_LEFT
+                && !mouseWorldIsActive()
+                && (Uint32)SDL_GetTicks() - g_menuItemClickMs >= kMenuItemDoubleClickGuardMs)
             {
                 toggleFullscreen();
             }

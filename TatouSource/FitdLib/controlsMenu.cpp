@@ -565,6 +565,7 @@ void processControlsMenu(bool hdMode)
 				int clicked = menuMouseHitList(gm.x, gm.y, WindowX1, WindowX2, mouseTopY, 11, totalEntries);
 				if (clicked >= 0)
 				{
+					menuNoteItemClick();
 					currentEntry = clicked;
 					playMenuSound("Select.wav");
 					if (currentEntry == backEntry)

@@ -447,6 +447,7 @@ int ChoosePerso(void)
                 }
                 if (menuMouseClicked() && gm.x >= 0.0f)
                 {
+                    menuNoteItemClick();
                     choice = (gm.x < 160.0f) ? 0 : 1;
                     g_portraitOverlayChoice = choice;
                     localKey = 0x1C; // treat as Enter to exit inner loop

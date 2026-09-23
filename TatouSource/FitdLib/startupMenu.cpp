@@ -225,6 +225,7 @@ void LanguageSelectionMenu(void)
                 int hit = menuMouseHitList(gm.x, gm.y, 8, 311, startY, 16, availableCount);
                 if (hit >= 0)
                 {
+                    menuNoteItemClick();
                     playMenuSound("Select.wav");
                     selectedEntry = hit;
                 }
@@ -364,6 +365,7 @@ int MainMenu(void)
 				int hit = menuMouseHitList(gm.x, gm.y, 8, 311, 76, 16, 3);
 				if (hit >= 0)
 				{
+					menuNoteItemClick();
 					playMenuSound("Select.wav");
 					selectedEntry = hit;
 				}

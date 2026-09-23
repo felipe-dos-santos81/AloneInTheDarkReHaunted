@@ -537,6 +537,7 @@ void processSystemMenu(void)
                 }
                 if (menuMouseClicked() && getSystemMenuItemAtMouse(useHDBG) >= 0)
                 {
+                    menuNoteItemClick();
                     localKey = 0x1C;
                     localClick = 0;
                 }
@@ -895,7 +896,10 @@ void processMapScreen(void)
 
 			// Mouse click anywhere closes the map screen
 			if (!AntiRebond && menuMouseClicked())
+			{
+				menuNoteItemClick();
 				localClick = 1;
+			}
 
 			if (!AntiRebond)
 			{
