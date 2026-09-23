@@ -36,3 +36,28 @@ void mouseWorldKeyboardTookOver();
 // tank-control code must not run), false to let keyboard controls run as before.
 struct tObject;
 bool mouseNavSteer(tObject* actor);
+
+// What the HUD should draw this frame (logical 320x200 coordinates).
+struct MouseHudState
+{
+    bool visible = false;
+    bool iconEnabled[3] = { false, false, false };
+    int hoverIcon = -1;
+    bool hasDestination = false;
+    float destX = 0.0f;
+    float destY = 0.0f;
+    bool hasPreview = false;
+    float previewX = 0.0f;
+    float previewY = 0.0f;
+    bool hasPointer = false;
+    int pointerX = 0;
+    int pointerY = 0;
+    bool held = false;
+    bool settling = false;
+};
+
+bool mouseWorldHudState(MouseHudState* out);
+
+// True while the mouse drives gameplay and was the last input: the idle
+// auto-hide must not hide the cursor.
+bool mouseWorldWantsCursor();

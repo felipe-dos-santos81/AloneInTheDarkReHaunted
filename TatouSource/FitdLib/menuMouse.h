@@ -68,7 +68,7 @@ inline void menuUpdateGameplayCursor()
             st.hidden = false;
         }
     }
-    else if (!st.hidden &&
+    else if (!st.hidden && !mouseWorldWantsCursor() &&
              (SDL_GetTicks() - st.lastMoveT) >= CURSOR_HIDE_DELAY_MS)
     {
         mouseInputRequestVisible(false);

@@ -16,6 +16,7 @@
 #include "lanternLighting.h"
 #include "menuMouse.h"
 #include "mouse/mouseWorld.h"
+#include "mouse/mouseHud.h"
 
 #ifndef WIN32
 #include <sys/time.h>
@@ -717,6 +718,7 @@ void PlayWorld(int allowSystemMenu, int deltaTime)
 
         AllRedraw(flagRedraw);
         mouseWorldDrawDebugOverlay();
+        mouseHudDraw();
 
         updatePendingEvents();
     }

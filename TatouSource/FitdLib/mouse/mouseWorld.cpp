@@ -655,6 +655,50 @@ void tickNavigation(uint32_t now)
     if (s_world.decision.arrived || s_world.decision.abandoned)
         handleArrival();
 }
+
+mouse::CursorShape shapeFor(mouse::ClickKind kind)
+{
+    switch (kind)
+    {
+    case mouse::ClickKind::Walk:
+    case mouse::ClickKind::Steer:        return mouse::CursorShape::Default;
+    case mouse::ClickKind::Target:
+    case mouse::ClickKind::HudInventory:
+    case mouse::ClickKind::HudMap:
+    case mouse::ClickKind::HudMenu:      return mouse::CursorShape::Pointer;
+    case mouse::ClickKind::Attack:       return mouse::CursorShape::Crosshair;
+    case mouse::ClickKind::Push:         return mouse::CursorShape::Move;
+    default:                             return mouse::CursorShape::NotAllowed;
+    }
+}
+
+// Resolve what is under the pointer for the cursor; hovering never changes state.
+void updateHover()
+{
+    if (!s_world.hoverPos)
+    {
+        s_world.hover = {};
+        mouseInputRequestCursor(mouse::CursorShape::Default);
+        return;
+    }
+    if (s_world.pointer.held && latchedPush())
+        s_world.hover = mouse::ClickResult{ mouse::ClickKind::Push, {} }; // the push cursor sticks while held
+    else
+        s_world.hover = resolveAt(*s_world.hoverPos);
+    mouseInputRequestCursor(shapeFor(s_world.hover.kind));
+}
+
+// A room-frame floor point on the logical screen, or nothing.
+std::optional<mouse::Vec2> screenOf(int room, mouse::XZ p)
+{
+    if (!heroAvailable() || !roomValid(room))
+        return std::nullopt;
+    mouse::Camera camera;
+    if (!cameraForRoom(room, &camera))
+        return std::nullopt;
+    const int floorY = mouse::reframeY(hero().roomY, originOf(hero().room), originOf(room));
+    return mouse::projectPoint(camera, p.x, floorY, p.z);
+}
 }
 
 void mouseWorldTakeOver()
@@ -842,6 +886,7 @@ void mouseWorldFrame(int allowSystemMenu)
 
     tickNavigation(now);
     s_world.hoverPos = pointerNow;
+    updateHover();
 }
 
 void mouseWorldKeyboardTookOver()
@@ -881,4 +926,49 @@ bool mouseNavSteer(tObject* actor)
         actor->beta = updateActorRotation(&actor->rotate);
     actor->speed = s_world.decision.run ? 5 : 4; // 5 is FITD's run speed
     return true;
+}
+
+bool mouseWorldHudState(MouseHudState* out)
+{
+    *out = MouseHudState{};
+    if (!s_worldActive || !s_allowSystemMenu)
+        return false;
+    out->visible = true;
+    for (int i = 0; i < mouse::kHudIconCount; ++i)
+        out->iconEnabled[i] = hudIconAllowed((mouse::HudIcon)i);
+    if (s_world.hoverPos)
+    {
+        if (auto icon = mouse::hudIconAt(*s_world.hoverPos))
+            out->hoverIcon = (int)*icon;
+        out->hasPointer = true;
+        out->pointerX = s_world.hoverPos->x;
+        out->pointerY = s_world.hoverPos->y;
+    }
+    out->held = s_world.pointer.held;
+    out->settling = mouse::settling(s_world.pointer);
+    if (s_world.intent && !s_world.intent->steering)
+    {
+        if (auto s = screenOf(s_world.intent->room, s_world.intent->dest))
+        {
+            out->hasDestination = true;
+            out->destX = (float)s->x;
+            out->destY = (float)s->y;
+        }
+    }
+    const mouse::ClickKind k = s_world.hover.kind;
+    if (!s_world.pointer.held && !out->hasDestination && (k == mouse::ClickKind::Walk || k == mouse::ClickKind::Target))
+    {
+        if (auto s = screenOf(s_world.hover.payload.room, mouse::XZ{ s_world.hover.payload.x, s_world.hover.payload.z }))
+        {
+            out->hasPreview = true;
+            out->previewX = (float)s->x;
+            out->previewY = (float)s->y;
+        }
+    }
+    return true;
+}
+
+bool mouseWorldWantsCursor()
+{
+    return g_remasterConfig.controls.mouseGameplay && s_world.lastInputMouse;
 }
