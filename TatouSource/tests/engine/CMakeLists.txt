@@ -7,6 +7,7 @@ set(MOUSE_DIR "${CMAKE_SOURCE_DIR}/FitdLib/mouse")
 set(MOUSE_CORE_SOURCES
     "${MOUSE_DIR}/mouseGesture.cpp"
     "${MOUSE_DIR}/mousePick.cpp"
+    "${MOUSE_DIR}/mouseNav.cpp"
 )
 
 file(GLOB ENGINE_TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cpp")
