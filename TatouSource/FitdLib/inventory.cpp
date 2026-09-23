@@ -298,6 +298,8 @@ void processInventory(void)
     if(!numObjInInventoryTable[currentInventory])
         return;
 
+    mouseWorldTakeOver();
+
     // Play inventory open sound
     playMenuSound("Expand.wav");
 
