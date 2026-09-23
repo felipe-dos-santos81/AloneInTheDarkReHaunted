@@ -632,6 +632,11 @@ void tickNavigation(uint32_t now)
     s_world.hasDecision = false;
     if (!s_world.intent)
         return;
+    if (hero().trackMode != 1)
+    {
+        cancelIntent(); // a script owns the hero: nothing to steer or dispatch
+        return;
+    }
     mouse::NavIntent& in = *s_world.intent;
     const tObject& h = hero();
     if (in.requiresHold && (g_currentFloor != in.originFloor || h.room != in.originRoom))
