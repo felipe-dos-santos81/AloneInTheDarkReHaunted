@@ -36,7 +36,7 @@ lock. SDL cursor and window calls belong on the main thread.
    mention, even in comments — `SDL_SetWindowMouseGrab`,
    `SDL_SetWindowRelativeMouseMode`, `SDL_SetWindowMouseRect`,
    `SDL_WarpMouseInWindow`, `SDL_WarpMouseGlobal` or `SDL_CaptureMouse`
-   anywhere under `TatouSource/FitdLib/`. SDL's default mouse auto-capture
+   anywhere under `TatouSource/FitdLib/` and `TatouSource/Fitd/`. SDL's default mouse auto-capture
    (which keeps delivering the button-up after a drag leaves the window,
    without restraining the cursor) stays on: never set its hint. Vendored
    `ThirdParty/` code is exempt. `make test-engine` enforces this.
