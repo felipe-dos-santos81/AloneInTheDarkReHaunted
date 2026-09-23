@@ -10,6 +10,7 @@
 #include "common.h"
 #include "consoleLog.h"
 #include "math.h"
+#include "mouse/mouseWorld.h"
 
 #define	TL_INIT_COOR		0
 #define	TL_GOTO			1
@@ -240,6 +241,8 @@ void processTrack(void)
     {
     case 1: // manual
         {
+            if (mouseNavSteer(currentProcessedActorPtr)) // mouse walk (mouse/mouseWorld.h)
+                break;
             GereManualRot(40); // reduced from 60 for snappier rotation during combat
             if(localJoyD&1) // forward
             {

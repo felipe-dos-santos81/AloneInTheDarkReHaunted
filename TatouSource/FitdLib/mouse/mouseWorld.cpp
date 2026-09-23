@@ -9,6 +9,7 @@
 #include "mouseGate.h"
 #include "mouseGesture.h"
 #include "mouseHudLayout.h"
+#include "mouseInput.h"
 #include "mouseNav.h"
 #include "mousePick.h"
 
@@ -438,12 +439,225 @@ const char* kindName(mouse::ClickKind kind)
     default:                             return "blocked";
     }
 }
+
+// ---- the live mouse state --------------------------------------------------
+
+struct World
+{
+    mouse::PointerState pointer;
+    std::optional<mouse::NavIntent> intent;
+    mouse::NavDecision decision;
+    bool hasDecision = false;
+    int attackTarget = -1;
+    uint32_t attackStartMs = 0;
+    int attackFrames = 0;
+    bool lastInputMouse = false;
+    int intentFloor = -1;
+    mouse::ClickResult hover;
+    std::optional<mouse::Point> hoverPos;
+};
+
+World s_world;
+
+// Stop the hero where it stands (held intents; see Task 19 for the stand animation).
+void stopHero()
+{
+    if (!heroAvailable())
+        return;
+    tObject& h = hero();
+    h.speed = 0;
+    h.direction = 0;
+    h.rotate.numSteps = 0;
+}
+
+void cancelIntent()
+{
+    const bool held = s_world.intent && s_world.intent->requiresHold;
+    s_world.intent.reset();
+    s_world.hasDecision = false;
+    if (held)
+        stopHero();
+}
+
+void clearAttack()
+{
+    s_world.attackTarget = -1;
+    s_world.attackFrames = 0;
+}
+
+bool latchedPush()
+{
+    return s_world.intent && s_world.intent->requiresHold;
+}
+
+void startIntent(mouse::ClickKind kind, const mouse::Payload& p, bool run)
+{
+    mouse::NavIntent in;
+    in.dest = mouse::XZ{ p.x, p.z };
+    in.room = p.room;
+    in.targetObject = p.object;
+    in.requiresHold = kind == mouse::ClickKind::Push;
+    in.run = run && !in.requiresHold;          // leaning on furniture is never a run
+    in.steering = kind == mouse::ClickKind::Steer;
+    if (in.requiresHold)
+    {
+        in.originFloor = g_currentFloor;
+        in.originRoom = hero().room;
+    }
+    s_world.intent = in;
+    s_world.intentFloor = g_currentFloor;
+    s_world.hasDecision = false;
+}
+
+void applyDecision(const mouse::Decision& d)
+{
+    switch (d.type)
+    {
+    case mouse::DecisionType::OpenHud:
+        // The opened screen's first quick click is not a fullscreen double-click.
+        menuNoteItemClick();
+        localKey = d.kind == mouse::ClickKind::HudInventory ? 0x1C
+                 : d.kind == mouse::ClickKind::HudMap       ? 0x0F
+                                                            : 0x1B;
+        break;
+    case mouse::DecisionType::Issue:
+        startIntent(d.kind, d.payload, d.run);
+        break;
+    case mouse::DecisionType::Cancel:
+        cancelIntent();
+        break;
+    default:
+        break; // Attack is handled from Task 20 on
+    }
+}
+
+void endPointerHold()
+{
+    mouse::onRelease(s_world.pointer);
+    mouse::endHold(s_world.pointer, s_world.intent && s_world.intent->steering);
+    cancelIntent();
+}
+
+void releaseAll()
+{
+    mouse::resetPointer(s_world.pointer);
+    cancelIntent();
+    clearAttack();
+}
+
+// Not driving the world this frame (option off, cutscene, no hero).
+void leaveWorld()
+{
+    s_worldActive = false;
+    if (s_world.intent || s_world.attackTarget >= 0 || s_world.pointer.held)
+        releaseAll();
+}
+
+// The doorway midpoint linking `from` to `to`, in from's frame (track.cpp follow mode).
+mouse::XZ linkMidpoint(int from, int to)
+{
+    char* link = getRoomLink((unsigned int)from, (unsigned int)to);
+    const int x1 = *(s16*)(link + 0);
+    const int x2 = *(s16*)(link + 2);
+    const int z1 = *(s16*)(link + 8);
+    const int z2 = *(s16*)(link + 10);
+    return mouse::XZ{ x1 + (x2 - x1) / 2, z1 + (z2 - z1) / 2 };
+}
+
+// Re-aim an arrived target click at the object itself, so collision-driven
+// FOUND scripts (anim.cpp HARD_COL) fire; a second arrival then dispatches.
+bool pushIntoTarget(mouse::NavIntent& in)
+{
+    if (in.targetObject < 0 || in.targetObject >= (int)ListWorldObjets.size())
+        return false;
+    const tWorldObject& w = ListWorldObjets[in.targetObject];
+    if (w.objIndex == -1 || w.foundLife == -1)
+        return false;
+    const tObject& a = ListObjets[w.objIndex];
+    if (a.objectType & AF_FOUNDABLE)
+        return false;
+    if (in.dest == mouse::XZ{ a.roomX, a.roomZ })
+        return false;
+    in.dest = mouse::XZ{ a.roomX, a.roomZ };
+    in.room = a.room;
+    in.planned = false;
+    mouse::resetStall(in);
+    return true;
+}
+
+// Act on an arrival at a clicked object. Floor walks end silently: the Action
+// bit is global and scripts poll it.
+void dispatchTarget(int worldIdx)
+{
+    if (worldIdx < 0 || worldIdx >= (int)ListWorldObjets.size())
+        return;
+    const tWorldObject& w = ListWorldObjets[worldIdx];
+    if (w.objIndex == -1)
+        return; // taken or gone while we walked
+    const tObject& a = ListObjets[w.objIndex];
+    if (a.objectType & AF_FOUNDABLE)
+    {
+        FoundObjet(worldIdx, 0); // blocking screen; calls mouseWorldTakeOver
+        return;
+    }
+    localClick = 1; // one frame of Action: PlayWorld turns it into action = 0x2000
+}
+
+void handleArrival()
+{
+    mouse::NavIntent& in = *s_world.intent;
+    const mouse::NavDecision d = s_world.decision;
+    if (in.requiresHold)
+    {
+        cancelIntent(); // Task 19 engages the push here
+        localJoyD = 0;
+        return;
+    }
+    if (d.arrived && pushIntoTarget(in))
+    {
+        s_world.hasDecision = false;
+        localJoyD = 0;
+        return;
+    }
+    const int target = in.targetObject;
+    s_world.intent.reset();
+    s_world.hasDecision = false;
+    localJoyD = 0;
+    if (d.arrived && target >= 0)
+        dispatchTarget(target);
+}
+
+void tickNavigation(uint32_t now)
+{
+    s_world.hasDecision = false;
+    if (!s_world.intent)
+        return;
+    mouse::NavIntent& in = *s_world.intent;
+    const tObject& h = hero();
+    if (in.requiresHold && (g_currentFloor != in.originFloor || h.room != in.originRoom))
+    {
+        cancelIntent();
+        return;
+    }
+    mouse::NavEnv env;
+    env.grid = gridFor(h.room, agentOf(h));
+    env.linkMidpoint = [](int from, int to) { return linkMidpoint(from, to); };
+    env.reframe = [](mouse::XZ p, int from, int to) { return mouse::reframe(p, originOf(from), originOf(to)); };
+    env.capObjet = [](int x1, int z1, int beta, int x2, int z2) { return CapObjet(x1, z1, beta, x2, z2); };
+    s_world.decision = mouse::decide(in, heroPose(), env, now, !in.engaged);
+    s_world.hasDecision = true;
+    localJoyD = s_world.decision.joyd; // LIFE scripts reading the stick see a live one
+    if (s_world.decision.arrived || s_world.decision.abandoned)
+        handleArrival();
+}
 }
 
 void mouseWorldTakeOver()
 {
     s_worldActive = false;
     s_screenGate.arm();
+    releaseAll();
+    mouseInputRequestCursor(mouse::CursorShape::Default);
 }
 
 bool mouseWorldIsActive()
@@ -539,4 +753,127 @@ void mouseWorldDrawDebugOverlay()
             }
         }
     }
+}
+
+void mouseWorldFrame(int allowSystemMenu)
+{
+    s_allowSystemMenu = allowSystemMenu;
+    mouse::Frame frame;
+    const bool haveFrame = mouseInputTakeFrame(&frame);
+
+    // Cutscenes and intros: a left click skips exactly like the Action key.
+    if (!allowSystemMenu)
+    {
+        leaveWorld();
+        if (menuMouseClicked())
+            localClick = 1;
+        return;
+    }
+    if (!g_remasterConfig.controls.mouseGameplay || NumCamera < 0 || !heroAvailable())
+    {
+        leaveWorld();
+        return;
+    }
+    s_worldActive = true;
+    if (frame.blocked)
+    {
+        releaseAll(); // F1 dialog or an ImGui window owns the mouse
+        return;
+    }
+
+    const uint32_t now = (uint32_t)SDL_GetTicks();
+    const int camera = NumCamera;
+    const mouse::Resolver resolve = [](mouse::Point p) { return resolveAt(p); };
+
+    // A script took the hero (cutscene, death, scripted walk), or the floor changed.
+    if (s_world.intent && hero().trackMode != 1)
+        cancelIntent();
+    if (s_world.intentFloor != g_currentFloor)
+    {
+        if (s_world.pointer.held)
+            mouse::rebase(s_world.pointer);
+        cancelIntent();
+        s_world.intentFloor = g_currentFloor;
+    }
+
+    for (const mouse::Event& e : frame.events)
+    {
+        const std::optional<mouse::Point> pos = e.inside ? std::optional<mouse::Point>(e.pos) : std::nullopt;
+        switch (e.type)
+        {
+        case mouse::EventType::Motion:
+            s_world.lastInputMouse = true;
+            mouse::onMove(s_world.pointer, pos);
+            break;
+        case mouse::EventType::Down:
+            s_world.lastInputMouse = true;
+            mouse::onPress(s_world.pointer, pos);
+            if (pos)
+                applyDecision(mouse::pressDecision(s_world.pointer, *pos, e.clicks, camera, resolve, latchedPush()));
+            break;
+        case mouse::EventType::Up:
+            endPointerHold();
+            break;
+        case mouse::EventType::FocusLost:
+            releaseAll();
+            break;
+        }
+    }
+    // A release SDL never delivered: the button is up now.
+    if (haveFrame && s_world.pointer.held && !frame.leftDown)
+        endPointerHold();
+
+    const std::optional<mouse::Point> pointerNow =
+        haveFrame ? (frame.inside ? std::optional<mouse::Point>(frame.pos) : std::nullopt) : s_world.pointer.pos;
+
+    // Held pointer follow: once per frame, re-resolving only when it moved.
+    if (s_world.pointer.held)
+        applyDecision(mouse::holdDecision(s_world.pointer, pointerNow, camera, resolve, latchedPush(),
+                                          s_world.intent.has_value()));
+
+    // Every walk is hold-bound.
+    if (s_world.intent && !s_world.pointer.held)
+        cancelIntent();
+
+    tickNavigation(now);
+    s_world.hoverPos = pointerNow;
+}
+
+void mouseWorldKeyboardTookOver()
+{
+    s_world.lastInputMouse = false;
+    if (s_world.intent || s_world.attackTarget >= 0)
+    {
+        cancelIntent();
+        clearAttack();
+    }
+    if (s_world.pointer.held)
+        s_world.pointer.spent = true; // no follow resumes on this hold
+}
+
+bool mouseNavSteer(tObject* actor)
+{
+    if (!s_worldActive || !heroAvailable() || actor != &hero())
+        return false;
+    if (!s_world.intent)
+        return false;
+    if (!s_world.hasDecision || !s_world.decision.advance)
+    {
+        actor->speed = 0; // instant stop, like this fork's tank controls
+        actor->direction = 0;
+        actor->rotate.numSteps = 0;
+        return true;
+    }
+    // Follow mode's turn toward a point (track.cpp case 2), aimed at the waypoint.
+    const int angle = CapObjet(actor->roomX + actor->stepX, actor->roomZ + actor->stepZ, actor->beta,
+                               s_world.decision.target.x, s_world.decision.target.z);
+    if (actor->rotate.numSteps == 0 || actor->direction != angle)
+        InitRealValue(actor->beta, actor->beta - (angle * 256), 60, &actor->rotate);
+    actor->direction = angle;
+    if (angle == 0)
+        actor->rotate.numSteps = 0;
+    else
+        actor->beta = updateActorRotation(&actor->rotate);
+    actor->speed = s_world.decision.run ? 5 : 4; // 5 is FITD's run speed
+    return true;
 }

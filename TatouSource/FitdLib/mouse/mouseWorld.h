@@ -24,3 +24,15 @@ void mouseWorldFloorChanged();
 // Debug: draw the hero room's walk grid and the floor pick under the pointer
 // (only when debug.mouseNavOverlay is true in aitd_remaster.cfg).
 void mouseWorldDrawDebugOverlay();
+
+// Once per PlayWorld frame, right after the input latch (localKey/localJoyD/
+// localClick). Handles cutscene skips, HUD icons, gestures and the mouse walk.
+void mouseWorldFrame(int allowSystemMenu);
+
+// Keyboard or gamepad input this frame: the mouse lets go of the hero.
+void mouseWorldKeyboardTookOver();
+
+// processTrack case 1: true when the mouse steered `actor` this frame (the
+// tank-control code must not run), false to let keyboard controls run as before.
+struct tObject;
+bool mouseNavSteer(tObject* actor);

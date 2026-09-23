@@ -344,9 +344,11 @@ void PlayWorld(int allowSystemMenu, int deltaTime)
 		localJoyD = JoyD;
 		localClick = Click;
 
-		// Cutscenes and intros: a left click skips exactly like the Action key.
-		if (!allowSystemMenu && menuMouseClicked())
-			localClick = 1;
+		// Keyboard or gamepad input takes the hero back from the mouse.
+		if (key || JoyD || Click)
+			mouseWorldKeyboardTookOver();
+		// Mouse gameplay: cutscene skips, HUD icons, hold-to-walk (mouse/mouseWorld.h).
+		mouseWorldFrame(allowSystemMenu);
 
         if(localKey)
         {
