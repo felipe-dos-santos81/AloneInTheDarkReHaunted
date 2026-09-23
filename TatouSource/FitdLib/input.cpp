@@ -18,6 +18,7 @@
 #include "debugger.h"
 #include "remasterOptions.h"
 #include "mouse/mouseWorld.h"
+#include "mouse/mouseInput.h"
 
 extern float nearVal;
 extern float farVal;
@@ -112,6 +113,7 @@ void readKeyboard(void)
             cleanupAndExit();
             break;
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
+            mouseInputOnEvent(event);
             // Double-click toggles fullscreen outside the mouse-driven world (where a
             // double-click-and-hold runs), and never when it activated a menu item.
             if (!remasterOptionsIsOpen() && event.button.clicks == 2 && event.button.button == SDL_BUTTON_LEFT
@@ -120,6 +122,11 @@ void readKeyboard(void)
             {
                 toggleFullscreen();
             }
+            break;
+        case SDL_EVENT_MOUSE_MOTION:
+        case SDL_EVENT_MOUSE_BUTTON_UP:
+        case SDL_EVENT_WINDOW_FOCUS_LOST:
+            mouseInputOnEvent(event);
             break;
         case SDL_EVENT_WINDOW_RESIZED:
         case SDL_EVENT_WINDOW_MAXIMIZED:
@@ -134,6 +141,9 @@ void readKeyboard(void)
         }
 
     }
+
+    // Hand this frame's mouse events to the game thread and apply cursor requests.
+    mouseInputEndMainFrame(remasterOptionsIsOpen() || ImGui::GetIO().WantCaptureMouse);
 
 #ifdef FITD_DEBUGGER
     debuggerVar_fastForward = false;

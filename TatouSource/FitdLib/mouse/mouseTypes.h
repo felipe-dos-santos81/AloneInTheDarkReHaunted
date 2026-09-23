@@ -50,4 +50,78 @@ inline bool windowToLogical(float wx, float wy, int winW, int winH, Point* out)
     return true;
 }
 
+// One left-button / pointer event, already mapped to logical coordinates.
+enum class EventType : uint8_t
+{
+    Motion,
+    Down,
+    Up,
+    FocusLost,
+};
+
+struct Event
+{
+    EventType type = EventType::Motion;
+    bool inside = false; // pos is valid (inside the window)
+    Point pos;
+    int clicks = 0;      // SDL consecutive-click count (Down only)
+};
+
+// Everything the game thread learns about the mouse in one frame.
+struct Frame
+{
+    std::vector<Event> events;
+    bool inside = false;  // current pointer position valid
+    Point pos;
+    bool leftDown = false;
+    bool blocked = false; // F1 dialog open or ImGui wants the mouse
+};
+
+// Main thread pushes events and publishes once per frame; the game thread takes
+// at most once per frame. The engine's render semaphores serialize the two
+// sides, so no lock is needed. A frame nobody took is replaced (screens that do
+// not take frames have no use for world events).
+class FrameQueue
+{
+public:
+    void push(const Event& e) { pending_.push_back(e); }
+
+    void publish(bool inside, Point pos, bool leftDown, bool blocked)
+    {
+        ready_.events.swap(pending_);
+        pending_.clear();
+        ready_.inside = inside;
+        ready_.pos = pos;
+        ready_.leftDown = leftDown;
+        ready_.blocked = blocked;
+        hasReady_ = true;
+    }
+
+    bool take(Frame* out)
+    {
+        if (!hasReady_)
+            return false;
+        *out = ready_;
+        ready_.events.clear();
+        hasReady_ = false;
+        return true;
+    }
+
+private:
+    std::vector<Event> pending_;
+    Frame ready_;
+    bool hasReady_ = false;
+};
+
+// OS cursor shapes (SDL3 system cursors).
+enum class CursorShape : uint8_t
+{
+    Default,
+    Pointer,
+    Crosshair,
+    Move,
+    NotAllowed,
+    Count,
+};
+
 } // namespace mouse

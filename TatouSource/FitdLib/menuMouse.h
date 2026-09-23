@@ -13,6 +13,7 @@
 #include <SDL.h>
 
 #include "mouse/mouseWorld.h"
+#include "mouse/mouseInput.h"
 
 // SDL_GetTicks() of the last mouse click that activated a menu item. The
 // fullscreen double-click (input.cpp) is refused shortly after one.
@@ -63,14 +64,14 @@ inline void menuUpdateGameplayCursor()
         st.lastMoveT = SDL_GetTicks();
         if (st.hidden)
         {
-            SDL_ShowCursor();
+            mouseInputRequestVisible(true);
             st.hidden = false;
         }
     }
     else if (!st.hidden &&
              (SDL_GetTicks() - st.lastMoveT) >= CURSOR_HIDE_DELAY_MS)
     {
-        SDL_HideCursor();
+        mouseInputRequestVisible(false);
         st.hidden = true;
     }
 }
@@ -82,7 +83,7 @@ inline void menuRestoreCursorForMenu()
     MenuCursorState& st = menuCursorState();
     if (st.hidden)
     {
-        SDL_ShowCursor();
+        mouseInputRequestVisible(true);
         st.hidden = false;
     }
     // Reset timer so cursor stays visible for the full delay after menu exit
