@@ -26,6 +26,18 @@ extern void playMenuSound(const char* soundName);
 static u32 s_invObjSelTime = 0;   // Time when object selection changed
 static u32 s_invActSelTime = 0;   // Time when action selection changed
 
+// Mouse hit geometry, recorded by the draw functions (320x200 space).
+static int s_invListRowY0 = 0;     // y of the first visible object row
+static int s_invListRows = 0;      // number of visible object rows
+static int s_invActionRowY0 = 0;   // y of the first action row
+static bool s_invBackHover = false;
+
+// Close button in the gap between the object list and the lower panels.
+static const int kInvBackX1 = 294, kInvBackY1 = 93, kInvBackX2 = 311, kInvBackY2 = 106;
+// Scroll arrows drawn by DrawListObjets (AffSpfI at 298,10 and 298,74).
+static const int kInvUpX1 = 294, kInvUpY1 = 6, kInvUpX2 = 314, kInvUpY2 = 24;
+static const int kInvDownX1 = 294, kInvDownY1 = 70, kInvDownX2 = 314, kInvDownY2 = 88;
+
 sBody* ShowObjet;
 int ShowBody;
 int ShowBeta;
@@ -82,6 +94,7 @@ int DrawListObjets(int startIdx, int selectIdx, int selectColor)
 		y = 28;
 	}
 
+	s_invListRowY0 = y;
 	for(i=0;i<5;i++)
 	{
 		if(startIdx>=numObjInInventoryTable[currentInventory])
@@ -133,6 +146,7 @@ int DrawListObjets(int startIdx, int selectIdx, int selectColor)
 		y += fontHeight;
 		startIdx++;
 	}
+	s_invListRows = i;
 
 
 	if(var_6>0)
@@ -216,6 +230,7 @@ void drawInventoryActions(int arg)
 		y = 139 - ((numInventoryActions*fontHeight)/2);
 	}
 
+	s_invActionRowY0 = y;
 	for(int i=0;i<numInventoryActions;i++)
 	{
 		if(arg == i)
@@ -423,6 +438,128 @@ void processInventory(void)
         localKey = key;
         localJoyD = JoyD;
         localClick = Click;
+
+        // Mouse: hovering a row selects it, clicking the selected row confirms,
+        // the arrows scroll and the X leaves (menuMouse.h).
+        {
+            static ImVec2 s_invMouse = { -1.0f, -1.0f };
+            ImVec2 gm = menuGetGameMouse();
+            bool moved = menuMouseMoved(s_invMouse, localKey || localJoyD);
+            bool clicked = menuMouseClicked();
+            int numObjects = numObjInInventoryTable[currentInventory];
+
+            s_invBackHover = gm.x >= 0.0f && menuMouseHitRect(gm.x, gm.y, kInvBackX1, kInvBackY1, kInvBackX2, kInvBackY2);
+            if (clicked && s_invBackHover)
+            {
+                menuNoteItemClick();
+                playMenuSound("Back.wav");
+                choice = 0;
+                exitMenu = 1;
+                continue;
+            }
+
+            int scroll = 0;
+            if (clicked && firstObjectDisplayedIdx > 0 &&
+                menuMouseHitRect(gm.x, gm.y, kInvUpX1, kInvUpY1, kInvUpX2, kInvUpY2))
+                scroll = -1;
+            else if (clicked && firstObjectDisplayedIdx + 5 < numObjects &&
+                     menuMouseHitRect(gm.x, gm.y, kInvDownX1, kInvDownY1, kInvDownX2, kInvDownY2))
+                scroll = 1;
+
+            int objRow = (scroll == 0 && gm.x >= 0.0f)
+                ? menuMouseHitList(gm.x, gm.y, 10, 309, s_invListRowY0, fontHeight, s_invListRows) : -1;
+
+            if (scroll != 0 && modeSelect == 1)
+            {
+                // leave the action list first, like Left/Right on the keyboard
+                playMenuSound("Back.wav");
+                drawInventoryActions(-1);
+                modeSelect = 0;
+                lastSelectedObjectIdx = -1;
+                antiBounce = 2;
+                notifyTTFMenuSelectionChanged();
+            }
+
+            if (modeSelect == 0)
+            {
+                if (scroll != 0)
+                {
+                    menuNoteItemClick();
+                    int next = selectedObjectIdx + scroll;
+                    if (next >= 0 && next < numObjects)
+                    {
+                        playMenuSound("Navigation.wav");
+                        selectedObjectIdx = next;
+                        s_invObjSelTime = (u32)SDL_GetTicks();
+                        notifyTTFMenuSelectionChanged();
+                    }
+                }
+                else if (objRow >= 0)
+                {
+                    int hovered = firstObjectDisplayedIdx + objRow;
+                    if ((moved || clicked) && hovered != selectedObjectIdx)
+                    {
+                        playMenuSound("Navigation.wav");
+                        selectedObjectIdx = hovered;
+                        s_invObjSelTime = (u32)SDL_GetTicks();
+                        notifyTTFMenuSelectionChanged();
+                    }
+                    else if (clicked && lastSelectedObjectIdx == selectedObjectIdx)
+                    {
+                        // the row is selected and its actions are computed: open them (as Enter)
+                        menuNoteItemClick();
+                        playMenuSound("Select.wav");
+                        DrawListObjets(firstObjectDisplayedIdx, selectedObjectIdx, 14);
+                        menuWaitVSync();
+                        osystem_CopyBlockPhys((unsigned char*)logicalScreen, 0, 0, 320, 200);
+                        modeSelect = 1;
+                        lastSelectedObjectIdx = -1;
+                        selectedActions = 0;
+                        antiBounce = 2;
+                        notifyTTFMenuSelectionChanged();
+                        continue;
+                    }
+                }
+            }
+            else
+            {
+                int actRow = gm.x >= 0.0f
+                    ? menuMouseHitList(gm.x, gm.y, 170, 309, s_invActionRowY0, fontHeight, numInventoryActions) : -1;
+                if (actRow >= 0)
+                {
+                    if ((moved || clicked) && actRow != selectedActions)
+                    {
+                        playMenuSound("Navigation.wav");
+                        selectedActions = actRow;
+                        s_invActSelTime = (u32)SDL_GetTicks();
+                        notifyTTFMenuSelectionChanged();
+                    }
+                    if (clicked)
+                    {
+                        // confirm the action (as Enter)
+                        menuNoteItemClick();
+                        playMenuSound("Select.wav");
+                        selectedObjectIdx = inventoryTable[currentInventory][selectedObjectIdx];
+                        action = 1 << (inventoryActionTable[selectedActions] - 23);
+                        choice = 1;
+                        exitMenu = 1;
+                        continue;
+                    }
+                }
+                else if (clicked && objRow >= 0)
+                {
+                    // back to the object list (as Left/Right)
+                    menuNoteItemClick();
+                    playMenuSound("Back.wav");
+                    drawInventoryActions(-1);
+                    modeSelect = 0;
+                    lastSelectedObjectIdx = -1;
+                    antiBounce = 2;
+                    notifyTTFMenuSelectionChanged();
+                    continue;
+                }
+            }
+        }
 
         if(!localKey && !localJoyD && !localClick)
         {
@@ -643,6 +780,7 @@ void processInventory(void)
             }
         }
 
+        menuDrawCloseButton(kInvBackX1, kInvBackY1, kInvBackX2, kInvBackY2, s_invBackHover);
 		osystem_CopyBlockPhys((unsigned char*)logicalScreen,0,0,320,200);
         //osystem_flip(NULL);
     }

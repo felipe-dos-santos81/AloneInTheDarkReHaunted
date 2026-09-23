@@ -174,3 +174,69 @@ inline int menuMouseHitTwoButtons(float gameX, float gameY,
     if (hit(rightCx)) return 1;
     return -1;
 }
+
+// Hit-test an inclusive rectangle in game space.
+inline bool menuMouseHitRect(float gameX, float gameY, int x1, int y1, int x2, int y2)
+{
+    return gameX >= (float)x1 && gameX <= (float)x2 &&
+           gameY >= (float)y1 && gameY <= (float)y2;
+}
+
+// 320x200 game coordinates -> ImGui foreground draw-list coordinates
+// (window pixels), the same mapping fontTTF.cpp uses.
+inline ImVec2 menuGameToScreen(float gx, float gy)
+{
+    extern int outputResolution[2];
+    return ImVec2(gx * (float)outputResolution[0] / 320.0f,
+                  gy * (float)outputResolution[1] / 200.0f);
+}
+
+// Shared frame for the small drawn buttons below. Returns the line colour.
+inline ImU32 menuDrawButtonFrame(ImDrawList* dl, ImVec2 a, ImVec2 b, bool hover, bool enabled, float thickness)
+{
+    const ImU32 fill = IM_COL32(16, 16, 16, 200);
+    const ImU32 line = !enabled ? IM_COL32(110, 110, 100, 170)
+                     : hover    ? IM_COL32(255, 230, 150, 255)
+                                : IM_COL32(210, 210, 190, 255);
+    dl->AddRectFilled(a, b, fill, 2.0f);
+    dl->AddRect(a, b, line, 2.0f, 0, thickness);
+    return line;
+}
+
+// A small "X" button over the inclusive 320x200 rect, drawn at window resolution.
+inline void menuDrawCloseButton(int x1, int y1, int x2, int y2, bool hover)
+{
+    if (!g_imguiFrameActive)
+        return;
+    ImDrawList* dl = ImGui::GetForegroundDrawList();
+    ImVec2 a = menuGameToScreen((float)x1, (float)y1);
+    ImVec2 b = menuGameToScreen((float)(x2 + 1), (float)(y2 + 1));
+    float t = (b.y - a.y) * 0.12f;
+    if (t < 1.0f) t = 1.0f;
+    ImU32 line = menuDrawButtonFrame(dl, a, b, hover, true, t);
+    float px = (b.x - a.x) * 0.30f;
+    float py = (b.y - a.y) * 0.25f;
+    dl->AddLine(ImVec2(a.x + px, a.y + py), ImVec2(b.x - px, b.y - py), line, t);
+    dl->AddLine(ImVec2(b.x - px, a.y + py), ImVec2(a.x + px, b.y - py), line, t);
+}
+
+// A small triangle button (dir -1 points left, +1 right), drawn at window resolution.
+inline void menuDrawArrowButton(int x1, int y1, int x2, int y2, int dir, bool hover, bool enabled)
+{
+    if (!g_imguiFrameActive)
+        return;
+    ImDrawList* dl = ImGui::GetForegroundDrawList();
+    ImVec2 a = menuGameToScreen((float)x1, (float)y1);
+    ImVec2 b = menuGameToScreen((float)(x2 + 1), (float)(y2 + 1));
+    float t = (b.y - a.y) * 0.12f;
+    if (t < 1.0f) t = 1.0f;
+    ImU32 line = menuDrawButtonFrame(dl, a, b, hover, enabled, t);
+    float cy = (a.y + b.y) * 0.5f;
+    float h = (b.y - a.y) * 0.30f;
+    float left = a.x + (b.x - a.x) * 0.32f;
+    float right = b.x - (b.x - a.x) * 0.32f;
+    if (dir < 0)
+        dl->AddTriangleFilled(ImVec2(left, cy), ImVec2(right, cy - h), ImVec2(right, cy + h), line);
+    else
+        dl->AddTriangleFilled(ImVec2(right, cy), ImVec2(left, cy - h), ImVec2(left, cy + h), line);
+}
