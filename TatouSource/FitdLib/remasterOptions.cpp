@@ -238,6 +238,12 @@ static void drawColorTab()
 
 static void drawControllerTab()
 {
+    ImGui::TextDisabled("Mouse");
+    ImGui::Separator();
+    ImGui::Checkbox("Mouse gameplay (hold left button to walk, double-click and hold to run)",
+                    &g_remasterConfig.controls.mouseGameplay);
+    ImGui::Spacing();
+
     ImGui::TextDisabled("Controller behavior");
     ImGui::Separator();
     ImGui::Checkbox("Enable controller", &g_remasterConfig.controller.enableController);

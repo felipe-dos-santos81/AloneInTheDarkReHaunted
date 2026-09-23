@@ -83,6 +83,9 @@ void initDefaultRemasterConfig()
     g_remasterConfig.font.fontSize = 16;
     g_remasterConfig.font.hideOriginalText = true;
 
+    // Mouse gameplay (left button walks, runs and interacts in the world)
+    g_remasterConfig.controls.mouseGameplay = true;
+
     // Controls defaults (matching initDefaultKeyBindings)
     g_remasterConfig.controls.keyBindings[0] = SDL_SCANCODE_UP;
     g_remasterConfig.controls.keyBindings[1] = SDL_SCANCODE_DOWN;
@@ -123,6 +126,7 @@ void initDefaultRemasterConfig()
     // Debug / diagnostics defaults
     g_remasterConfig.debug.enableGraphicsValidation = false; // Avoid DXGI 0x87A exceptions in normal Debug play
     g_remasterConfig.debug.logLifeScripts = false;  // Don't log life scripts by default (very verbose)
+    g_remasterConfig.debug.mouseNavOverlay = false;
     g_remasterConfig.debug.dumpLifeScripts = false;   // Don't dump life scripts by default
     g_remasterConfig.debug.generateNativeLifeScripts = false; // Don't generate native C code by default
     g_remasterConfig.debug.enableNativeLifeScripts = false;    // Don't use native life scripts by default
@@ -289,6 +293,8 @@ void loadRemasterConfig()
                 g_remasterConfig.animation.poseSmoothingStrength = (float)atof(value);
 
             // Controls settings
+            else if (strcmp(key, "controls.mouseGameplay") == 0)
+                g_remasterConfig.controls.mouseGameplay = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
             else if (strcmp(key, "controls.key.up") == 0)
                 g_remasterConfig.controls.keyBindings[0] = atoi(value);
             else if (strcmp(key, "controls.key.down") == 0)
@@ -355,6 +361,8 @@ void loadRemasterConfig()
             // Debug / diagnostics settings
             else if (strcmp(key, "debug.graphicsValidation") == 0)
                 g_remasterConfig.debug.enableGraphicsValidation = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
+            else if (strcmp(key, "debug.mouseNavOverlay") == 0)
+                g_remasterConfig.debug.mouseNavOverlay = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
             else if (strcmp(key, "debug.logLifeScripts") == 0)
                 g_remasterConfig.debug.logLifeScripts = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
             else if (strcmp(key, "debug.dumpLifeScripts") == 0)
@@ -493,6 +501,7 @@ void saveRemasterConfig()
     fprintf(file, "animation.poseSmoothingStrength = %.2f\n", g_remasterConfig.animation.poseSmoothingStrength);
 
     fprintf(file, "\n# Controls Settings\n");
+    fprintf(file, "controls.mouseGameplay = %s\n", g_remasterConfig.controls.mouseGameplay ? "true" : "false");
     fprintf(file, "controls.key.up = %d\n", g_remasterConfig.controls.keyBindings[0]);
     fprintf(file, "controls.key.down = %d\n", g_remasterConfig.controls.keyBindings[1]);
     fprintf(file, "controls.key.left = %d\n", g_remasterConfig.controls.keyBindings[2]);
@@ -531,6 +540,7 @@ void saveRemasterConfig()
 
     fprintf(file, "\n# Debug / Diagnostics Settings\n");
     fprintf(file, "debug.graphicsValidation = %s\n", g_remasterConfig.debug.enableGraphicsValidation ? "true" : "false");
+    fprintf(file, "debug.mouseNavOverlay = %s\n", g_remasterConfig.debug.mouseNavOverlay ? "true" : "false");
     fprintf(file, "debug.logLifeScripts = %s\n", g_remasterConfig.debug.logLifeScripts ? "true" : "false");
     fprintf(file, "debug.dumpLifeScripts = %s\n", g_remasterConfig.debug.dumpLifeScripts ? "true" : "false");
     fprintf(file, "debug.generateNativeLifeScripts = %s\n", g_remasterConfig.debug.generateNativeLifeScripts ? "true" : "false");

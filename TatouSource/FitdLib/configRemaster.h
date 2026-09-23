@@ -103,6 +103,7 @@ struct RemasterConfig
     struct {
         int keyBindings[10];     // SDL_Scancode per action (ACTION_COUNT = 10)
         int gamepadBindings[10]; // SDL_GamepadButton per action
+        bool mouseGameplay;      // Left-button mouse gameplay in the world (default: true)
     } controls;
 
     // Mask dumping/loading settings
@@ -135,6 +136,7 @@ struct RemasterConfig
         bool dumpLifeScripts;   // Dump all LISTLIFE scripts to file on startup (default: false)
         bool generateNativeLifeScripts; // Generate native C code for all life scripts (default: false)
         bool enableNativeLifeScripts;   // Use compiled native C replacements for safe life scripts (default: false)
+        bool mouseNavOverlay;   // Draw the mouse walk grid and last pick over the scene (default: false)
     } debug;
 };
 
