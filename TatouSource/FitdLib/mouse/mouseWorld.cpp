@@ -551,6 +551,7 @@ void leaveWorld()
     s_worldActive = false;
     if (s_world.intent || s_world.attackTarget >= 0 || s_world.pointer.held)
         releaseAll();
+    mouseInputRequestCursor(mouse::CursorShape::Default);
 }
 
 // The doorway midpoint linking `from` to `to`, in from's frame (track.cpp follow mode).
@@ -827,6 +828,7 @@ void mouseWorldFrame(int allowSystemMenu)
     if (frame.blocked)
     {
         releaseAll(); // F1 dialog or an ImGui window owns the mouse
+        mouseInputRequestCursor(mouse::CursorShape::Default);
         return;
     }
 
