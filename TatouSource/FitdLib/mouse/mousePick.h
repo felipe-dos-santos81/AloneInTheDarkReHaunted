@@ -68,4 +68,35 @@ std::optional<Vec2> apply(const Homography& h, double x, double y);
 XZ reframe(XZ p, RoomOrigin from, RoomOrigin to);
 int reframeY(int y, RoomOrigin from, RoomOrigin to);
 
+// How far (logical px) a recovered floor point may reproject from its pixel.
+constexpr int kReprojectPx = 2;
+// How far (logical px) a snapped walk may land from the pointer on screen.
+constexpr int kSnapBudgetPx = 8;
+// How far along the bearing a steer destination is placed: out of reach in one
+// hold, below GiveDistance2D's s16 limit.
+constexpr int kSteerDistance = 12000;
+
+// One floor polygon's plane<->screen maps under one camera.
+struct PolyFit
+{
+    std::vector<XZ> world; // polygon, room-scale units
+    Homography toScreen;
+    Homography toFloor;
+};
+
+// Fit every polygon (room-scale) at floor height floorY. Polygons with fewer
+// than four distinct vertices in front of the camera are skipped.
+std::vector<PolyFit> fitFloor(const Camera& camera, const std::vector<std::vector<XZ>>& polysWorld, int floorY);
+
+// The floor point under `pixel`, or nothing.
+std::optional<XZ> pickFloor(const std::vector<PolyFit>& fits, Point pixel);
+
+// A far destination along the bearing from `here` toward `pixel` (for pixels
+// with no reachable floor), or nothing when the hero's feet are off screen.
+std::optional<XZ> steerPoint(const Camera& camera, const std::vector<PolyFit>& fits,
+                             int floorY, XZ here, Point pixel);
+
+// Even-odd point-in-polygon, used only to attribute a pick to its polygon.
+bool insideWorldPoly(int x, int z, const std::vector<XZ>& poly);
+
 } // namespace mouse

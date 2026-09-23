@@ -1,3 +1,5 @@
+#include <cstdlib>
+
 #include "doctest.h"
 #include "mousePick.h"
 #include "test_helpers.h"
@@ -92,4 +94,68 @@ TEST_CASE("reframe uses FITD's AdjustZV signs")
     CHECK(reframe(XZ{ 100, 100 }, from, to) == XZ{ 100 - 10, 100 + 30 });
     CHECK(reframeY(100, from, to) == 100 + 20);
     CHECK(reframe(reframe(XZ{ 5, 7 }, from, to), to, from) == XZ{ 5, 7 });
+}
+
+namespace
+{
+const std::vector<XZ> kSquare{ XZ{ -2000, 1000 }, XZ{ 2000, 1000 }, XZ{ 2000, 5000 }, XZ{ -2000, 5000 } };
+
+Point pixelOf(const Camera& c, int x, int z)
+{
+    Vec2 v = *projectPoint(c, x, 0, z);
+    return Point{ (int)v.x, (int)v.y };
+}
+}
+
+TEST_CASE("pickFloor recovers the floor point under a pixel")
+{
+    Camera c = levelCamera();
+    auto fits = fitFloor(c, { kSquare }, 0);
+    REQUIRE(fits.size() == 1);
+    auto hit = pickFloor(fits, pixelOf(c, 500, 3000));
+    REQUIRE(hit);
+    CHECK(std::abs(hit->x - 500) <= 15);
+    CHECK(std::abs(hit->z - 3000) <= 15);
+}
+
+TEST_CASE("pickFloor refuses pixels whose floor point lies outside every polygon")
+{
+    Camera c = levelCamera();
+    auto fits = fitFloor(c, { kSquare }, 0);
+    CHECK_FALSE(pickFloor(fits, pixelOf(c, 3000, 3000)));
+}
+
+TEST_CASE("fitFloor skips polygons with fewer than four usable vertices")
+{
+    Camera c = levelCamera();
+    std::vector<XZ> triangle{ XZ{ 0, 1000 }, XZ{ 1000, 1000 }, XZ{ 0, 2000 } };
+    std::vector<XZ> duplicated{ XZ{ 0, 1000 }, XZ{ 0, 1000 }, XZ{ 1000, 1000 }, XZ{ 1000, 1000 } };
+    CHECK(fitFloor(c, { triangle, duplicated }, 0).empty());
+}
+
+TEST_CASE("steerPoint walks a pixel above the horizon back to a bearing on the floor")
+{
+    Camera c = levelCamera();
+    auto fits = fitFloor(c, { kSquare }, 0);
+    // (160,50) recovers behind the camera; the half-way sample (160,125) is z=11000.
+    auto target = steerPoint(c, fits, 0, XZ{ 0, 2000 }, Point{ 160, 50 });
+    REQUIRE(target);
+    CHECK(target->x == 0);
+    CHECK(target->z == 2000 + kSteerDistance);
+}
+
+TEST_CASE("steerPoint has no bearing when the hero's feet are off screen or under the pointer")
+{
+    Camera c = levelCamera();
+    auto fits = fitFloor(c, { kSquare }, 0);
+    CHECK_FALSE(steerPoint(c, fits, 0, XZ{ 0, -2000 }, Point{ 160, 150 }));
+    Point feet = pixelOf(c, 0, 2000);
+    CHECK_FALSE(steerPoint(c, fits, 0, XZ{ 0, 2000 }, feet));
+}
+
+TEST_CASE("insideWorldPoly is an even-odd test")
+{
+    CHECK(insideWorldPoly(0, 3000, kSquare));
+    CHECK_FALSE(insideWorldPoly(2500, 3000, kSquare));
+    CHECK_FALSE(insideWorldPoly(0, 6000, kSquare));
 }

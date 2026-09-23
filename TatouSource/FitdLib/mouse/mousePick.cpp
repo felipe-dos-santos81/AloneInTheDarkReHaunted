@@ -5,7 +5,9 @@
 
 #include "mousePick.h"
 
+#include <algorithm>
 #include <cmath>
+#include <limits>
 #include <utility>
 
 namespace mouse
@@ -214,6 +216,136 @@ XZ reframe(XZ p, RoomOrigin from, RoomOrigin to)
 int reframeY(int y, RoomOrigin from, RoomOrigin to)
 {
     return y + 10 * (to.worldY - from.worldY);
+}
+
+std::vector<PolyFit> fitFloor(const Camera& camera, const std::vector<std::vector<XZ>>& polysWorld, int floorY)
+{
+    std::vector<PolyFit> fits;
+    for (const std::vector<XZ>& poly : polysWorld)
+    {
+        std::vector<std::pair<XZ, Vec2>> usable;
+        for (XZ w : poly)
+            if (auto s = projectPoint(camera, w.x, floorY, w.z))
+                usable.push_back({ w, *s });
+        if (usable.size() < 4)
+            continue;
+
+        // Farthest-point sampling in world space: any four coplanar points
+        // define the plane's homography; spreading them conditions the fit.
+        std::vector<size_t> chosen{ 0 };
+        while (chosen.size() < 4)
+        {
+            size_t best = std::numeric_limits<size_t>::max();
+            double bestScore = 0.0;
+            for (size_t i = 0; i < usable.size(); ++i)
+            {
+                if (std::find(chosen.begin(), chosen.end(), i) != chosen.end())
+                    continue;
+                double score = std::numeric_limits<double>::max();
+                for (size_t c : chosen)
+                {
+                    const double dx = usable[i].first.x - usable[c].first.x;
+                    const double dz = usable[i].first.z - usable[c].first.z;
+                    score = std::min(score, dx * dx + dz * dz);
+                }
+                if (score > bestScore)
+                {
+                    best = i;
+                    bestScore = score;
+                }
+            }
+            if (best == std::numeric_limits<size_t>::max())
+                break; // fewer than four distinct vertices
+            chosen.push_back(best);
+        }
+        if (chosen.size() < 4)
+            continue;
+
+        std::array<Vec2, 4> src;
+        std::array<Vec2, 4> dst;
+        for (int k = 0; k < 4; ++k)
+        {
+            src[k] = Vec2{ (double)usable[chosen[k]].first.x, (double)usable[chosen[k]].first.z };
+            dst[k] = usable[chosen[k]].second;
+        }
+        auto toScreen = fitHomography(src, dst);
+        if (!toScreen)
+            continue;
+        auto toFloor = invert(*toScreen);
+        if (!toFloor)
+            continue;
+        fits.push_back(PolyFit{ poly, *toScreen, *toFloor });
+    }
+    return fits;
+}
+
+std::optional<XZ> pickFloor(const std::vector<PolyFit>& fits, Point pixel)
+{
+    for (const PolyFit& fit : fits)
+    {
+        auto recovered = apply(fit.toFloor, pixel.x, pixel.y);
+        if (!recovered)
+            continue;
+        const int wx = (int)std::lround(recovered->x);
+        const int wz = (int)std::lround(recovered->y);
+        auto forward = apply(fit.toScreen, wx, wz);
+        if (!forward)
+            continue;
+        if (std::fabs(forward->x - pixel.x) > kReprojectPx || std::fabs(forward->y - pixel.y) > kReprojectPx)
+            continue; // the fit does not explain this pixel
+        if (insideWorldPoly(wx, wz, fit.world))
+            return XZ{ wx, wz };
+    }
+    return std::nullopt;
+}
+
+std::optional<XZ> steerPoint(const Camera& camera, const std::vector<PolyFit>& fits,
+                             int floorY, XZ here, Point pixel)
+{
+    if (fits.empty())
+        return std::nullopt;
+    auto feet = projectPoint(camera, here.x, floorY, here.z);
+    if (!feet)
+        return std::nullopt;
+    // Every polygon of a room shares one plane, so any fit's inverse answers.
+    const Homography& toFloor = fits.front().toFloor;
+    for (int sample = 0; sample < 12; ++sample)
+    {
+        const double weight = std::pow(0.5, sample); // 1 = the pixel, 0 = the feet
+        const double px = feet->x + (pixel.x - feet->x) * weight;
+        const double py = feet->y + (pixel.y - feet->y) * weight;
+        auto recovered = apply(toFloor, px, py);
+        if (!recovered)
+            continue;
+        if (!projectPoint(camera, (int)std::lround(recovered->x), floorY, (int)std::lround(recovered->y)))
+            continue; // behind the camera: this pixel is above the horizon
+        const double dx = recovered->x - here.x;
+        const double dz = recovered->y - here.z;
+        const double length = std::hypot(dx, dz);
+        if (length < 1.0)
+            continue; // the pointer is on the hero
+        return XZ{ (int)std::lround(here.x + dx * kSteerDistance / length),
+                   (int)std::lround(here.z + dz * kSteerDistance / length) };
+    }
+    return std::nullopt;
+}
+
+bool insideWorldPoly(int x, int z, const std::vector<XZ>& poly)
+{
+    bool inside = false;
+    const size_t n = poly.size();
+    for (size_t k = 0; k < n; ++k)
+    {
+        const XZ a = poly[k];
+        const XZ b = poly[(k + 1) % n];
+        if ((a.z > z) != (b.z > z) && a.z != b.z)
+        {
+            const double crossing = (double)(b.x - a.x) * (z - a.z) / (double)(b.z - a.z) + a.x;
+            if (x < crossing)
+                inside = !inside;
+        }
+    }
+    return inside;
 }
 
 } // namespace mouse
