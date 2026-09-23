@@ -5,6 +5,7 @@ set(MOUSE_DIR "${CMAKE_SOURCE_DIR}/FitdLib/mouse")
 
 # Engine-free mouse sources compiled into the tests (tasks append to this list).
 set(MOUSE_CORE_SOURCES
+    "${MOUSE_DIR}/mouseGesture.cpp"
 )
 
 file(GLOB ENGINE_TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cpp")
