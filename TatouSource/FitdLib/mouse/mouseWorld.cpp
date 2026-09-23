@@ -488,7 +488,10 @@ void stopHero()
     h.speed = 0;
     h.direction = 0;
     h.rotate.numSteps = 0;
-    if (g_gameId == AITD1)
+    // Never force the stand pose over a script-owned hero (Task 17's trackMode cancel) or
+    // while an uninterruptable anim (hit/death) is current or queued: GereAnim commits
+    // newAnim unconditionally, bypassing InitAnim's ANIM_UNINTERRUPTABLE refusal.
+    if (g_gameId == AITD1 && h.trackMode == 1 && !((h.animType | h.newAnimType) & ANIM_UNINTERRUPTABLE))
     {
         initHeroAnim(kPlayerStandAnim, 0, kPlayerStandAnim);
         h.newAnim = kPlayerStandAnim;
