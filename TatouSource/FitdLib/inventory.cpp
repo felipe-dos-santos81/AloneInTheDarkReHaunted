@@ -1000,6 +1000,37 @@ void FoundObjet(int objIdx, int param)
         localJoyD = JoyD;
         localClick = Click;
 
+        // Mouse: hovering Leave/Take selects it, a click confirms the hovered button.
+        if (!AntiRebond)
+        {
+            static ImVec2 s_foundMouse = { -1.0f, -1.0f };
+            ImVec2 gm = menuGetGameMouse();
+            bool moved = menuMouseMoved(s_foundMouse, localKey || localJoyD);
+            bool clicked = menuMouseClicked();
+            if (gm.x >= 0.0f)
+            {
+                if (choix != 2)
+                {
+                    // Leave is centred at x=130, Take at x=190 (DrawFoundWindow)
+                    int hit = menuMouseHitTwoButtons(gm.x, gm.y, 130, 190, WindowY2 - 8, 29, 8);
+                    if (hit >= 0 && (moved || clicked))
+                        choix = hit;
+                    if (hit >= 0 && clicked)
+                    {
+                        menuNoteItemClick();
+                        exitflag = 1;
+                        continue;
+                    }
+                }
+                else if (clicked && menuMouseHitRect(gm.x, gm.y, 130, WindowY2 - 16, 190, WindowY2))
+                {
+                    menuNoteItemClick();
+                    exitflag = 1;
+                    continue;
+                }
+            }
+        }
+
         if (!AntiRebond)
         {
             if (localKey == 1)

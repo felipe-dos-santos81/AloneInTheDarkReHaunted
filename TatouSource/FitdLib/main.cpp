@@ -848,6 +848,11 @@ void readBook(int index, int type, int vocIndex)
     notifyTTFMenuStateChanged(false, false);
 }
 
+// Mouse page buttons along the bottom edge of the book (320x200 space).
+static const int kLireBtnY1 = 186, kLireBtnY2 = 198;
+static const int kLirePrevX1 = 8, kLirePrevX2 = 36;
+static const int kLireCloseX1 = 146, kLireCloseX2 = 174;
+static const int kLireNextX1 = 284, kLireNextX2 = 312;
 int Lire(int index, int startx, int top, int endx, int bottom, int demoMode, int color, int shadow, int vocIndex)
 {
     bool lastPageReached = false;
@@ -1195,15 +1200,38 @@ int Lire(int index, int startx, int top, int endx, int bottom, int demoMode, int
                 localJoyD = JoyD;
                 localClick = Click;
 
-                // Mouse: click anywhere to exit, left region for prev page, right region for next page
+                // Mouse: visible Prev / Close / Next buttons along the bottom edge.
+                bool mousePrev = false;
+                bool mouseNext = false;
                 {
-                    static ImVec2 s_lireMouse = { -1.0f, -1.0f };
                     ImVec2 gm = menuGetGameMouse();
-                    if (menuMouseClicked() && gm.x >= 0.0f)
+                    bool clicked = menuMouseClicked();
+                    bool canPrev = page > 0;
+                    bool canNext = !lastPageReached;
+                    bool inside = gm.x >= 0.0f;
+                    bool overPrev = inside && menuMouseHitRect(gm.x, gm.y, kLirePrevX1, kLireBtnY1, kLirePrevX2, kLireBtnY2);
+                    bool overClose = inside && menuMouseHitRect(gm.x, gm.y, kLireCloseX1, kLireBtnY1, kLireCloseX2, kLireBtnY2);
+                    bool overNext = inside && menuMouseHitRect(gm.x, gm.y, kLireNextX1, kLireBtnY1, kLireNextX2, kLireBtnY2);
+
+                    menuDrawArrowButton(kLirePrevX1, kLireBtnY1, kLirePrevX2, kLireBtnY2, -1, overPrev, canPrev);
+                    menuDrawCloseButton(kLireCloseX1, kLireBtnY1, kLireCloseX2, kLireBtnY2, overClose);
+                    menuDrawArrowButton(kLireNextX1, kLireBtnY1, kLireNextX2, kLireBtnY2, +1, overNext, canNext);
+
+                    if (clicked && overClose)
                     {
-                        // Click anywhere: exit book
+                        menuNoteItemClick();
                         quit = 1;
                         break;
+                    }
+                    if (clicked && overPrev && canPrev)
+                    {
+                        menuNoteItemClick();
+                        mousePrev = true;
+                    }
+                    if (clicked && overNext && canNext)
+                    {
+                        menuNoteItemClick();
+                        mouseNext = true;
                     }
                 }
 
@@ -1219,7 +1247,7 @@ int Lire(int index, int startx, int top, int endx, int bottom, int demoMode, int
                 }
 
                 // flip to next page
-                if (JoyD & 0xA || localKey == 0x1C)
+                if (mouseNext || JoyD & 0xA || localKey == 0x1C)
                 {
                     if (!lastPageReached)
                     {
@@ -1244,7 +1272,7 @@ int Lire(int index, int startx, int top, int endx, int bottom, int demoMode, int
                 }
 
                 // flip to previous page
-                if (JoyD & 5) {
+                if (mousePrev || JoyD & 5) {
                     if (page > 0) {
                         previousPage = page;
                         page--;
@@ -1265,6 +1293,7 @@ int Lire(int index, int startx, int top, int endx, int bottom, int demoMode, int
             unsigned int var_6;
             startChrono(&var_6);
 
+            bool demoClicked = false;
             do
             {
                 process_events();
@@ -1272,9 +1301,14 @@ int Lire(int index, int startx, int top, int endx, int bottom, int demoMode, int
                 {
                     break;
                 }
+                if (menuMouseClicked())
+                {
+                    demoClicked = true;
+                    break;
+                }
             } while (!key && !Click);
 
-            if (key || Click)
+            if (key || Click || demoClicked)
             {
                 quit = 1;
             }
