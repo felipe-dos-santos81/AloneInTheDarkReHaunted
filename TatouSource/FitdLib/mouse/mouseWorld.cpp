@@ -539,6 +539,68 @@ void startIntent(mouse::ClickKind kind, const mouse::Payload& p, bool run)
     s_world.hasDecision = false;
 }
 
+// ---- melee (port of m-aitd interaction/combat.py attack_in_hand and input.py) ----
+
+constexpr uint32_t kAttackBudgetMs = 2000; // m-aitd: 100 ticks at 50 Hz
+
+// Instantly face a point without disturbing the track interpolation.
+void faceToward(mouse::XZ target)
+{
+    tObject& h = hero();
+    for (int step = 0; step < 256; ++step)
+    {
+        const int direction = CapObjet(h.roomX + h.stepX, h.roomZ + h.stepZ, h.beta, target.x, target.z);
+        if (direction == 0)
+            break;
+        h.beta = (h.beta - direction * 4) & 0x3FF;
+    }
+    h.direction = 0;
+    h.rotate.numSteps = 0;
+}
+
+// Accept a click on an enemy: stop, face it, and hold Action until the swing ends.
+void armAttack(int actorIdx)
+{
+    if (!isCombatTarget(actorIdx) || !canStrike(true))
+        return;
+    const tObject& h = hero();
+    const tObject& t = ListObjets[actorIdx];
+    mouse::XZ target{ t.roomX, t.roomZ };
+    if (t.room != h.room)
+        target = mouse::reframe(target, originOf(t.room), originOf(h.room));
+    cancelIntent();
+    hero().speed = 0;
+    faceToward(target);
+    s_world.attackTarget = actorIdx;
+    s_world.attackStartMs = (uint32_t)SDL_GetTicks();
+    s_world.attackFrames = 0;
+}
+
+// One frame of FITD's own melee input (forward + Action) for an accepted click.
+// A single frame is not enough: the hero's LIFE re-queues idle as soon as the
+// action drops, so the swing would never reach its strike frame.
+bool tickAttack(uint32_t now)
+{
+    if (s_world.attackTarget < 0)
+        return false;
+    if (!isCombatTarget(s_world.attackTarget) || !canStrike(false))
+    {
+        clearAttack();
+        return false;
+    }
+    if (s_world.attackFrames > 0 &&
+        (hero().animActionType == 0 || now - s_world.attackStartMs >= kAttackBudgetMs))
+    {
+        clearAttack();
+        return false;
+    }
+    ++s_world.attackFrames;
+    s_world.hasDecision = false;
+    localJoyD = 1;
+    localClick = 1; // PlayWorld turns this into action = 0x2000
+    return true;
+}
+
 void applyDecision(const mouse::Decision& d)
 {
     switch (d.type)
@@ -556,8 +618,11 @@ void applyDecision(const mouse::Decision& d)
     case mouse::DecisionType::Cancel:
         cancelIntent();
         break;
+    case mouse::DecisionType::Attack:
+        armAttack(d.payload.object);
+        break;
     default:
-        break; // Attack is handled from Task 20 on
+        break;
     }
 }
 
@@ -1116,7 +1181,9 @@ void mouseWorldFrame(int allowSystemMenu)
     if (s_world.intent && !s_world.pointer.held)
         cancelIntent();
 
-    tickNavigation(now);
+    // An accepted enemy click owns the hero until the swing finishes.
+    if (!tickAttack(now))
+        tickNavigation(now);
     s_world.hoverPos = pointerNow;
     updateHover();
 }
@@ -1137,6 +1204,14 @@ bool mouseNavSteer(tObject* actor)
 {
     if (!s_worldActive || !heroAvailable() || actor != &hero())
         return false;
+    if (s_world.attackTarget >= 0)
+    {
+        // forward is held for the LIFE script's melee, not to walk
+        actor->speed = 0;
+        actor->direction = 0;
+        actor->rotate.numSteps = 0;
+        return true;
+    }
     if (!s_world.intent)
         return false;
     if (!s_world.hasDecision || !s_world.decision.advance)
