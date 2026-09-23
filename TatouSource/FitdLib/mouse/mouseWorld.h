@@ -17,3 +17,10 @@ bool mouseWorldIsActive();
 // Gate for screen clicks (menuMouseClicked): false until the button has been
 // released after a takeover.
 bool mouseScreenClickFilter(bool clickedThisFrame, bool downNow);
+
+// Floor data changed (LoadEtage): drop cached grids and plane fits.
+void mouseWorldFloorChanged();
+
+// Debug: draw the hero room's walk grid and the floor pick under the pointer
+// (only when debug.mouseNavOverlay is true in aitd_remaster.cfg).
+void mouseWorldDrawDebugOverlay();

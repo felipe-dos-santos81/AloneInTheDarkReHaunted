@@ -9,6 +9,7 @@
 
 #include "common.h"
 #include "hdBackground.h"
+#include "mouse/mouseWorld.h"
 
 u32 g_currentFloorRoomRawDataSize = 0;
 u32 g_currentFloorCameraRawDataSize;
@@ -441,4 +442,6 @@ void LoadEtage(int floorNumber)
     /*    roomCameraData+=0x14;
 
     }*/
+
+    mouseWorldFloorChanged();
 }

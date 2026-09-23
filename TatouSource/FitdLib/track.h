@@ -13,5 +13,7 @@
 void processTrack(void);
 void GereManualRot(int param);
 void resetTrackStuckCounters(int actorIdx);
+int CapObjet(int x1, int z1, int beta, int x2, int z2);
+char* getRoomLink(unsigned int room1, unsigned int room2);
 
 #endif

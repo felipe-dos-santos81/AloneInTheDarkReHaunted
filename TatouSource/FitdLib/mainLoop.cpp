@@ -714,6 +714,7 @@ void PlayWorld(int allowSystemMenu, int deltaTime)
         }
 
         AllRedraw(flagRedraw);
+        mouseWorldDrawDebugOverlay();
 
         updatePendingEvents();
     }
