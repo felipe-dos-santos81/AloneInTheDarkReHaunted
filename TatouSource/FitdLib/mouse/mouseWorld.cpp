@@ -79,7 +79,12 @@ const mouse::Grid* gridFor(int room, const mouse::Agent& agent)
 {
     if (!roomValid(room))
         return nullptr;
-    const auto key = std::make_tuple((int)g_currentFloor, room, agent.half, agent.y1, agent.y2);
+    // Bucket the Y band (I4): the hero's exact y1/y2 crawls every hover frame on
+    // stairs/falls, rebuilding the grid (~4.5 ms) even though the walkable band
+    // rarely changes cell. The build still uses the exact agent of the first
+    // request that lands in a bucket.
+    const auto key = std::make_tuple((int)g_currentFloor, room, agent.half,
+                                      mouse::floorDiv(agent.y1, 100), mouse::floorDiv(agent.y2, 100));
     auto it = s_grids.find(key);
     if (it == s_grids.end())
     {
@@ -416,12 +421,11 @@ mouse::ClickResult resolveAt(mouse::Point p)
     }
     if (actor >= 0)
         return targetFor(actor);
+    const tObject& h = hero();
+    if (h.screenXMax >= 0 && h.screenYMax >= 0 &&
+        mouse::contains(mouse::Rect{ h.screenXMin, h.screenYMin, h.screenXMax, h.screenYMax }, p))
+        return {}; // on the hero: blocked, never the floor behind him (I3)
     return pickFloorOrSteer(p);
-}
-
-mouse::ClickResult resolveClick(mouse::Point p)
-{
-    return s_worldActive ? resolveAt(p) : mouse::ClickResult{};
 }
 
 const char* kindName(mouse::ClickKind kind)

@@ -49,7 +49,7 @@ lock. SDL cursor and window calls belong on the main thread.
    - A held pointer is re-resolved only when it moves; a still pointer never
      retargets at a camera cut (6 px dead zone after a cut).
    - A held push never asserts the global Action (`0x2000`).
-   - One resolver (`resolveClick`) drives both the cursor and the click;
+   - One resolver (`resolveAt`) drives both the cursor and the click;
      hovering never changes game state.
    - Picking uses only the engine's integer projection
      (`mouse::projectPoint` replicates `transformPoint` + the renderer
