@@ -1,0 +1,50 @@
+#include "doctest.h"
+
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+
+namespace fs = std::filesystem;
+
+// AGENTS.md rule 1: never lock, grab, confine or warp the OS cursor, and never
+// turn off SDL's default auto-capture. Project code must not even name these.
+TEST_CASE("no FitdLib source locks, grabs, confines or warps the OS cursor")
+{
+    const char* banned[] = {
+        "SDL_SetWindowMouseGrab",
+        "SDL_SetWindowRelativeMouseMode",
+        "SDL_SetWindowMouseRect",
+        "SDL_WarpMouseInWindow",
+        "SDL_WarpMouseGlobal",
+        "SDL_CaptureMouse",
+        "SDL_HINT_MOUSE_AUTO_CAPTURE",
+    };
+
+    const fs::path root(FITD_SOURCE_DIR);
+    REQUIRE(fs::is_directory(root));
+
+    std::vector<std::string> offenders;
+    for (const auto& entry : fs::recursive_directory_iterator(root))
+    {
+        if (!entry.is_regular_file())
+            continue;
+        const std::string ext = entry.path().extension().string();
+        if (ext != ".cpp" && ext != ".c" && ext != ".h" && ext != ".hpp")
+            continue;
+        std::ifstream in(entry.path(), std::ios::binary);
+        std::stringstream buffer;
+        buffer << in.rdbuf();
+        const std::string text = buffer.str();
+        for (const char* name : banned)
+        {
+            if (text.find(name) != std::string::npos)
+                offenders.push_back(entry.path().string() + ": " + name);
+        }
+    }
+
+    for (const auto& offender : offenders)
+        MESSAGE(offender);
+    CHECK(offenders.empty());
+}
