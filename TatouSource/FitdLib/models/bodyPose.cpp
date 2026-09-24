@@ -114,4 +114,115 @@ uint64_t skeletonHash(const PoseBody& body)
     return h;
 }
 
+namespace
+{
+
+// RotateList's matrix: Y, then X, then Z (R = Rz Rx Ry). An axis is skipped
+// only when its raw angle is 0: 1024 reads table[0] = 4, a tiny rotation.
+Affine3d rotation(int ax, int ay, int az, const int16_t* t)
+{
+    Affine3d r = identityAffine<double>();
+    auto axis = [&](int angle, int i, int j) {
+        // Rows i and j mix: (a, b) -> (a c - b s, a s + b c), as RotateList does.
+        const double s = t[angle & 0x3FF] / 32768.0;
+        const double c = t[(angle + 0x100) & 0x3FF] / 32768.0;
+        Affine3d m = identityAffine<double>();
+        m.m[i][i] = c;
+        m.m[i][j] = -s;
+        m.m[j][i] = s;
+        m.m[j][j] = c;
+        r = compose(m, r);
+    };
+    if (ay)
+        axis(ay, 0, 2);
+    if (ax)
+        axis(ax, 1, 2);
+    if (az)
+        axis(az, 0, 1);
+    return r;
+}
+
+// RotateGroupe: rotate the group at array position `pos`, then scan the next
+// (groups - m_numGroup) entries, starting with itself, recursing into every
+// entry whose parent is this group's number.
+void rotateGroupe(const PoseBody& body, int pos, const Affine3d& r, Affine3d* local)
+{
+    const PoseGroup& g = body.groups[pos];
+    local[pos] = compose(r, local[pos]);
+    const int n = (int)body.groups.size();
+    for (int j = pos; j < std::min(n, pos + n - g.self); ++j)
+        if (body.groups[j].parent == g.self)
+            rotateGroupe(body, j, r, local);
+}
+
+bool poseDouble(const PoseBody& body, const GroupState* states, int alpha, int beta, int gamma,
+                const int16_t* sinTable, Affine3d* world)
+{
+    const int n = (int)body.groups.size();
+    GroupState s[kMaxPoseGroups];
+    std::copy(states, states + n, s);
+    // The engine stores the actor's angles in group 0's s16 delta.
+    s[0].dx = (int16_t)alpha;
+    s[0].dy = (int16_t)beta;
+    s[0].dz = (int16_t)gamma;
+    if (s[0].type == 1 && (s[0].dx || s[0].dy || s[0].dz))
+        return false;
+
+    Affine3d local[kMaxPoseGroups];
+    std::fill(local, local + n, identityAffine<double>());
+    for (uint16_t h : body.order)
+    {
+        const GroupState& st = s[h];
+        if (!st.dx && !st.dy && !st.dz)
+            continue;
+        switch (st.type)
+        {
+        case 0:
+            rotateGroupe(body, h, rotation(st.dx, st.dy, st.dz, sinTable), local);
+            break;
+        case 1:
+            local[h] = compose(translationAffine<double>(st.dx, st.dy, st.dz), local[h]);
+            break;
+        case 2:
+        {
+            Affine3d z = identityAffine<double>();
+            z.m[0][0] = (st.dx + 256) / 256.0;
+            z.m[1][1] = (st.dy + 256) / 256.0;
+            z.m[2][2] = (st.dz + 256) / 256.0;
+            local[h] = compose(z, local[h]);
+            break;
+        }
+        default:
+            break; // the engine's switch ignores other types
+        }
+    }
+
+    // Pivot pass, in array order: a group hangs from its pivot vertex, which
+    // belongs to the (already placed) parent.
+    for (int g = 0; g < n; ++g)
+    {
+        double p[3] = { 0.0, 0.0, 0.0 };
+        if (g)
+        {
+            const auto& v = body.verts[body.groups[g].pivot];
+            applyAffine(world[body.groups[g].parent], (double)v[0], (double)v[1], (double)v[2], p);
+        }
+        world[g] = compose(translationAffine(p[0], p[1], p[2]), local[g]);
+    }
+    return true;
+}
+
+} // namespace
+
+bool poseGroups(const PoseBody& body, const GroupState* states, int alpha, int beta, int gamma,
+                const int16_t* sinTable, Affine3* worldFromLocal)
+{
+    Affine3d world[kMaxPoseGroups];
+    if (!poseDouble(body, states, alpha, beta, gamma, sinTable, world))
+        return false;
+    for (size_t g = 0; g < body.groups.size(); ++g)
+        worldFromLocal[g] = castAffine<float>(world[g]);
+    return true;
+}
+
 } // namespace models

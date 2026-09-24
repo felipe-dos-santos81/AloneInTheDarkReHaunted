@@ -61,4 +61,14 @@ bool validateSkeleton(const PoseBody& body, std::string* why);
 // same value.
 uint64_t skeletonHash(const PoseBody& body);
 
+// worldFromLocal[g] maps group g's stored vertices to model space, as
+// AnimNuage leaves them in pointBuffer. `states` has one entry per group;
+// group 0's delta is replaced by (alpha, beta, gamma), as the engine does.
+// `sinTable` is the engine's cosTable (a sine table: entry i = sin(i * 2pi / 1024)).
+// Requires validateSkeleton(body). Returns false, and writes nothing, when
+// group 0 translates by a non-zero delta: the engine then adds root vertex 0
+// to itself, which no matrix reproduces (no AITD1 animation does this).
+bool poseGroups(const PoseBody& body, const GroupState* states, int alpha, int beta, int gamma,
+                const int16_t* sinTable, Affine3* worldFromLocal);
+
 } // namespace models
