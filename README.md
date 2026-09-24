@@ -4,6 +4,15 @@
 
 **A faithful remaster of the original 1992 survival horror classic.**
 
+## About This Fork
+
+This repository is a fork of [spacefarergames/AloneInTheDarkReHaunted](https://github.com/spacefarergames/AloneInTheDarkReHaunted) that focuses on *Alone in the Dark 1*. It aims to:
+
+- **Improve game accessibility.** The whole game plays with the mouse's left button alone (see [Mouse](#mouse-left-button-only)); keyboard and gamepad play are unchanged.
+- **Provide a native macOS port** (Apple Silicon / arm64). See the [macOS section of BUILDING.md](BUILDING.md#macos-apple-silicon) for build steps.
+
+### About The Project
+
 *Copyright © 2026 Infogrames / Spacefarer Retro Remasters LLC*
 *Author: Jake Jackson (jake@spacefarergames.com)*
 
@@ -19,15 +28,6 @@ AITD-R (also known as *Alone In The Dark Re-Haunted*) lets you play the original
 > PayPal- jake@spacefarergames.com
 
 ---
-
-## About This Fork
-
-This repository is a fork of [spacefarergames/AloneInTheDarkReHaunted](https://github.com/spacefarergames/AloneInTheDarkReHaunted) that focuses on *Alone in the Dark 1*. It aims to:
-
-- **Improve game accessibility.** The whole game plays with the mouse's left
-  button alone (see [Mouse](#mouse-left-button-only)); keyboard and gamepad
-  play are unchanged.
-- **Provide a native macOS port** (Apple Silicon / arm64). See the [macOS section of BUILDING.md](BUILDING.md#macos-apple-silicon) for build steps.
 
 ### Adding the Original Game Files
 
