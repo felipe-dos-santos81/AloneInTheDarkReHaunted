@@ -103,7 +103,7 @@ run: build ## Play from a folder holding the game data [data=DIR]
 
 test: test-engine test-tools ## Run every test suite
 
-test-engine: configure ## Engine unit tests (doctest: engine-free mouse modules, cursor rule)
+test-engine: configure ## Engine unit tests (doctest: engine-free mouse and model modules, cursor rule)
 	$(CMAKE_BUILD) --target engine_tests
 	cd "$(BUILD_DIR)" && ctest -C "$(BUILD_TYPE)" --output-on-failure -R engine_tests
 

@@ -14,6 +14,12 @@ Guidance for anyone (human or agent) changing this repository.
   (rooms, cameras, caches), `mouseWorldResolve.cpp` (what a click means),
   `mouseWorldPush.cpp`, `mouseWorldAttack.cpp` and `mouseWorldDebug.cpp`,
   sharing `mouseWorldInternal.h`; the engine includes only `mouseWorld.h`.
+- `TatouSource/FitdLib/models/` — HD character model math, engine-free
+  (standard headers only) and unit-tested in `TatouSource/tests/engine/`:
+  `affine3.h`, `bodyPose.*` (a body's pose as one matrix per bone group; its
+  Python twin is `tools/aitd_models/pose.py`) and `renderCamera.*` (the
+  engine's camera and 320x200 projection in float). The game compiles them
+  but does not call them yet.
 - `tools/` + `tests/tools/` — the Python texture pipeline and the HD model
   export (`tools/aitd_models/`, `make export-models`; contract in
   `docs/model-contract.md`); `make test-tools` runs both suites.
