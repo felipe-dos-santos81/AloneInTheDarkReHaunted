@@ -1206,7 +1206,11 @@ int Lire(int index, int startx, int top, int endx, int bottom, int demoMode, int
                     ImVec2 gm = menuGetGameMouse();
                     bool clicked = menuMouseClicked();
                     bool canPrev = page > 0;
-                    bool canNext = !lastPageReached;
+                    // On the story page after character select (demoMode 2),
+                    // Next on the last page starts the game as Enter does:
+                    // ChoosePerso reads localKey once Lire returns.
+                    bool nextConfirms = demoMode == 2 && lastPageReached;
+                    bool canNext = !lastPageReached || nextConfirms;
                     bool inside = gm.x >= 0.0f;
                     // A click on a disabled arrow still counts as a click on an item.
                     bool overPrev = inside && menuMouseHitRect(gm.x, gm.y, LIRE_PREV_RECT);
@@ -1224,7 +1228,9 @@ int Lire(int index, int startx, int top, int endx, int bottom, int demoMode, int
                     }
                     if (clicked && overPrev && canPrev)
                         mousePrev = true;
-                    if (clicked && overNext && canNext)
+                    if (clicked && overNext && nextConfirms)
+                        localKey = 0x1C;
+                    else if (clicked && overNext && canNext)
                         mouseNext = true;
                 }
 

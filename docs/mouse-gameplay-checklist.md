@@ -8,7 +8,7 @@ with a one-line note. Build: `make build-fitd`; run: `make run data=DIR`.
 | # | Check | Emily | Carnby |
 |---|---|---|---|
 | 1 | Title, armadillo, credits book and opening cutscene all skip with a left click | | |
-| 2 | Character select, story page and startup menu work by mouse | | |
+| 2 | Startup menu works by mouse; clicking a portrait picks that character at once; on the story page, ▶ on the last page starts the game and ✕ returns to character select | | |
 | 3 | Attic: hold on the floor walks and follows the pointer; release stops at once | | |
 | 4 | Double-click and hold runs; a double press near the first spot keeps its destination | | |
 | 5 | Holding still through a camera cut keeps walking without turning | | |
