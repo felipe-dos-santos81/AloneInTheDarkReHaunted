@@ -71,4 +71,14 @@ uint64_t skeletonHash(const PoseBody& body);
 bool poseGroups(const PoseBody& body, const GroupState* states, int alpha, int beta, int gamma,
                 const int16_t* sinTable, Affine3* worldFromLocal);
 
+// inverseBind[g] = (world matrix of g in the bind pose)^-1. The bind pose is
+// `bindOrNull` (one state per group), or the rest pose (every delta 0) when
+// null. Returns false when that pose has no matrices or a singular one.
+bool restBind(const PoseBody& body, const GroupState* bindOrNull, const int16_t* sinTable,
+              Affine3* inverseBind);
+
+// skin[g] = world[g] ∘ inverseBind[g]: maps a bind-pose model-space vertex
+// bound to group g to its posed position.
+void skinMatrices(const Affine3* world, const Affine3* inverseBind, int n, Affine3* skin);
+
 } // namespace models

@@ -159,3 +159,46 @@ TEST_CASE("the integer path stays within its drift bounds")
         }
     }
 }
+
+TEST_CASE("skin matrices move bind-pose vertices to their posed positions")
+{
+    const int16_t* t = engineCosTable();
+    for (const PoseBody& b : { chainBody(), humanoidBody() })
+    {
+        std::vector<GroupState> pose(b.groups.size(), GroupState{ 0, 100, -200, 300 });
+        pose[1] = { 2, 40, -20, 10 }; // a zoom too
+        std::vector<GroupState> bindPose(b.groups.size(), GroupState{ 0, 0, 0, 0 });
+        bindPose[1] = { 0, 0, 256, 0 }; // bound with group 1 turned
+
+        const std::vector<GroupState>* binds[] = { nullptr, &bindPose }; // the rest pose, then a turned one
+        for (const std::vector<GroupState>* bind : binds)
+        {
+            Affine3 inverseBind[kMaxPoseGroups], world[kMaxPoseGroups], skin[kMaxPoseGroups];
+            REQUIRE(restBind(b, bind ? bind->data() : nullptr, t, inverseBind));
+            REQUIRE(poseGroups(b, pose.data(), 0, 64, 0, t, world));
+            skinMatrices(world, inverseBind, (int)b.groups.size(), skin);
+
+            // A bind-pose model-space vertex of group g, through skin[g], lands where the engine puts it.
+            const Points bound = exactPose(b, bind ? *bind : restStates(b));
+            const Points posed = exactPose(b, pose, 0, 64, 0);
+            double worst = 0.0;
+            for (size_t g = 0; g < b.groups.size(); ++g)
+                for (int v = b.groups[g].start; v < b.groups[g].start + b.groups[g].count; ++v)
+                {
+                    const Vec3 p = apply(skin[g], { (float)bound[v][0], (float)bound[v][1], (float)bound[v][2] });
+                    worst = std::max({ worst, std::abs(p.x - posed[v][0]), std::abs(p.y - posed[v][1]),
+                                       std::abs(p.z - posed[v][2]) });
+                }
+            CHECK(worst < kFloatTolerance);
+        }
+    }
+}
+
+TEST_CASE("a bind pose that zooms a group to nothing is refused")
+{
+    const PoseBody b = chainBody();
+    std::vector<GroupState> flat = restStates(b);
+    flat[2] = { 2, -256, 0, 0 }; // x scale 0
+    Affine3 inverseBind[kMaxPoseGroups];
+    CHECK_FALSE(restBind(b, flat.data(), engineCosTable(), inverseBind));
+}

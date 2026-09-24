@@ -225,4 +225,26 @@ bool poseGroups(const PoseBody& body, const GroupState* states, int alpha, int b
     return true;
 }
 
+bool restBind(const PoseBody& body, const GroupState* bindOrNull, const int16_t* sinTable, Affine3* inverseBind)
+{
+    const int n = (int)body.groups.size();
+    GroupState rest[kMaxPoseGroups] = {};
+    Affine3d world[kMaxPoseGroups];
+    if (!poseDouble(body, bindOrNull ? bindOrNull : rest, 0, 0, 0, sinTable, world))
+        return false;
+    Affine3d inv[kMaxPoseGroups];
+    for (int g = 0; g < n; ++g)
+        if (!invertAffine(world[g], &inv[g]))
+            return false;
+    for (int g = 0; g < n; ++g)
+        inverseBind[g] = castAffine<float>(inv[g]);
+    return true;
+}
+
+void skinMatrices(const Affine3* world, const Affine3* inverseBind, int n, Affine3* skin)
+{
+    for (int g = 0; g < n; ++g)
+        skin[g] = castAffine<float>(compose(castAffine<double>(world[g]), castAffine<double>(inverseBind[g])));
+}
+
 } // namespace models
