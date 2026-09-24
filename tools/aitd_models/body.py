@@ -5,7 +5,7 @@ TatouSource/FitdLib/hqr.cpp. Only the AITD1 layout (no INFO_OPTIMISE)."""
 from __future__ import annotations
 
 import struct
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 INFO_ANIM = 0x2
 INFO_OPTIMISE = 0x8
@@ -13,6 +13,7 @@ INFO_OPTIMISE = 0x8
 PRIM_LINE, PRIM_POLY, PRIM_POINT, PRIM_SPHERE = 0, 1, 2, 3
 PRIM_BIG_POINT, PRIM_ZIXEL = 6, 7
 PRIM_POLY_TEX = (8, 9, 10)
+PRIM_POLY_UV = (9, 10)  # textured polygons that store per-point UVs
 POINT_LIKE = (PRIM_POINT, PRIM_BIG_POINT, PRIM_ZIXEL)
 
 
@@ -64,7 +65,7 @@ class Frame:
 @dataclass(frozen=True)
 class Animation:
     num_groups: int
-    frames: tuple[Frame, ...] = field(default_factory=tuple)
+    frames: tuple[Frame, ...]
 
 
 class _Reader:
@@ -111,7 +112,7 @@ def parse_body(raw: bytes) -> Body:
         if t == PRIM_POLY or t in PRIM_POLY_TEX:
             n, material, color = r.take("BBB")
             pts = tuple(v // 6 for v in r.take(f"{n}H"))
-            if t in (9, 10):
+            if t in PRIM_POLY_UV:
                 r.p += 2 * n  # per-point UVs, ignored like the engine
             prims.append(Primitive(t, material, color, pts))
         elif t == PRIM_LINE:

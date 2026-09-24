@@ -2,11 +2,10 @@ import pathlib
 import subprocess
 import sys
 
+import models  # tools/ is on sys.path (conftest.py)
 from model_helpers import write_model_data_dir
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "tools"))
-import models  # noqa: E402
 
 
 def run(tmp_path, *extra):

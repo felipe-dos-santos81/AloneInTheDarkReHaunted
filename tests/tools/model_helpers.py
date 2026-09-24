@@ -85,7 +85,9 @@ def rest(n=4):
 
 
 def synthetic_palette_rgb():
-    return np.array([(i, 255 - i, i // 2) for i in range(256)], dtype=np.uint8)
+    """helpers.synthetic_palette() decoded to (256, 3) uint8."""
+    from helpers import synthetic_palette
+    return np.frombuffer(synthetic_palette(), dtype=np.uint8).reshape(256, 3).copy()
 
 
 # ── glTF evaluation (an independent skinning of a written .glb) ─────────────

@@ -6,27 +6,27 @@ their canonical key: the first in HQR order (LISTBODY before LISTBOD2), then
 by entry index."""
 from __future__ import annotations
 
+import contextlib
 import hashlib
-import io
 import json
+import os
 import pathlib
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
 
 import numpy as np
-from PIL import Image
 
 from aitd_textures.catalog import PALETTE_ENTRY, PALETTE_PAK
 from aitd_textures.decode import decode_palette
 from aitd_textures.explode import ExplodeError
-from aitd_textures.files import atomic_write_bytes
+from aitd_textures.files import atomic_write_bytes, save_png
 from aitd_textures.pak import Pak, PakError
 
 from .body import Animation, BodyError, parse_anim, parse_body
 from .manifest import MANIFEST_NAME, BodyRecord, write_manifest
-from .mesh import build_mesh
-from .original import build_original_glb
-from .pose import pose_float, rest_states, skin
+from .original import build_original_glb, rest_mesh
+from .pose import skin
 from .raster import View, framing_for, render
 from .skeleton import skeleton_hash, validate
 
@@ -36,6 +36,8 @@ VIEWS = (View("front", 0.0), View("three_quarter", 45.0), View("side", 90.0), Vi
 REFERENCE_SIZE = 1024
 PREVIEW_ANIMS = 3
 CHARACTER_MIN_GROUPS = 6
+# Folders are written in parallel; one 4x supersampled 1024 px render briefly holds ~0.7 GB.
+JOBS = min(6, os.cpu_count() or 1)
 PRIM_NAMES = {0: "line", 1: "poly", 2: "point", 3: "sphere", 6: "big_point", 7: "zixel",
               8: "poly_tex", 9: "poly_tex", 10: "poly_tex"}
 
@@ -47,10 +49,18 @@ class ExportResult:
     skipped: list[str] = field(default_factory=list)   # "<HQR> entry <n>: <reason>"
 
 
-def _png_rgba(pixels: np.ndarray) -> bytes:
-    buf = io.BytesIO()
-    Image.fromarray(np.ascontiguousarray(pixels, dtype=np.uint8)).save(buf, format="PNG")
-    return buf.getvalue()
+def _write_folder(args) -> None:
+    """original.glb and the reference views of one canonical body (runs in a worker)."""
+    folder, body, palette, animations, rest, ssaa, size = args
+    atomic_write_bytes(folder / "original.glb", build_original_glb(body, palette, animations, rest))
+    mesh = rest[1]
+    framing = framing_for(mesh.positions, size)
+    for view in VIEWS:
+        save_png(folder / "reference" / f"{view.name}.png", render(mesh, view, framing, ssaa))
+    views_doc = {"framing": framing.to_json(),
+                 "views": [{"name": v.name, "yaw_deg": v.yaw_deg, "file": f"{v.name}.png",
+                            "basis_right_down_forward": v.basis().tolist()} for v in VIEWS]}
+    atomic_write_bytes(folder / "reference" / "views.json", (json.dumps(views_doc, indent=1) + "\n").encode())
 
 
 def _load_anims(pak: Pak, hqr: str, log) -> dict[str, Animation]:
@@ -64,17 +74,18 @@ def _load_anims(pak: Pak, hqr: str, log) -> dict[str, Animation]:
 
 
 def export_models(data_dir, out_dir, log=print, only: set[str] | None = None,
-                  ssaa: int = 4, size: int = REFERENCE_SIZE) -> ExportResult:
+                  ssaa: int = 4, size: int = REFERENCE_SIZE, jobs: int = JOBS) -> ExportResult:
     """Export every animated body under `data_dir` into `out_dir`.
 
     `only` limits which folders are (re)written: any keys, each resolved to
     its canonical key; the manifest always lists every body. Raises PakError
     when a required PAK is missing, and ValueError for an unknown key in
-    `only` (before writing anything)."""
+    `only` (before writing anything). `jobs` worker processes write the
+    folders."""
     data_dir, out_dir = pathlib.Path(data_dir), pathlib.Path(out_dir)
     palette = decode_palette(Pak(data_dir / f"{PALETTE_PAK}.PAK").read(PALETTE_ENTRY))
     result = ExportResult()
-    found = []  # (key, hqr, index, raw, body, anims)
+    found = []  # (key, hqr, index, sha256, skeleton hash, body, anims)
     for hqr, anim_hqr in BODY_PAKS:
         pak = Pak(data_dir / f"{hqr}.PAK")
         anims = _load_anims(Pak(data_dir / f"{anim_hqr}.PAK"), anim_hqr, log)
@@ -91,15 +102,15 @@ def export_models(data_dir, out_dir, log=print, only: set[str] | None = None,
             if problems:
                 result.skipped.append(f"{hqr} entry {i}: {'; '.join(problems)}")
                 continue
-            found.append((f"{hqr}_{i:03d}", hqr, i, raw, body, anims))
+            found.append((f"{hqr}_{i:03d}", hqr, i, hashlib.sha256(raw).hexdigest(), skeleton_hash(body), body, anims))
 
     # found is in HQR order (LISTBODY first), so the first key of a group is canonical.
     by_sha, by_skeleton = defaultdict(list), defaultdict(list)
-    for key, _hqr, _i, raw, body, _anims in found:
-        by_sha[hashlib.sha256(raw).hexdigest()].append(key)
-        by_skeleton[skeleton_hash(body)].append(key)
+    for key, _hqr, _i, sha, shash, _body, _anims in found:
+        by_sha[sha].append(key)
+        by_skeleton[shash].append(key)
 
-    canonical_of = {key: by_sha[hashlib.sha256(raw).hexdigest()][0] for key, _h, _i, raw, _b, _a in found}
+    canonical_of = {key: by_sha[sha][0] for key, _h, _i, sha, _s, _b, _a in found}
     if only is not None:
         unknown = sorted(set(only) - set(canonical_of))
         if unknown:
@@ -109,12 +120,13 @@ def export_models(data_dir, out_dir, log=print, only: set[str] | None = None,
                 log(f"{key} is an alias of {canonical_of[key]}; exporting {canonical_of[key]}")
         only = {canonical_of[key] for key in only}
 
-    for key, hqr, index, raw, body, anims in found:
-        sha = hashlib.sha256(raw).hexdigest()
-        shash = skeleton_hash(body)
-        rest = pose_float(body, rest_states(body))
-        posed = skin(body, rest.group_matrices())
-        mesh = build_mesh(body, posed, palette)
+    rests = {}  # sha256 -> (rest pose, mesh, height): aliases are byte-identical
+    tasks = []  # (key, log line, _write_folder arguments)
+    for key, hqr, index, sha, shash, body, anims in found:
+        if sha not in rests:
+            rest, mesh = rest_mesh(body, palette)
+            rests[sha] = rest, mesh, float(np.ptp(skin(body, rest.group_matrices())[:, 1]))
+        rest, mesh, height = rests[sha]
         preview = [name for name, a in sorted(anims.items()) if a.num_groups == len(body.groups)][:PREVIEW_ANIMS]
         counts: dict[str, int] = defaultdict(int)
         for prim in body.primitives:
@@ -124,7 +136,7 @@ def export_models(data_dir, out_dir, log=print, only: set[str] | None = None,
         record = BodyRecord(
             key=key, hqr=hqr, body=index, canonical=by_sha[sha][0],
             target=f"body_{key}.glb", kind=kind, body_sha256=sha, skeleton_hash=shash,
-            zv=list(body.zv), height=float(np.ptp(posed[:, 1])), triangles=mesh.triangle_count,
+            zv=list(body.zv), height=height, triangles=mesh.triangle_count,
             prim_counts=dict(sorted(counts.items())),
             groups=[{"parent": g.parent, "pivot_rest": [float(c) for c in rest.joints[gi][:3, 3]], "count": g.count}
                     for gi, g in enumerate(body.groups)],
@@ -134,19 +146,15 @@ def export_models(data_dir, out_dir, log=print, only: set[str] | None = None,
         result.records.append(record)
         if not record.is_canonical or kind == "skip" or (only is not None and key not in only):
             continue
-        folder = out_dir / record.dir
-        atomic_write_bytes(folder / "original.glb",
-                           build_original_glb(body, palette, [(n, anims[n]) for n in preview]))
-        framing = framing_for(mesh.positions, size)
-        for view in VIEWS:
-            atomic_write_bytes(folder / "reference" / f"{view.name}.png",
-                               _png_rgba(render(mesh, view, framing, ssaa)))
-        views_doc = {"framing": framing.to_json(),
-                     "views": [{"name": v.name, "yaw_deg": v.yaw_deg, "file": f"{v.name}.png",
-                                "basis_right_down_forward": v.basis().tolist()} for v in VIEWS]}
-        atomic_write_bytes(folder / "reference" / "views.json", (json.dumps(views_doc, indent=1) + "\n").encode())
-        result.written.append(key)
-        log(f"exported {key} ({kind}, {len(body.groups)} groups, {mesh.triangle_count} triangles)")
+        tasks.append((key, f"exported {key} ({kind}, {len(body.groups)} groups, {mesh.triangle_count} triangles)",
+                      (out_dir / record.dir, body, palette, [(n, anims[n]) for n in preview], (rest, mesh), ssaa, size)))
+
+    workers = min(jobs, len(tasks))
+    with ProcessPoolExecutor(workers) if workers > 1 else contextlib.nullcontext() as pool:
+        done = (pool.map if pool else map)(_write_folder, [args for _k, _m, args in tasks])
+        for (key, message, _args), _ in zip(tasks, done):  # in order, so the log reads as before
+            result.written.append(key)
+            log(message)
 
     for reason in result.skipped:
         log(f"warning: skipped {reason}")

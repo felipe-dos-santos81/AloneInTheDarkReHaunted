@@ -15,7 +15,7 @@ CHUNK_JSON = 0x4E4F534A
 CHUNK_BIN = 0x004E4942
 
 FLOAT, UNSIGNED_BYTE, UNSIGNED_SHORT, UNSIGNED_INT = 5126, 5121, 5123, 5125
-ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER = 34962, 34963
+ARRAY_BUFFER = 34962
 _DTYPES = {FLOAT: np.float32, UNSIGNED_BYTE: np.uint8, UNSIGNED_SHORT: np.uint16, UNSIGNED_INT: np.uint32}
 _COMPONENTS = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4, "MAT4": 16}
 
@@ -103,9 +103,8 @@ class Glb:
         end = start + stride * (count - 1) + dtype.itemsize * n if count else start
         if end > view.get("byteOffset", 0) + view["byteLength"] or end > len(self.bin):
             raise GltfError(f"accessor {index} runs past its buffer view")
-        raw = np.frombuffer(self.bin, dtype=np.uint8, count=end - start, offset=start) if count else np.zeros(0, np.uint8)
-        rows = [np.frombuffer(raw[i * stride:i * stride + dtype.itemsize * n].tobytes(), dtype=dtype) for i in range(count)]
-        out = np.array(rows, dtype=np.float64).reshape(count, n) if count else np.zeros((0, n))
+        out = (np.ndarray((count, n), dtype, buffer=self.bin, offset=start, strides=(stride, dtype.itemsize))
+               .astype(np.float64) if count else np.zeros((0, n)))
         if acc.get("normalized"):
             out /= np.iinfo(dtype).max
         return out if n > 1 else out[:, 0]

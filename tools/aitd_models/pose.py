@@ -23,7 +23,7 @@ import numpy as np
 
 from .body import Body
 from .cos_table import COS_TABLE
-from .skeleton import children
+from .skeleton import descendants
 
 State = tuple[int, tuple[int, int, int]]
 ROTATE, TRANSLATE, ZOOM = 0, 1, 2
@@ -171,13 +171,6 @@ def pose_float(body: Body, states, angles=(0, 0, 0)) -> Pose:
     if states[0][0] == TRANSLATE and any(states[0][1]):
         raise ValueError("group 0 translates; the engine's result is not an affine pose")
     n = len(body.groups)
-    kids = children(body)
-
-    def subtree(gi: int) -> list[int]:
-        out = [gi]
-        for c in kids[gi]:
-            out += subtree(c)
-        return out
 
     local = np.stack([np.eye(4)] * n)
     zoom = np.ones((n, 3))
@@ -187,7 +180,7 @@ def pose_float(body: Body, states, angles=(0, 0, 0)) -> Pose:
             continue
         if t == ROTATE:
             r = _affine(rotation(d))
-            for x in subtree(gi):
+            for x in (gi, *descendants(body, gi)):
                 local[x] = r @ local[x]
         elif t == TRANSLATE:
             local[gi] = _affine(translation=d) @ local[gi]

@@ -100,7 +100,7 @@ def build_mesh(body: Body, posed: np.ndarray, palette: np.ndarray) -> Mesh:
             new = [(centre + unit_v[f] * prim.size, [g, g, g]) for f in unit_f]
         elif prim.type == PRIM_LINE:
             a, b = prim.points
-            new = _prism(posed[a].copy(), posed[b].copy(), owner[a], owner[b])
+            new = _prism(posed[a], posed[b], owner[a], owner[b])
         elif prim.type in POINT_LIKE:
             new = []
         else:
@@ -112,7 +112,7 @@ def build_mesh(body: Body, posed: np.ndarray, palette: np.ndarray) -> Mesh:
             prims.append(pi)
     if not tris:
         return Mesh(np.zeros((0, 3)), np.zeros((0, 3), np.float32), np.zeros(0, int), np.zeros(0, int))
-    return Mesh(np.concatenate(tris), np.concatenate(cols).astype(np.float32),
+    return Mesh(np.concatenate(tris), np.concatenate(cols),
                 np.array(grps), np.array(prims))
 
 

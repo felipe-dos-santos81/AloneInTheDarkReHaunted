@@ -66,17 +66,18 @@ def render(mesh: Mesh, view: View, framing: Framing, ssaa: int = 4) -> np.ndarra
         sy = cam[:, 1] * scale + n / 2
         sz = cam[:, 2]
         shade = AMBIENT + (1 - AMBIENT) * np.abs(face_normals(mesh.positions) @ basis[2])
-        for t in range(mesh.triangle_count):
+        tx, ty = sx.reshape(-1, 3), sy.reshape(-1, 3)
+        x0s = np.maximum(np.floor(tx.min(axis=1)).astype(int), 0)
+        x1s = np.minimum(np.ceil(tx.max(axis=1)).astype(int), n - 1)
+        y0s = np.maximum(np.floor(ty.min(axis=1)).astype(int), 0)
+        y1s = np.minimum(np.ceil(ty.max(axis=1)).astype(int), n - 1)
+        areas = (tx[:, 1] - tx[:, 0]) * (ty[:, 2] - ty[:, 0]) - (tx[:, 2] - tx[:, 0]) * (ty[:, 1] - ty[:, 0])
+        for t in np.flatnonzero((x0s <= x1s) & (y0s <= y1s) & (np.abs(areas) >= 1e-9)):
             i = 3 * t
             xs, ys, zs = sx[i:i + 3], sy[i:i + 3], sz[i:i + 3]
-            x0, x1 = max(int(np.floor(xs.min())), 0), min(int(np.ceil(xs.max())), n - 1)
-            y0, y1 = max(int(np.floor(ys.min())), 0), min(int(np.ceil(ys.max())), n - 1)
-            if x0 > x1 or y0 > y1:
-                continue
-            area = (xs[1] - xs[0]) * (ys[2] - ys[0]) - (xs[2] - xs[0]) * (ys[1] - ys[0])
-            if abs(area) < 1e-9:
-                continue
-            px, py = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
+            x0, x1, y0, y1, area = x0s[t], x1s[t], y0s[t], y1s[t], areas[t]
+            px = np.arange(x0, x1 + 1)[None, :] + 0.5
+            py = np.arange(y0, y1 + 1)[:, None] + 0.5
             w0 = ((xs[1] - px) * (ys[2] - py) - (xs[2] - px) * (ys[1] - py)) / area
             w1 = ((xs[2] - px) * (ys[0] - py) - (xs[0] - px) * (ys[2] - py)) / area
             w2 = 1 - w0 - w1
@@ -89,8 +90,13 @@ def render(mesh: Mesh, view: View, framing: Framing, ssaa: int = 4) -> np.ndarra
             region[win] = z[win]
             colour[y0:y1 + 1, x0:x1 + 1][win] = mesh.colors[i] * shade[t]
             cover[y0:y1 + 1, x0:x1 + 1][win] = 1.0
-    rgba = np.concatenate([colour, cover[..., None]], axis=2)
-    rgba = rgba.reshape(framing.size, ssaa, framing.size, ssaa, 4).mean(axis=(1, 3))
-    alpha = rgba[..., 3:4]
-    rgb = np.divide(rgba[..., :3], alpha, out=np.zeros_like(rgba[..., :3]), where=alpha > 0)
+    rgb, alpha = _downsample(colour, ssaa), _downsample(cover[..., None], ssaa)
+    rgb = np.divide(rgb, alpha, out=np.zeros_like(rgb), where=alpha > 0)
     return (np.concatenate([rgb, alpha], axis=2) * 255 + 0.5).clip(0, 255).astype(np.uint8)
+
+
+def _downsample(image: np.ndarray, ssaa: int) -> np.ndarray:
+    """(n, n, C) -> (n/ssaa, n/ssaa, C): the mean of each ssaa x ssaa block,
+    gathered into one contiguous axis first (much faster than a two-axis mean)."""
+    s, c = image.shape[0] // ssaa, image.shape[2]
+    return image.reshape(s, ssaa, s, ssaa, c).transpose(0, 2, 1, 3, 4).reshape(s, s, ssaa * ssaa, c).mean(axis=2)

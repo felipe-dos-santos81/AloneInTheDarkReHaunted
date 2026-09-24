@@ -17,7 +17,7 @@ import numpy as np
 
 from .body import Animation, Body
 from .gltf import ARRAY_BUFFER, UNSIGNED_BYTE, GlbBuilder, quaternion
-from .mesh import build_mesh, face_normals
+from .mesh import Mesh, build_mesh, face_normals
 from .pose import ZOOM, Pose, pose_float, rest_states, skin
 
 FLIP = np.diag([1.0, -1.0, -1.0])
@@ -72,14 +72,21 @@ def _locals(body: Body, pose: Pose) -> list[np.ndarray]:
     return out
 
 
+def rest_mesh(body: Body, palette: np.ndarray) -> tuple[Pose, Mesh]:
+    """The rest pose and the mesh drawn in it."""
+    rest = pose_float(body, rest_states(body))
+    return rest, build_mesh(body, skin(body, rest.group_matrices()), palette)
+
+
 def build_original_glb(body: Body, palette: np.ndarray,
-                       animations: list[tuple[str, Animation]] = ()) -> bytes:
-    """`animations` are (name, Animation) pairs whose group count matches the body."""
+                       animations: list[tuple[str, Animation]] = (),
+                       rest: tuple[Pose, Mesh] | None = None) -> bytes:
+    """`animations` are (name, Animation) pairs whose group count matches the
+    body; `rest` is rest_mesh(body, palette) when the caller already has it."""
     for name, anim in animations:
         if anim.num_groups != len(body.groups):
             raise ValueError(f"animation {name} has {anim.num_groups} groups, body has {len(body.groups)}")
-    rest = pose_float(body, rest_states(body))
-    mesh = build_mesh(body, skin(body, rest.group_matrices()), palette)
+    rest, mesh = rest or rest_mesh(body, palette)
     zoomed = zoomed_groups(body, animations)
     g = GlbBuilder()
 
@@ -97,7 +104,7 @@ def build_original_glb(body: Body, palette: np.ndarray,
         g.doc["nodes"][joint_nodes[grp.parent]].setdefault("children", []).append(joint_nodes[gi])
     skin_joints = joint_nodes + [geo_nodes[gi] for gi in zoomed]
     skin_groups = list(range(len(body.groups))) + zoomed  # the group behind each skin joint
-    bind_slot = {gi: skin_joints.index(geo_nodes.get(gi, joint_nodes[gi])) for gi in range(len(body.groups))}
+    bind_slot = {gi: slot for slot, gi in enumerate(skin_groups)}  # a geo joint's later slot wins
 
     # Inverse bind matrices: the rest joint frames are pure translations.
     ibms = [np.linalg.inv(to_gltf_rigid(rest.joints[gi])).T.reshape(16) for gi in skin_groups]  # column-major
@@ -129,10 +136,11 @@ def build_original_glb(body: Body, palette: np.ndarray,
     for name, anim in animations:
         times = key_times(anim)
         poses = [pose_float(body, _frame_states(body, anim, k)) for k in range(len(times))]
+        pose_locals = [_locals(body, p) for p in poses]
         time_acc = g.accessor(np.array(times), "SCALAR", bounds=True)
         channels, samplers = [], []
         for gi in range(len(body.groups)):
-            locals_ = [_locals(body, p)[gi] for p in poses]
+            locals_ = [locs[gi] for locs in pose_locals]
             quats = []
             for m in locals_:
                 q = quaternion(m[:3, :3])

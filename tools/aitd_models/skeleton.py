@@ -36,11 +36,12 @@ def children(body: Body) -> list[list[int]]:
 
 
 def descendants(body: Body, gi: int) -> list[int]:
-    out, stack = [], list(children(body)[gi])
+    kids = children(body)
+    out, stack = [], list(kids[gi])
     while stack:
         c = stack.pop()
         out.append(c)
-        stack.extend(children(body)[c])
+        stack.extend(kids[c])
     return sorted(out)
 
 
