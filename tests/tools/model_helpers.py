@@ -86,3 +86,45 @@ def rest(n=4):
 
 def synthetic_palette_rgb():
     return np.array([(i, 255 - i, i // 2) for i in range(256)], dtype=np.uint8)
+
+
+# ── glTF evaluation (an independent skinning of a written .glb) ─────────────
+
+def gltf_skinned_positions(glb, anim_index=None, key=0):
+    """POSITION of mesh 0 skinned at animation key `key` (rest pose when
+    `anim_index` is None), evaluated from the node graph, the skin and the
+    animation samplers alone -- nothing from aitd_models.pose."""
+    from aitd_models.gltf import trs_matrix
+    doc = glb.doc
+    nodes = [dict(n) for n in doc["nodes"]]
+    if anim_index is not None:
+        anim = doc["animations"][anim_index]
+        for ch in anim["channels"]:
+            values = glb.accessor(anim["samplers"][ch["sampler"]]["output"])
+            nodes[ch["target"]["node"]][ch["target"]["path"]] = [float(v) for v in values[key]]
+    world = {}
+
+    def walk(i, parent):
+        world[i] = parent @ trs_matrix(nodes[i])
+        for c in nodes[i].get("children", []):
+            walk(c, world[i])
+
+    for root in doc["scenes"][doc.get("scene", 0)]["nodes"]:
+        walk(root, np.eye(4))
+    skin = doc["skins"][0]
+    ibm = glb.accessor(skin["inverseBindMatrices"]).reshape(-1, 4, 4).transpose(0, 2, 1)
+    joint = [world[j] @ ibm[k] for k, j in enumerate(skin["joints"])]
+    attrs = doc["meshes"][0]["primitives"][0]["attributes"]
+    pos = glb.accessor(attrs["POSITION"])
+    js = glb.accessor(attrs["JOINTS_0"]).astype(int)[:, 0]
+    return np.array([(joint[j] @ np.array([*p, 1.0]))[:3] for p, j in zip(pos, js)])
+
+
+# ── a synthetic INDARK for export tests ──────────────────────────────────────
+
+def chain_anim_bytes():
+    """Two keyframes on the 4-group chain: a rotation, then translate + zoom."""
+    return anim_bytes([
+        (10, (0, 0, -20), [(0, (0, 0, 0)), (0, (0, 0, 256)), (0, (100, 0, 0)), (0, (0, 0, 0))]),
+        (20, (0, 0, -30), [(0, (0, 0, 0)), (1, (0, -10, 5)), (2, (256, 0, -128)), (0, (0, 64, 0))]),
+    ])
