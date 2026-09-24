@@ -9,9 +9,15 @@ Guidance for anyone (human or agent) changing this repository.
   `ThirdParty/` vendored code (SDL3, bgfx, ImGui, SoLoud, zlib, doctest).
 - `TatouSource/FitdLib/mouse/` — left-button mouse gameplay. Files named in
   "Mouse rules" below as engine-free include only standard headers and are
-  unit-tested in `TatouSource/tests/engine/`.
+  unit-tested in `TatouSource/tests/engine/`. The engine adapter is
+  `mouseWorld.cpp` (frame, intents, public API) with `mouseWorldGeometry.cpp`
+  (rooms, cameras, caches), `mouseWorldResolve.cpp` (what a click means),
+  `mouseWorldPush.cpp`, `mouseWorldAttack.cpp` and `mouseWorldDebug.cpp`,
+  sharing `mouseWorldInternal.h`; the engine includes only `mouseWorld.h`.
 - `tools/` + `tests/tools/` — the Python texture pipeline (`make test-tools`).
 - `docs/` — contracts and checklists (`docs/mouse-gameplay-checklist.md`).
+- `graphify-out/` (any depth) — generated knowledge graph (`/graphify`);
+  git-ignored, never commit it.
 
 ## Commands
 
@@ -20,6 +26,7 @@ make build-fitd          # build the game
 make run data=DIR        # run from a directory holding the original .PAK files
 make test-engine         # C++ unit tests (doctest) for engine-free modules
 make test-tools          # Python texture-tool tests
+make test                # both
 ```
 
 ## Threads
@@ -55,7 +62,18 @@ lock. SDL cursor and window calls belong on the main thread.
      (`mouse::projectPoint` replicates `transformPoint` + the renderer
      divide), never a float render path.
    - Every screen entered from gameplay calls `mouseWorldTakeOver()` first.
-   - SDL cursor calls happen only in `mouseInputEndMainFrame()` (main thread).
+   - A clicked object acts only on touch: the hero leans into it and the
+     engine's own collision opens `FoundObjet`; a found script gets one frame
+     of Action on the touch. The mouse never calls `FoundObjet` itself.
+   - While a script owns the hero (`trackMode != 1`) world clicks resolve to
+     blocked (the HUD still works) and a held button is spent.
+   - SDL cursor calls happen only in `mouseInputEndMainFrame()` (main thread),
+     which also applies ImGui's requested shape while ImGui wants the mouse.
+   - Screens hit-test through the `menuMouseHit*` helpers, which record item
+     clicks for the fullscreen double-click guard; a hand-rolled hit test calls
+     `menuNoteItemClick()`, and a click that ends a wait uses
+     `menuMouseSkipClicked()`.
    - Engine-free files (`mouseTypes.h`, `mouseGate.h`, `mouseGesture.*`,
-     `mousePick.*`, `mouseNav.*`, `mouseHudLayout.h`) include no FitdLib,
-     SDL or ImGui headers; new behaviour in them gets a doctest first.
+     `mousePick.*`, `mousePoly.*`, `mouseNav.*`, `mouseHudLayout.h`) include
+     no FitdLib, SDL or ImGui headers; new behaviour in them gets a doctest
+     first.

@@ -24,7 +24,9 @@ AITD-R (also known as *Alone In The Dark Re-Haunted*) lets you play the original
 
 This repository is a fork of [spacefarergames/AloneInTheDarkReHaunted](https://github.com/spacefarergames/AloneInTheDarkReHaunted) that focuses on *Alone in the Dark 1*. It aims to:
 
-- **Improve game accessibility.**
+- **Improve game accessibility.** The whole game plays with the mouse's left
+  button alone (see [Mouse](#mouse-left-button-only)); keyboard and gamepad
+  play are unchanged.
 - **Provide a native macOS port** (Apple Silicon / arm64). See the [macOS section of BUILDING.md](BUILDING.md#macos-apple-silicon) for build steps.
 
 ### Adding the Original Game Files
@@ -234,9 +236,25 @@ Beginning with Version 2.0, Rehaunted will automatically find and copy over the 
 | Quick Turn Left | **Q** | 180° turn to the left |
 | Quick Turn Right | **E** | 180° turn to the right |
 | Fullscreen Toggle | **F11** or **Alt+Enter** | Toggle fullscreen / windowed mode |
-| Fullscreen Toggle | **Double-click** | Double-click the window to toggle fullscreen |
+| Fullscreen Toggle | **Double-click** | Double-click empty space on the title screen or in a menu (in the world a double-click runs) |
 
 > All keyboard bindings are fully rebindable via the **Controls** option in the in-game system menu, or by editing `aitd_remaster.cfg`.
+
+### Mouse (Left Button Only)
+
+| Action | Mouse | Notes |
+|--------|-------|-------|
+| Walk | **Hold** on the floor | The hero follows the pointer and stops the moment you let go |
+| Run | **Double-click and hold** | The second press's hold runs |
+| Use an object | **Hold** on it | The hero walks to it and steps into it: pickable items open the found screen, scripted objects get their Action |
+| Push | **Hold** on pushable scenery | Pushes while held |
+| Fight | **Click** an enemy | Faces it and swings the weapon in hand |
+| Inventory / Map / Menu | **Click** the icons, top left | Every screen and menu also works by click |
+
+- The cursor shape shows what a click would do; "not allowed" means nothing.
+- The game never locks or confines the cursor to its window.
+- Any key or gamepad input takes the hero back from the mouse.
+- Turn it off with **F1 → Controls → Mouse gameplay** (`controls.mouseGameplay = false`).
 
 ### Gamepad (Default — Xbox Layout)
 
@@ -285,7 +303,8 @@ The *Re-Haunted* fork adds several enhancements on top of the original FITD engi
 | **TTF font rendering** | ✅ Available | Smooth anti-aliased overlay fonts via ImGui (configurable font, size, and style) |
 | **Post-processing** | ✅ Available | Bloom, film grain, SSAO, vignette, SSGI, light probes |
 | **Controller support** | ✅ Available | Xbox, PlayStation, Switch Pro, and other SDL3-compatible gamepads with rebindable controls |
-| **Fullscreen mode** | ✅ Available | Toggle via F11, Alt+Enter, double-click, or system menu; persists in config |
+| **Fullscreen mode** | ✅ Available | Toggle via F11, Alt+Enter, double-click outside gameplay, or system menu; persists in config |
+| **Mouse gameplay** | ✅ Available | Left-button-only play: hold to walk, double-click-and-hold to run, click objects, enemies and HUD icons; never locks the cursor |
 | **In-game maps** | ✅ Available | Interactive mansion and underground maps with real-time position tracking |
 | **Interactive hints** | ✅ Available | Highlights interactable objects in the game world |
 | **Voice-over playback** | ✅ Available | CD voice-over for AITD1 book/letter reading sequences |
@@ -312,7 +331,8 @@ Copy `fitd_remaster.cfg.example` to `aitd_remaster.cfg` alongside the game data 
 | **Post-processing** | `postprocessing.bloom`, `postprocessing.filmGrain`, `postprocessing.ssao`, `postprocessing.vignette`, `postprocessing.ssgi`, `postprocessing.lightProbes` |
 | **Music** | `music.external`, `music.folder` |
 | **Font** | `font.enableTTF`, `font.path`, `font.size`, `font.hideOriginal` |
-| **Controls** | `controls.key.*`, `controls.pad.*` — per-action keyboard scancode and gamepad button bindings |
+| **Controls** | `controls.key.*`, `controls.pad.*` — per-action keyboard scancode and gamepad button bindings; `controls.mouseGameplay` — left-button mouse play (default on) |
+| **Debug** | `debug.mouseNavOverlay` — draw the mouse walk grid and floor pick over the game |
 | **Gameplay** | `gameplay.hints` — interactive hint overlay |
 | **Masks** | `masks.dump`, `masks.load` — HD depth mask dumping and loading |
 | **Sequence Dumping** | `sequences.dump`, `sequences.load` - HD sequence replacements (for AITD2 / AITD 3 only) |
@@ -326,6 +346,7 @@ Copy `fitd_remaster.cfg.example` to `aitd_remaster.cfg` alongside the game data 
 FITD/
 ├── Fitd/                  # Executable entry point (WinMain / main)
 ├── FitdLib/               # Core engine static library (~75 source files)
+│   ├── mouse/             # Left-button mouse gameplay
 │   ├── shaders/           # bgfx shader programs (.sc)
 │   └── embedded/          # Embedded game data (PAK files, textures, etc.)
 ├── ThirdParty/            # Git submodules
@@ -334,6 +355,7 @@ FITD/
 │   ├── soloud.cmake       # SoLoud audio library
 │   ├── imgui/             # Dear ImGui (debug UI, TTF font overlay)
 │   └── zlib/              # Compression (HQR/PAK archives)
+├── tests/engine/          # doctest unit tests (make test-engine)
 ├── tools/                 # Build tools (HDA archive builder, etc.)
 ├── build/                 # Generated build directories
 ├── .github/workflows/     # CI (CMake multi-platform)
@@ -354,7 +376,7 @@ For a deeper dive into the code modules and data flow, see **[ARCHITECTURE.md](A
 
 ## Contributing
 
-Contributions are welcome! Please see **[CONTRIBUTING.md](CONTRIBUTING.md)** for guidelines on setting up a development environment, coding standards, and the pull request workflow.
+Contributions are welcome! Please see **[CONTRIBUTING.md](CONTRIBUTING.md)** for guidelines on setting up a development environment, coding standards, and the pull request workflow. **[AGENTS.md](AGENTS.md)** holds this fork's firm rules (never lock the cursor, keep keyboard play unchanged, the mouse invariants); run `make test` before sending changes.
 
 ---
 

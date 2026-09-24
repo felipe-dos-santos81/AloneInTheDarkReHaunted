@@ -68,7 +68,7 @@ UNPACK_TOOL = $(firstword $(wildcard \
 
 .PHONY: help deps configure build build-fitd build-tools run \
         hda-pack hda-unpack clean distclean rebuild \
-        tools-deps test-tools test-engine \
+        tools-deps test test-tools test-engine \
         export-textures check-textures import-textures hd-install
 
 # ── Environment ──────────────────────────────────────────────────────────────
@@ -124,9 +124,11 @@ tools-deps: ## [STEP 5] Create tools/.venv with the texture tool dependencies
 test-tools: ## Run the texture tool test-suite
 	$(PYTHON) -m pytest tests/tools -q
 
-test-engine: configure ## Build and run the engine unit tests (doctest)
+test-engine: configure ## Build and run the engine unit tests (doctest: engine-free mouse modules, cursor rule)
 	$(CMAKE) --build "$(BUILD_DIR)" --target engine_tests --config "$(BUILD_TYPE)" --parallel "$(JOBS)"
 	cd "$(BUILD_DIR)" && ctest -C "$(BUILD_TYPE)" --output-on-failure -R engine_tests
+
+test: test-engine test-tools ## Run every test suite (engine unit tests, then texture tools)
 
 export-textures: ## [STEP 5] Export original plates, screens and animation jobs (usage: make export-textures [gamedata=DIR] [textures=DIR] [anims=DIR])
 	$(PYTHON) tools/textures.py export --data "$(gamedata)" --out "$(textures)" --anims "$(anims)"

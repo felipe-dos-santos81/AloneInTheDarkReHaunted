@@ -14,7 +14,7 @@ with a one-line note. Build: `make build-fitd`; run: `make run data=DIR`.
 | 5 | Holding still through a camera cut keeps walking without turning | | |
 | 6 | Holding across a doorway and on stairs keeps walking | | |
 | 7 | Hold on a wall or the ceiling walks that way; on the hero shows "not allowed" | | |
-| 8 | Hold on the lamp: the hero walks beside it and the found screen opens; Take works | | |
+| 8 | Hold on the lamp: the hero walks to it and steps into it, and the found screen opens on the touch (as walking into it by keyboard); Take works | | |
 | 9 | Hold on an object with a found script (not pickable): the hero steps into it and its script runs | | |
 | 10 | Found screen: Leave and Take by hover + click | | |
 | 11 | Wardrobe: hold pushes it; release stops; Action is never set (the hero never freezes) | | |
@@ -28,14 +28,14 @@ with a one-line note. Build: `make build-fitd`; run: `make run data=DIR`.
 | 19 | Game over: a click continues | | |
 | 20 | Complete keyboard-only pass of rows 3–19 (no mouse): unchanged from before | | |
 | 21 | Gamepad pass of rows 3–19: unchanged from before | | |
-| 22 | Fullscreen: double-click on empty title/menu space toggles; on a menu item it does not; in the world it does not; F11 and Alt+Enter still toggle | | |
+| 22 | Fullscreen: double-click on empty title/menu space toggles; on a menu item it does not; in the world it does not; a double-click that skips an intro, picture or sequence does not; F11 and Alt+Enter still toggle | | |
 | 23 | F1 → Controls → untick "Mouse gameplay": world clicks do nothing, no icons, double-click in the world toggles fullscreen as before | | |
 | 24 | While holding a walk, drag the pointer out of the window: the cursor leaves freely; releasing outside stops the hero | | |
 | 25 | Alt-Tab away mid-walk: the hero stops; nothing resumes on return until a new press | | |
 | 26 | Resize the window and toggle fullscreen: clicks still land where the pointer is | | |
 | 27 | Cursor shapes: arrow (walk), hand (object, icons), crosshair (enemy), four-way (pushable), not-allowed (nothing possible) | | |
 | 28 | After mouse use the cursor never auto-hides; after keyboard play it hides after 2 s idle | | |
-| 29 | Keyboard push probe: push the attic wardrobe with the keyboard and watch the console; if the hero's LIFE switches to the push animation by itself (anim 5 while sliding), set `kForcePushAnim = false` in `TatouSource/FitdLib/mouse/mouseWorld.cpp`; if it re-queues a walk animation other than 254 every frame, set `kPlayerLifeForwardAnim` to that value. Then re-check row 11 | | |
+| 29 | Keyboard push probe: push the attic wardrobe with the keyboard and watch the console; if the hero's LIFE switches to the push animation by itself (anim 5 while sliding), set `kForcePushAnim = false` in `TatouSource/FitdLib/mouse/mouseWorldPush.cpp`; if it re-queues a walk animation other than 254 every frame, set `kPlayerLifeForwardAnim` to that value. Then re-check row 11 | | |
 | 30 | From the in-game system menu, open Save/Load and Controls with a mouse click: the click that opened them does not also select an entry | | |
 | 31 | Hover an enemy (crosshair), then let a cutscene start or untick "Mouse gameplay": the cursor returns to the normal arrow | | |
 | 32 | While walking by mouse, a scripted turn (e.g. a fight stance) does not spin the hero twice as fast as with the keyboard | | |
@@ -45,5 +45,11 @@ with a one-line note. Build: `make build-fitd`; run: `make run data=DIR`.
 | 36 | While holding a walk, trigger a picture or message screen (e.g. read a note by walking into it): after closing it the hero does not resume the old walk until a new press | | |
 | 37 | Play by keyboard, stay idle 2 s (cursor hides), then walk into an item: the found screen shows the mouse cursor and Take/Leave work by mouse | | |
 | 38 | Click the hero's own body: the cursor shows "not allowed" and the hero does not move | | |
+| 39 | Hold on an object whose nearest side is off screen or cut off by furniture: the hero walks to a side it can reach, preferring one you can see | | |
+| 40 | Hold on an item the hero cannot touch (e.g. across a table): the hero gives up without taking it, as the keyboard would | | |
+| 41 | While a script walks the hero with the HUD shown, the cursor shows "not allowed" over the world; a button held through it does not start a walk when control returns until a new press | | |
+| 42 | F1 dialog: the cursor is the normal arrow over it, and ImGui's own shapes (text caret, resize arrows) appear where it uses them | | |
+| 43 | Reopen the found screen, Controls, the save picker and the startup menus with the pointer resting on an entry: the selection stays put until the pointer moves | | |
+| 44 | Click floor spots in the corners of L-shaped rooms: the hero walks to the spot clicked, not just toward it | | |
 
 Signed off by: ______  Date: ______  Build: `git rev-parse --short HEAD` = ______
