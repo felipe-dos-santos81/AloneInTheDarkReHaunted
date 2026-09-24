@@ -42,6 +42,8 @@ textures_ai ?= data/textures-ai
 dest        ?= Assets/backgrounds_hd
 anims       ?= $(dest)
 dark        ?= mirror
+models      ?= data/models
+bodies      ?=
 
 TEXTURE_IMPORT = $(PYTHON) tools/textures.py import --src "$(textures_ai)" --dest "$(dest)" \
                  --originals "$(textures)" --dark "$(dark)"
@@ -61,6 +63,7 @@ require = @test -x "$(1)" || { echo "error: $(2) not found - $(3)"; exit 1; }
 .PHONY: help deps tools-deps configure build build-fitd build-tools run \
         test test-engine test-tools \
         export-textures check-textures import-textures hd-install hda-pack hda-unpack \
+        export-models \
         clean distclean rebuild
 
 help: ## List the targets
@@ -104,7 +107,7 @@ test-engine: configure ## Engine unit tests (doctest: engine-free mouse modules,
 	$(CMAKE_BUILD) --target engine_tests
 	cd "$(BUILD_DIR)" && ctest -C "$(BUILD_TYPE)" --output-on-failure -R engine_tests
 
-test-tools: ## Texture tool tests (pytest)
+test-tools: ## Texture and model tool tests (pytest)
 	$(PYTHON) -m pytest tests/tools -q
 
 ##@ HD backgrounds
@@ -134,6 +137,11 @@ hda-pack: build-tools ## Pack a folder into an .hda archive [src=DIR out=FILE]
 hda-unpack: build-tools ## Extract an .hda archive [archive=FILE out=DIR]
 	$(call require,$(UNPACK_TOOL),unpack_hda_archive,run 'make build-tools')
 	"$(UNPACK_TOOL)" "$(archive)" "$(out)"
+
+##@ HD character models
+
+export-models: ## Export animated bodies for the model generator [gamedata=DIR models=DIR bodies=KEY,...]
+	$(PYTHON) tools/models.py export --data "$(gamedata)" --out "$(models)"$(if $(bodies), --bodies "$(bodies)")
 
 ##@ Clean
 

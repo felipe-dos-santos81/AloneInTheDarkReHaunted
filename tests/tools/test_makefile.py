@@ -47,7 +47,19 @@ def test_hd_install_packs_assets_into_the_source_tree():
     assert '"Assets/backgrounds_hd" "TatouSource/backgrounds_hd.hda"' in out
 
 
+def test_export_models_target():
+    out = make_n("export-models", "gamedata=/g", "models=/m")
+    assert 'tools/models.py export --data "/g" --out "/m"' in out
+    assert "--bodies" not in out
+
+
+def test_export_models_defaults_and_filter():
+    assert '--data "data/aitd1" --out "data/models"' in make_n("export-models")
+    assert '--bodies "LISTBODY_011,LISTBOD2_011"' in make_n("export-models", "bodies=LISTBODY_011,LISTBOD2_011")
+
+
 def test_help_lists_the_texture_targets():
     out = make_run("help")
-    for target in ("export-textures", "check-textures", "import-textures", "hd-install", "tools-deps", "test-tools"):
+    for target in ("export-textures", "check-textures", "import-textures", "hd-install", "tools-deps", "test-tools",
+                   "export-models"):
         assert target in out
