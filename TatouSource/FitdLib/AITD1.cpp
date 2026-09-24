@@ -283,36 +283,45 @@ int ChoosePerso(void)
     int choice = 0;
     int firsttime = 1;
     int choiceMade = 0;
+    bool usingHDBackground = false;
 
     // Notify TTF that we're entering character selection
     notifyTTFMenuStateChanged(true, false);
 
-    // Try HD replacement for character selection background (only in HD mode)
-    HDBackgroundInfo* hdBg = g_remasterConfig.graphics.enableHDBackgrounds ? loadHDBackground("ITD_RESS", 10) : nullptr;
-    if (hdBg)
-    {
-        updateBackgroundTextureHD(hdBg->data, hdBg->width, hdBg->height, hdBg->channels);
-        if (hdBg->isAnimated)
-            setCurrentAnimatedHDBackground(hdBg);
-        else
-            freeHDBackground(hdBg);
-    }
-
-    // Store whether we're using HD background for this screen
-    bool usingHDBackground = g_currentBackgroundIsHD;
-
-    uiLayer.fill(0);
-    InitCopyBox(aux, logicalScreen);
-
-    g_portraitOverlayChoice = choice;
-
-    // Load the character-select PAK once and snapshot a clean copy in aux2.
-    // Both are used many times by the inner loop without changing.
-    LoadPak("ITD_RESS", 10, aux);
-    FastCopyScreen(aux, aux2);
-
     while (choiceMade == 0)
     {
+        // Set the screen up on every pass: the story page, which returns here
+        // on its close button, replaces the HD background, aux, the UI layer
+        // and the portrait overlay.
+
+        // Try HD replacement for character selection background (only in HD mode)
+        HDBackgroundInfo* hdBg = g_remasterConfig.graphics.enableHDBackgrounds ? loadHDBackground("ITD_RESS", 10) : nullptr;
+        if (hdBg)
+        {
+            updateBackgroundTextureHD(hdBg->data, hdBg->width, hdBg->height, hdBg->channels);
+            if (hdBg->isAnimated)
+                setCurrentAnimatedHDBackground(hdBg);
+            else
+                freeHDBackground(hdBg);
+        }
+        else if (g_currentBackgroundIsHD)
+        {
+            recreateBackgroundTexture(320, 200);
+        }
+
+        // Store whether we're using HD background for this screen
+        usingHDBackground = g_currentBackgroundIsHD;
+
+        uiLayer.fill(0);
+        InitCopyBox(aux, logicalScreen);
+
+        g_portraitOverlayChoice = choice;
+
+        // Load the character-select PAK and snapshot a clean copy in aux2,
+        // which the inner loop redraws from many times.
+        LoadPak("ITD_RESS", 10, aux);
+        FastCopyScreen(aux, aux2);
+
         process_events();
         osystem_drawBackground();
 
