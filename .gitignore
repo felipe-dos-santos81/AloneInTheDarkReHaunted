@@ -14,3 +14,15 @@ TatouSource/backgrounds_hd.hda
 TatouSource/build/**/Resources/backgrounds_hd.hda
 # graphify knowledge-graph output, at any depth (regenerate with /graphify)
 graphify-out/
+# Generated in the tracked build trees by the engine unit tests and the mouse
+# sources, which the committed trees predate (make test-engine, FitdLib/mouse/)
+TatouSource/build/*/tests/
+TatouSource/build/*/Testing/
+TatouSource/build/*/CTestTestfile.cmake
+TatouSource/build/*/CMakeFiles/VerifyGlobs.cmake
+TatouSource/build/*/CMakeFiles/cmake.verify_globs
+TatouSource/build/*/FitdLib/CMakeFiles/FitdLib.dir/mouse/
+# Runtime log the game writes next to its data
+memory_debug.log
+# Agent worktrees (superpowers:using-git-worktrees)
+.claude/worktrees/
