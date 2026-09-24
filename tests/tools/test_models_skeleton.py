@@ -2,7 +2,7 @@ from aitd_models.body import parse_body
 from aitd_models.skeleton import children, descendants, owners, skeleton_hash, validate
 from model_helpers import CHAIN_GROUPS, CHAIN_VERTICES, body_bytes
 
-CHAIN_HASH = "22a03bb7f51b6bf4"
+CHAIN_HASH = "22a03bb7f51b6bf4"  # also pinned in TatouSource/tests/engine/test_body_skeleton.cpp
 
 
 def chain(**kwargs):

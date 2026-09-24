@@ -13,9 +13,14 @@ set(MOUSE_CORE_SOURCES
     "${MOUSE_DIR}/mouseNav.cpp"
 )
 
+# Engine-free model sources compiled into the tests.
+set(MODELS_CORE_SOURCES
+    "${MODELS_DIR}/bodyPose.cpp"
+)
+
 file(GLOB ENGINE_TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cpp")
 
-add_executable(engine_tests ${ENGINE_TEST_SOURCES} ${MOUSE_CORE_SOURCES})
+add_executable(engine_tests ${ENGINE_TEST_SOURCES} ${MOUSE_CORE_SOURCES} ${MODELS_CORE_SOURCES})
 target_include_directories(engine_tests PRIVATE "${THIRD_PARTY}/doctest" "${MOUSE_DIR}" "${MODELS_DIR}")
 target_compile_definitions(engine_tests PRIVATE FITD_SOURCE_DIR="${CMAKE_SOURCE_DIR}/FitdLib")
 target_compile_definitions(engine_tests PRIVATE FITD_EXE_DIR="${CMAKE_SOURCE_DIR}/Fitd")
