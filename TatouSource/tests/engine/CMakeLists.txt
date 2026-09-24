@@ -16,6 +16,7 @@ set(MOUSE_CORE_SOURCES
 # Engine-free model sources compiled into the tests.
 set(MODELS_CORE_SOURCES
     "${MODELS_DIR}/bodyPose.cpp"
+    "${MODELS_DIR}/renderCamera.cpp"
 )
 
 file(GLOB ENGINE_TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cpp")
