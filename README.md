@@ -57,7 +57,7 @@ The original game files are **not** included, so you still need to supply them. 
    make run data=data/aitd1
    ```
 
-The game loads its files from the folder you start it in and writes `aitd_remaster.cfg` there too, so that folder must be writable.
+The game loads its files from the folder you start it in and writes `aitd_remaster.cfg` there too, so that folder must be writable. `make help` lists every other target: tests, HD assets and cleanup.
 
 ### HD Textures: Export, Upscale, Import
 
@@ -139,13 +139,13 @@ https://www.youtube.com/watch?v=0yaWv7vF3bA
 
 ```bash
 # 1. Clone with submodules
-git clone --recurse-submodules https://github.com/spacefarergames/AloneInTheDarkReHaunted.git
-cd FITD
+git clone --recurse-submodules https://github.com/felipe-dos-santos81/AloneInTheDarkReHaunted.git
+cd AloneInTheDarkReHaunted\TatouSource\build
 
 # 2. Generate the VS solution
-build\vs2022.bat          # Visual Studio 2022
+vs2022.bat          # Visual Studio 2022
 # — or —
-build\vs2026.bat          # Visual Studio 2026
+vs2026.bat          # Visual Studio 2026
 ```
 
 In Visual Studio:
@@ -159,19 +159,11 @@ In Visual Studio:
 ## Quick Start (Linux)
 
 ```bash
-# Install dependencies (Ubuntu/Debian)
-sudo apt install -y build-essential cmake pkg-config libx11-dev libxext-dev \
-    libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl-dev \
-    libglu1-mesa-dev libasound2-dev libpulse-dev libwayland-dev \
-    libxkbcommon-dev libpipewire-0.3-dev
-
-# Build
-mkdir -p build/linux && cd build/linux
-cmake ../.. -DCMAKE_BUILD_TYPE=Release
-cmake --build . -j$(nproc)
-
-# Run (from game data directory)
-cd Fitd && ./Tatou
+git clone --recurse-submodules https://github.com/felipe-dos-santos81/AloneInTheDarkReHaunted.git
+cd AloneInTheDarkReHaunted
+make deps                          # build dependencies (apt, dnf or pacman)
+make build-fitd                    # builds into TatouSource/build/Release
+make run data=/path/to/game/data   # run from the folder holding the .PAK files
 ```
 
 For full multi-platform build instructions see **[BUILDING.md](BUILDING.md)**.

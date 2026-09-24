@@ -22,12 +22,19 @@ Guidance for anyone (human or agent) changing this repository.
 ## Commands
 
 ```bash
+make help                # every target, grouped, with its arguments
 make build-fitd          # build the game
 make run data=DIR        # run from a directory holding the original .PAK files
 make test-engine         # C++ unit tests (doctest) for engine-free modules
 make test-tools          # Python texture-tool tests
 make test                # both
 ```
+
+## Git
+
+`TatouSource/build/` holds CMake build trees that upstream tracks, and every
+build rewrites some of their files; `Assets/` art also changes locally. Stage
+files by name — never `git add -A` or `git commit -a`.
 
 ## Threads
 
