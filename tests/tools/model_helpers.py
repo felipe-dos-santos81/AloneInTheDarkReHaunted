@@ -143,7 +143,8 @@ def write_model_data_dir(d):
     LISTBOD2 0 chain            -> alias of LISTBODY_000
              1 chain, recoloured -> canonical LISTBOD2_001, skeleton sibling
     LISTANIM / LISTANI2: 0 chain animation (4 groups), 1 a 3-group
-             animation, 2 a wrong-size entry (warning only)."""
+             animation, 2 a wrong-size entry, 3 an entry with no frames
+             (both warnings only)."""
     from helpers import pak_bytes, synthetic_palette
     d.mkdir(parents=True, exist_ok=True)
     entries = [b"filler"] * 4
@@ -157,7 +158,7 @@ def write_model_data_dir(d):
     (d / "LISTBODY.PAK").write_bytes(pak_bytes([chain, flat, chain, chain[:40], bad_pivot, points_only]))
     (d / "LISTBOD2.PAK").write_bytes(pak_bytes([chain, recoloured]))
     three = anim_bytes([(5, (0, 0, 0), [(0, (0, 0, 0))] * 3)])
-    anims = pak_bytes([chain_anim_bytes(), three, b"\x01\x00\x04\x00junk"])
+    anims = pak_bytes([chain_anim_bytes(), three, b"\x01\x00\x04\x00junk", struct.pack("<HH", 0, 4)])
     (d / "LISTANIM.PAK").write_bytes(anims)
     (d / "LISTANI2.PAK").write_bytes(anims)
     return d

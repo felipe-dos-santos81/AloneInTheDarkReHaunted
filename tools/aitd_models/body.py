@@ -138,6 +138,8 @@ def parse_anim(raw: bytes) -> Animation:
     plain = 4 + nf * (8 + ng * 8)
     if len(raw) != plain:
         raise BodyError(f"anim: size {len(raw)} != {plain} (only the AITD1 layout is supported)")
+    if nf == 0:
+        raise BodyError("anim: no frames")  # nothing to pose, and the engine would index frame 0
     frames = []
     for _ in range(nf):
         ts, sx, sy, sz = r.take("Hhhh")

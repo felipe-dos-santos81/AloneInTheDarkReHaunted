@@ -37,6 +37,7 @@ def test_skips_broken_entries_and_keeps_going(tmp_path):
     assert [s.split(":")[0] for s in result.skipped] == ["LISTBODY entry 3", "LISTBODY entry 4"]
     assert "pivot vertex 5 is not in parent group 0" in result.skipped[1]
     assert any(line.startswith("warning: LISTANIM entry 2") for line in lines)
+    assert any(line.startswith("warning: LISTANIM entry 3: anim: no frames") for line in lines)
 
 
 def test_writes_the_folder_contents(tmp_path):

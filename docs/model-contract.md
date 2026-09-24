@@ -14,7 +14,7 @@ folder (`data/models-ai/`). Contract version: **1**.
 ```
 data/models/
   manifest.json
-  bodies/<KEY>/                     one folder per canonical body (76 for AITD1)
+  bodies/<KEY>/                     one folder per drawable canonical body (75 for AITD1)
     original.glb                    the original body: skeleton, rigid skin, preview animations
     reference/front.png             1024x1024 RGBA, transparent background
     reference/three_quarter.png

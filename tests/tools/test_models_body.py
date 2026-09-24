@@ -63,3 +63,8 @@ def test_rejects_the_aitd2_animation_layout():
     raw = anim_bytes([(10, (0, 0, 0), [(0, (1, 2, 3))])]) + b"\0" * 8
     with pytest.raises(BodyError, match="AITD1 layout"):
         parse_anim(raw)
+
+
+def test_rejects_an_animation_without_frames():
+    with pytest.raises(BodyError, match="no frames"):
+        parse_anim(anim_bytes([]))
