@@ -32,9 +32,9 @@ make test                # both
 
 ## Git
 
-`TatouSource/build/` holds CMake build trees that upstream tracks, and every
-build rewrites some of their files; `Assets/` art also changes locally. Stage
-files by name — never `git add -A` or `git commit -a`.
+`TatouSource/build/` holds the CMake build trees and is ignored (only the
+`vs20xx.bat` scripts there are tracked). `Assets/` art changes locally, so
+stage files by name — never `git add -A` or `git commit -a`.
 
 ## Threads
 

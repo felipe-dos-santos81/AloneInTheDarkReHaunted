@@ -1,9 +1,7 @@
-TatouSource/build/vs2026/ThirdParty/bgfx.cmake/cmake/bgfx/Debug/glslang.lib
-TatouSource/build/vs2026/ThirdParty/bgfx.cmake/cmake/bgfx/Debug/shaderc.pdb
-TatouSource/build/vs2026/ThirdParty/bgfx.cmake/cmake/bgfx/Debug/spirv-opt.lib
-TatouSource/build/vs2026/ThirdParty/bgfx.cmake/cmake/bgfx/Release/spirv-opt.lib
-TatouSource/build/vs2026/ThirdParty/bgfx.cmake/cmake/bgfx/Release/spirv-opt.lib
-TatouSource/build/vs2026/ThirdParty/bgfx.cmake/cmake/bgfx/shaderc.dir/Debug/shaderc.ilk
+# CMake build trees (make configure, build\vs20xx.bat); only the VS scripts are source
+TatouSource/build/*
+!TatouSource/build/vs2022.bat
+!TatouSource/build/vs2026.bat
 docs/superpowers/
 /data/
 .DS_Store
@@ -11,17 +9,8 @@ tools/.venv/
 __pycache__/
 .pytest_cache/
 TatouSource/backgrounds_hd.hda
-TatouSource/build/**/Resources/backgrounds_hd.hda
 # graphify knowledge-graph output, at any depth (regenerate with /graphify)
 graphify-out/
-# Generated in the tracked build trees by the engine unit tests and the mouse
-# sources, which the committed trees predate (make test-engine, FitdLib/mouse/)
-TatouSource/build/*/tests/
-TatouSource/build/*/Testing/
-TatouSource/build/*/CTestTestfile.cmake
-TatouSource/build/*/CMakeFiles/VerifyGlobs.cmake
-TatouSource/build/*/CMakeFiles/cmake.verify_globs
-TatouSource/build/*/FitdLib/CMakeFiles/FitdLib.dir/mouse/
 # Runtime log the game writes next to its data
 memory_debug.log
 # Agent worktrees (superpowers:using-git-worktrees)
