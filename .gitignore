@@ -12,3 +12,5 @@ __pycache__/
 .pytest_cache/
 TatouSource/backgrounds_hd.hda
 TatouSource/build/**/Resources/backgrounds_hd.hda
+# graphify knowledge-graph output, at any depth (regenerate with /graphify)
+graphify-out/
