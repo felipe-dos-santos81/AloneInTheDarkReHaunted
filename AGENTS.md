@@ -14,7 +14,9 @@ Guidance for anyone (human or agent) changing this repository.
   (rooms, cameras, caches), `mouseWorldResolve.cpp` (what a click means),
   `mouseWorldPush.cpp`, `mouseWorldAttack.cpp` and `mouseWorldDebug.cpp`,
   sharing `mouseWorldInternal.h`; the engine includes only `mouseWorld.h`.
-- `tools/` + `tests/tools/` — the Python texture pipeline (`make test-tools`).
+- `tools/` + `tests/tools/` — the Python texture pipeline and the HD model
+  export (`tools/aitd_models/`, `make export-models`; contract in
+  `docs/model-contract.md`); `make test-tools` runs both suites.
 - `docs/` — contracts and checklists (`docs/mouse-gameplay-checklist.md`).
 - `graphify-out/` (any depth) — generated knowledge graph (`/graphify`);
   git-ignored, never commit it.
