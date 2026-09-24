@@ -128,3 +128,36 @@ def chain_anim_bytes():
         (10, (0, 0, -20), [(0, (0, 0, 0)), (0, (0, 0, 256)), (0, (100, 0, 0)), (0, (0, 0, 0))]),
         (20, (0, 0, -30), [(0, (0, 0, 0)), (1, (0, -10, 5)), (2, (256, 0, -128)), (0, (0, 64, 0))]),
     ])
+
+
+def write_model_data_dir(d):
+    """An INDARK holding ITD_RESS (palette at entry 3) and the body and
+    animation PAKs the model exporter reads:
+
+    LISTBODY 0 chain            -> canonical LISTBODY_000
+             1 not animated     -> ignored
+             2 chain again      -> alias of LISTBODY_000
+             3 truncated        -> skipped
+             4 pivot outside parent group -> skipped
+             5 points only      -> kind "skip", no folder
+    LISTBOD2 0 chain            -> alias of LISTBODY_000
+             1 chain, recoloured -> canonical LISTBOD2_001, skeleton sibling
+    LISTANIM / LISTANI2: 0 chain animation (4 groups), 1 a 3-group
+             animation, 2 a wrong-size entry (warning only)."""
+    from helpers import pak_bytes, synthetic_palette
+    d.mkdir(parents=True, exist_ok=True)
+    entries = [b"filler"] * 4
+    entries[3] = synthetic_palette()
+    (d / "ITD_RESS.PAK").write_bytes(pak_bytes(entries))
+    chain = body_bytes()
+    flat = body_bytes(flags=1, vertices=[(0, 0, 0), (10, 0, 0), (0, 10, 0)], prims=[(1, 0, 5, [0, 1, 2], 0)])
+    bad_pivot = body_bytes(groups=[(0, 3, 0, -1, 0), (3, 2, 5, 0, 1), (5, 2, 4, 1, 2), (7, 2, 2, 0, 3)])
+    points_only = body_bytes(prims=[(2, 0, 60, [0], 0), (7, 0, 61, [3], 0)])
+    recoloured = body_bytes(prims=[(t, m, c + 1, p, s) for t, m, c, p, s in CHAIN_PRIMS])
+    (d / "LISTBODY.PAK").write_bytes(pak_bytes([chain, flat, chain, chain[:40], bad_pivot, points_only]))
+    (d / "LISTBOD2.PAK").write_bytes(pak_bytes([chain, recoloured]))
+    three = anim_bytes([(5, (0, 0, 0), [(0, (0, 0, 0))] * 3)])
+    anims = pak_bytes([chain_anim_bytes(), three, b"\x01\x00\x04\x00junk"])
+    (d / "LISTANIM.PAK").write_bytes(anims)
+    (d / "LISTANI2.PAK").write_bytes(anims)
+    return d
