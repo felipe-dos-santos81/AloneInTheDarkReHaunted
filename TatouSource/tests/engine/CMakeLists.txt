@@ -1,7 +1,9 @@
-# Unit tests for the engine-free mouse modules (FitdLib/mouse). These sources
-# include only standard headers, so the test binary links neither FitdLib nor
-# bgfx/SDL. Engine-coupled behaviour is covered by docs/mouse-gameplay-checklist.md.
+# Unit tests for the engine-free modules: mouse gameplay (FitdLib/mouse) and
+# the HD character model math (FitdLib/models). These sources include only
+# standard headers, so the test binary links neither FitdLib nor bgfx/SDL.
+# Engine-coupled mouse behaviour is covered by docs/mouse-gameplay-checklist.md.
 set(MOUSE_DIR "${CMAKE_SOURCE_DIR}/FitdLib/mouse")
+set(MODELS_DIR "${CMAKE_SOURCE_DIR}/FitdLib/models")
 
 # Engine-free mouse sources compiled into the tests.
 set(MOUSE_CORE_SOURCES
@@ -14,7 +16,7 @@ set(MOUSE_CORE_SOURCES
 file(GLOB ENGINE_TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cpp")
 
 add_executable(engine_tests ${ENGINE_TEST_SOURCES} ${MOUSE_CORE_SOURCES})
-target_include_directories(engine_tests PRIVATE "${THIRD_PARTY}/doctest" "${MOUSE_DIR}")
+target_include_directories(engine_tests PRIVATE "${THIRD_PARTY}/doctest" "${MOUSE_DIR}" "${MODELS_DIR}")
 target_compile_definitions(engine_tests PRIVATE FITD_SOURCE_DIR="${CMAKE_SOURCE_DIR}/FitdLib")
 target_compile_definitions(engine_tests PRIVATE FITD_EXE_DIR="${CMAKE_SOURCE_DIR}/Fitd")
 set_target_properties(engine_tests PROPERTIES
