@@ -38,6 +38,8 @@ bool validateSkeleton(const PoseBody& body, std::string* why)
     const int nv = (int)body.verts.size();
     if (n < 1 || n > kMaxPoseGroups)
         return fail(why, std::to_string(n) + " groups (must be 1.." + std::to_string(kMaxPoseGroups) + ")");
+    if (nv == 0)
+        return fail(why, "body has no vertices");
     std::vector<uint16_t> sorted = body.order;
     std::sort(sorted.begin(), sorted.end());
     for (int i = 0; i < n; ++i)
@@ -67,6 +69,10 @@ bool validateSkeleton(const PoseBody& body, std::string* why)
     }
     if (std::count(owner.begin(), owner.end(), -1))
         return fail(why, "group vertex ranges do not cover every vertex exactly once");
+    // The root pivot pass adds vertex 0 to every root vertex; only a root
+    // vertex stays at the origin under rotate and zoom, as poseGroups assumes.
+    if (owner[0] != 0)
+        return fail(why, "vertex 0 is not in the root group");
     for (int gi = 1; gi < n; ++gi)
     {
         const PoseGroup& g = body.groups[gi];

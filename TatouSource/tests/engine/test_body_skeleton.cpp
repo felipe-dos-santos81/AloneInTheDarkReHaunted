@@ -41,6 +41,17 @@ TEST_CASE("validateSkeleton names each broken invariant")
         { "is not in parent group", [](PoseBody& b) { b.groups[3].pivot = 3; } },
         { "root pivot", [](PoseBody& b) { b.verts[0] = { 1, 0, 0 }; } },
         { "processed before one of its descendants", [](PoseBody& b) { b.order = { 1, 2, 3, 0 }; } },
+        // The root pivot pass adds vertex 0 to every root vertex: it must be a root vertex.
+        { "vertex 0 is not in the root group", [](PoseBody& b) {
+             b.verts = { { 0, 0, 0 }, { 10, -50, 0 }, { 0, -100, 0 }, { 5, -20, 3 } };
+             b.groups = { { 1, 2, 0, -1, 0 }, { 0, 1, 2, 0, 1 }, { 3, 1, 2, 0, 2 } };
+             b.order = { 1, 2, 0 };
+         } },
+        { "body has no vertices", [](PoseBody& b) {
+             b.verts.clear();
+             b.groups = { { 0, 0, 0, -1, 0 } };
+             b.order = { 0 };
+         } },
     };
     for (const Case& c : cases)
     {

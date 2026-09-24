@@ -55,6 +55,8 @@ def validate(body: Body) -> list[str]:
     groups, nv = body.groups, len(body.vertices)
     if not 1 <= len(groups) <= MAX_GROUPS:
         return [f"{len(groups)} groups (must be 1..{MAX_GROUPS})"]
+    if not nv:
+        return ["body has no vertices"]
     if sorted(body.order) != list(range(len(groups))):
         problems.append("group order is not a permutation of the groups")
     coverage = [0] * nv
@@ -75,6 +77,10 @@ def validate(body: Body) -> list[str]:
     if problems:
         return problems
     owner = owners(body)
+    if owner[0] != 0:
+        # The root pivot pass adds vertex 0 to every root vertex; only a root
+        # vertex stays at the origin under rotate and zoom, as pose_float assumes.
+        problems.append("vertex 0 is not in the root group")
     for gi, g in enumerate(groups):
         if not 0 <= g.pivot < nv:
             problems.append(f"group {gi}: pivot {g.pivot} out of range")

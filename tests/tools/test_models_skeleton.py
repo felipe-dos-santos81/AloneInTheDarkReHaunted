@@ -37,6 +37,15 @@ def test_reports_each_broken_invariant():
     assert "root pivot is not vertex 0 at the origin" in validate(chain(vertices=moved_root))
 
 
+def test_rejects_vertex_zero_outside_the_root_and_a_body_without_vertices():
+    # The engine's root pivot pass adds vertex 0 to every root vertex; the
+    # float pose assumes it stays at the origin, which only a root vertex does.
+    stray = chain(vertices=[(0, 0, 0), (10, -50, 0), (0, -100, 0), (5, -20, 3)],
+                  groups=[(1, 2, 0, -1, 0), (0, 1, 2, 0, 1), (3, 1, 2, 0, 2)], order=[1, 2, 0], prims=[])
+    assert validate(stray) == ["vertex 0 is not in the root group"]
+    empty = chain(vertices=[], groups=[(0, 0, 0, -1, 0)], order=[0], prims=[])
+    assert validate(empty) == ["body has no vertices"]
+
 def test_rejects_more_than_32_groups():
     verts = [(0, 0, 0)] * 33
     groups = [(0, 1, 0, -1, 0)] + [(i, 1, 0, 0, i) for i in range(1, 33)]
