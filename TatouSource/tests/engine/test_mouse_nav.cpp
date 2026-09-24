@@ -1,3 +1,8 @@
+///////////////////////////////////////////////////////////////////////////////
+// Alone In The Dark Re-Haunted
+// Engine unit tests: walk grid, ring searches and steering.
+///////////////////////////////////////////////////////////////////////////////
+
 #include "doctest.h"
 #include "mouseNav.h"
 
@@ -110,6 +115,36 @@ TEST_CASE("approachCell stands on the side the hero comes from")
     CHECK(fromEast->x > 500);
 }
 
+TEST_CASE("approachCell honours accept, on the target itself and around it")
+{
+    auto grid = buildGrid({ kRoom }, {}, kHero);
+    REQUIRE(grid);
+    // A walkable target is its own approach unless accept refuses it.
+    CHECK(approachCell(*grid, XZ{ 500, 300 }, XZ{ 0, 300 }) == XZ{ 500, 300 });
+    auto west = approachCell(*grid, XZ{ 500, 300 }, XZ{ 0, 300 }, [](XZ c) { return c.x < 450; });
+    REQUIRE(west);
+    CHECK(west->x < 450);
+    CHECK_FALSE(approachCell(*grid, XZ{ 500, 300 }, XZ{ 0, 300 }, [](XZ) { return false; }));
+}
+
+TEST_CASE("reachFrom marks the cells findPath can reach, never through a cut corner")
+{
+    // Two blocks leave the north-east corner joined to the rest only diagonally.
+    Box south{ 700, 1000, -800, 0, 0, 350 };
+    Box west{ 0, 650, -800, 0, 350, 600 };
+    auto grid = buildGrid({ kRoom }, { south, west }, kHero);
+    REQUIRE(grid);
+    auto reach = reachFrom(*grid, XZ{ 100, 100 });
+    REQUIRE(reach);
+    CHECK(reach->contains(XZ{ 100, 100 }));
+    CHECK(reach->contains(XZ{ 500, 100 }));
+    CHECK_FALSE(reach->contains(XZ{ 900, 500 })); // walkable, but only via a blocked corner
+    CHECK_FALSE(reach->contains(XZ{ 5000, 5000 })); // off the grid
+    CHECK(grid->isWalkable(900, 500));
+    CHECK_FALSE(findPath(*grid, XZ{ 100, 100 }, XZ{ 900, 500 }));
+    CHECK_FALSE(reachFrom(*grid, XZ{ 900, 200 })); // the start itself is blocked
+}
+
 TEST_CASE("findPath routes around a wall and string-pulls to few waypoints")
 {
     Box wall{ 450, 550, -800, 0, 0, 450 }; // wall from the south edge, gap at the north
@@ -187,13 +222,13 @@ TEST_CASE("decide walks, then reports arrival within the arrival distance in the
     NavIntent in = walkTo(XZ{ 900, 500 }, 2);
     in.run = true;
 
-    NavDecision far = decide(in, HeroPose{ 2, XZ{ 100, 100 }, 0 }, env, 0, true);
+    NavDecision far = decide(in, HeroPose{ 2, XZ{ 100, 100 }, 0 }, env, 0);
     CHECK(far.advance);
     CHECK(far.run);
     CHECK(far.joyd == (1 | 4));
     CHECK(far.target == XZ{ 900, 500 });
 
-    NavDecision near = decide(in, HeroPose{ 2, XZ{ 800, 450 }, 0 }, env, 10, true);
+    NavDecision near = decide(in, HeroPose{ 2, XZ{ 800, 450 }, 0 }, env, 10);
     CHECK(near.arrived);
     CHECK_FALSE(near.advance);
 }
@@ -203,7 +238,7 @@ TEST_CASE("decide aims a cross-room destination at the room link and never arriv
     auto grid = buildGrid({ kRoom }, {}, kHero);
     NavEnv env = envWith(&*grid);
     NavIntent in = walkTo(XZ{ 5000, 5000 }, 7);
-    NavDecision d = decide(in, HeroPose{ 2, XZ{ 4900, 4900 }, 0 }, env, 0, true);
+    NavDecision d = decide(in, HeroPose{ 2, XZ{ 4900, 4900 }, 0 }, env, 0);
     CHECK(d.target == XZ{ 5000, 5000 });
     CHECK(d.advance);
     CHECK_FALSE(d.arrived);
@@ -213,7 +248,7 @@ TEST_CASE("decide without a grid, or without a path, steers straight at the dest
 {
     NavEnv env = envWith(nullptr);
     NavIntent in = walkTo(XZ{ 3000, 3000 }, 2);
-    NavDecision d = decide(in, HeroPose{ 2, XZ{ 0, 0 }, 0 }, env, 0, true);
+    NavDecision d = decide(in, HeroPose{ 2, XZ{ 0, 0 }, 0 }, env, 0);
     CHECK(d.target == XZ{ 3000, 3000 });
     CHECK(d.advance);
 }
@@ -223,8 +258,8 @@ TEST_CASE("a steer intent re-frames its bearing when the hero changes room")
     NavEnv env = envWith(nullptr);
     NavIntent in = walkTo(XZ{ 12000, 0 }, 2);
     in.steering = true;
-    decide(in, HeroPose{ 2, XZ{ 0, 0 }, 0 }, env, 0, true);
-    NavDecision d = decide(in, HeroPose{ 3, XZ{ 0, 0 }, 0 }, env, 20, true);
+    decide(in, HeroPose{ 2, XZ{ 0, 0 }, 0 }, env, 0);
+    NavDecision d = decide(in, HeroPose{ 3, XZ{ 0, 0 }, 0 }, env, 20);
     CHECK(in.room == 3);
     CHECK(d.target == XZ{ 12000 - 100, 0 + 100 });
 }
@@ -234,15 +269,15 @@ TEST_CASE("the stall guard abandons a far target and accepts a near one after 6 
     NavEnv env = envWith(nullptr);
     NavIntent far = walkTo(XZ{ 3000, 0 }, 2);
     HeroPose stuck{ 2, XZ{ 0, 0 }, 0 };
-    CHECK(decide(far, stuck, env, 0, true).advance);
-    CHECK(decide(far, stuck, env, kStallMs - 1, true).advance);
-    NavDecision gaveUp = decide(far, stuck, env, kStallMs, true);
+    CHECK(decide(far, stuck, env, 0).advance);
+    CHECK(decide(far, stuck, env, kStallMs - 1).advance);
+    NavDecision gaveUp = decide(far, stuck, env, kStallMs);
     CHECK(gaveUp.abandoned);
     CHECK_FALSE(gaveUp.arrived);
 
     NavIntent near = walkTo(XZ{ 600, 0 }, 2);
-    decide(near, stuck, env, 0, true);
-    NavDecision close = decide(near, stuck, env, kStallMs, true);
+    decide(near, stuck, env, 0);
+    NavDecision close = decide(near, stuck, env, kStallMs);
     CHECK(close.arrived);
     CHECK_FALSE(close.abandoned);
 }
@@ -251,12 +286,12 @@ TEST_CASE("a stall close to a target through a closed door in another room aband
 {
     // The link midpoint is fixed at (5000, 5000) regardless of args; put the
     // hero within kGiveUpDistance of it but never let it move, and target a
-    // room that is not the hero's room (I5).
+    // room that is not the hero's room.
     NavEnv env = envWith(nullptr);
     NavIntent in = walkTo(XZ{ 5000, 5000 }, 7);
     HeroPose stuck{ 2, XZ{ 4900, 4900 }, 0 };
-    CHECK(decide(in, stuck, env, 0, true).advance);
-    NavDecision gaveUp = decide(in, stuck, env, kStallMs, true);
+    CHECK(decide(in, stuck, env, 0).advance);
+    NavDecision gaveUp = decide(in, stuck, env, kStallMs);
     CHECK(gaveUp.abandoned);
     CHECK_FALSE(gaveUp.arrived);
 }
@@ -265,7 +300,7 @@ TEST_CASE("progress resets the stall clock")
 {
     NavEnv env = envWith(nullptr);
     NavIntent in = walkTo(XZ{ 5000, 0 }, 2);
-    decide(in, HeroPose{ 2, XZ{ 0, 0 }, 0 }, env, 0, true);
-    decide(in, HeroPose{ 2, XZ{ 100, 0 }, 0 }, env, kStallMs - 1, true);
-    CHECK(decide(in, HeroPose{ 2, XZ{ 100, 0 }, 0 }, env, kStallMs + 10, true).advance);
+    decide(in, HeroPose{ 2, XZ{ 0, 0 }, 0 }, env, 0);
+    decide(in, HeroPose{ 2, XZ{ 100, 0 }, 0 }, env, kStallMs - 1);
+    CHECK(decide(in, HeroPose{ 2, XZ{ 100, 0 }, 0 }, env, kStallMs + 10).advance);
 }

@@ -3,10 +3,11 @@
 # bgfx/SDL. Engine-coupled behaviour is covered by docs/mouse-gameplay-checklist.md.
 set(MOUSE_DIR "${CMAKE_SOURCE_DIR}/FitdLib/mouse")
 
-# Engine-free mouse sources compiled into the tests (tasks append to this list).
+# Engine-free mouse sources compiled into the tests.
 set(MOUSE_CORE_SOURCES
     "${MOUSE_DIR}/mouseGesture.cpp"
     "${MOUSE_DIR}/mousePick.cpp"
+    "${MOUSE_DIR}/mousePoly.cpp"
     "${MOUSE_DIR}/mouseNav.cpp"
 )
 

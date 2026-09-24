@@ -6,12 +6,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <array>
 #include <cstdint>
 #include <functional>
 #include <optional>
 #include <vector>
 
+#include "mousePoly.h"
 #include "mouseTypes.h"
 
 namespace mouse
@@ -36,16 +36,7 @@ struct Agent
     int y2 = 0;
 };
 
-constexpr int kGridStep = 100;  // room units per cell
-constexpr int kCoverScale = 10; // cover-zone unit -> room units
-
-// Replica of the engine's testCrossProduct (main.cpp).
-int testCrossProduct(int x1, int z1, int x2, int z2, int x3, int z3, int x4, int z4);
-// The engine's isInPoly for one polygon and a point (cover units): inside when
-// both the -X and +X 10000-unit rays hit an edge.
-bool insideTwoRay(int x, int z, const std::vector<XZ>& poly);
-// Floor division (Python //) for negative coordinates.
-int floorDiv(int a, int b);
+constexpr int kGridStep = 100; // room units per cell
 
 struct Grid
 {
@@ -61,7 +52,16 @@ struct Grid
         return i >= 0 && j >= 0 && i < nx && j < nz && walk[(size_t)i * nz + j] != 0;
     }
     XZ center(int i, int j) const { return XZ{ x0 + i * step, z0 + j * step }; }
+    // Column / row whose centre is nearest x / z; may lie off the grid.
+    int column(int x) const;
+    int row(int z) const;
     bool cellOf(int x, int z, int* i, int* j) const;
+    // A move from (i, j) by (di, dj) lands on a walkable cell without cutting
+    // a blocked corner (the moves findPath takes).
+    bool canStep(int i, int j, int di, int dj) const
+    {
+        return at(i + di, j + dj) && (!(di && dj) || (at(i + di, j) && at(i, j + dj)));
+    }
     bool isWalkable(int x, int z) const;
     bool any() const;
 };
@@ -76,8 +76,19 @@ using Accept = std::function<bool(XZ)>;
 
 // Closest walkable cell centre to p in up to maxCells rings (p itself if walkable).
 std::optional<XZ> nearestWalkable(const Grid& grid, XZ p, int maxCells = 6, const Accept& accept = {});
-// Where to stand to reach `target` coming from `from` (up to maxCells rings).
-std::optional<XZ> approachCell(const Grid& grid, XZ target, XZ from, int maxCells = 12, const Accept& accept = {});
+// Where to stand to reach `target` coming from `from`: the target itself when
+// walkable, else the accepted cell nearest `from` on the first ring (up to 12)
+// that has one.
+std::optional<XZ> approachCell(const Grid& grid, XZ target, XZ from, const Accept& accept = {});
+
+// The cells findPath can reach from one start cell.
+struct Reach
+{
+    Grid grid; // the grid's geometry; walk = 1 for a reachable cell
+    bool contains(XZ p) const { return grid.isWalkable(p.x, p.z); }
+};
+// Nothing when `start` is not on a walkable cell.
+std::optional<Reach> reachFrom(const Grid& grid, XZ start);
 // A* (8-connected, no corner cutting) then string-pulled; last waypoint is goal.
 std::optional<std::vector<XZ>> findPath(const Grid& grid, XZ start, XZ goal);
 
@@ -101,21 +112,15 @@ struct NavIntent
     bool requiresHold = false; // held push
     bool run = false;
     bool steering = false;
-    bool engaged = false;      // held push: in contact
+    // Leaning into the target (a push in contact, or walking into a reached
+    // object): never arrives by distance, only stalls.
+    bool engaged = false;
     std::vector<XZ> waypoints;
     bool planned = false;
     int pathRoom = -1;
-    bool hasStallTarget = false;
-    XZ stallTarget;
+    std::optional<XZ> stallTarget;
     int stallBest = 0;
     uint32_t stallSinceMs = 0;
-    // held push
-    char pushAxis = 0; // 0, 'x' or 'z'
-    int pushLateral = 0;
-    bool hasApproachPose = false;
-    std::array<int, 11> approachPose{};
-    int originFloor = -1;
-    int originRoom = -1;
 };
 
 struct NavDecision
@@ -144,8 +149,7 @@ struct NavEnv
 };
 
 // One frame of steering for a live intent.
-NavDecision decide(NavIntent& intent, const HeroPose& hero, const NavEnv& env,
-                   uint32_t nowMs, bool stopAtDestination);
+NavDecision decide(NavIntent& intent, const HeroPose& hero, const NavEnv& env, uint32_t nowMs);
 // Forget stall progress (after a retarget).
 void resetStall(NavIntent& intent);
 

@@ -2480,14 +2480,14 @@ void processLife(int lifeNum, bool callFoundLife)
 
                 //soundFunc(0);
 
-                mouseWorldTakeOver(); // entered mid-frame from play (I2)
+                mouseWorldTakeOver(); // opened by a script, mid-frame, straight from play
                 g_menuActive = true;
                 do
                 {
                     unsigned int time;
                     process_events();
 
-                    if (menuMouseClicked())
+                    if (menuMouseSkipClicked())
                         break;
 
                     osystem_startFrame();
@@ -2906,7 +2906,7 @@ void processLife(int lifeNum, bool callFoundLife)
             case LM_WAIT_GAME_OVER:
             {
                 appendFormated("LM_WAIT_GAME_OVER ");
-                mouseWorldTakeOver(); // entered mid-frame from play (I2)
+                mouseWorldTakeOver(); // opened by a script, mid-frame, straight from play
                 while (key || JoyD || Click)
                 {
                     process_events();
@@ -2914,7 +2914,7 @@ void processLife(int lifeNum, bool callFoundLife)
                 while (!key && !JoyD && !Click)
                 {
                     process_events();
-                    if (menuMouseClicked())
+                    if (menuMouseSkipClicked())
                         break;
                 }
                 FlagGameOver = 1;

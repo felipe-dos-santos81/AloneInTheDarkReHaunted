@@ -12,6 +12,7 @@
 #include <optional>
 #include <vector>
 
+#include "mousePoly.h"
 #include "mouseTypes.h"
 
 namespace mouse
@@ -40,9 +41,22 @@ struct Camera
     const int16_t* cosTable = nullptr;
 };
 
+// A floor camera as the floor data stores it (cameraDataStruct).
+struct CameraData
+{
+    int alpha = 0;
+    int beta = 0;
+    int gamma = 0;
+    int x = 0;
+    int y = 0;
+    int z = 0;
+    int focal1 = 0;
+    int focal2 = 0;
+    int focal3 = 0;
+};
+
 // Same framing as InitView: (camX - worldX)*10, (worldY - camY)*10, (worldZ - camZ)*10.
-Camera frameCamera(int alpha, int beta, int gamma, int camX, int camY, int camZ,
-                   int focal1, int focal2, int focal3, RoomOrigin room, const int16_t* cosTable);
+Camera frameCamera(const CameraData& cam, RoomOrigin room, const int16_t* cosTable);
 
 struct Vec2
 {
@@ -76,27 +90,25 @@ constexpr int kSnapBudgetPx = 8;
 // hold, below GiveDistance2D's s16 limit.
 constexpr int kSteerDistance = 12000;
 
-// One floor polygon's plane<->screen maps under one camera.
+// One cover zone's plane<->screen maps under one camera.
 struct PolyFit
 {
-    std::vector<XZ> world; // polygon, room-scale units
-    Homography toScreen;
+    std::vector<XZ> cover; // polygon, cover units (room / 10)
+    Homography toScreen;   // room units -> screen
     Homography toFloor;
 };
 
-// Fit every polygon (room-scale) at floor height floorY. Polygons with fewer
-// than four distinct vertices in front of the camera are skipped.
-std::vector<PolyFit> fitFloor(const Camera& camera, const std::vector<std::vector<XZ>>& polysWorld, int floorY);
+// Fit every cover zone at floor height floorY. Zones with fewer than four
+// distinct vertices in front of the camera are skipped.
+std::vector<PolyFit> fitFloor(const Camera& camera, const std::vector<std::vector<XZ>>& coverPolys, int floorY);
 
-// The floor point under `pixel`, or nothing.
+// The floor point under `pixel` (room units) inside a zone by the engine's
+// isInPoly rule, or nothing.
 std::optional<XZ> pickFloor(const std::vector<PolyFit>& fits, Point pixel);
 
 // A far destination along the bearing from `here` toward `pixel` (for pixels
 // with no reachable floor), or nothing when the hero's feet are off screen.
 std::optional<XZ> steerPoint(const Camera& camera, const std::vector<PolyFit>& fits,
                              int floorY, XZ here, Point pixel);
-
-// Even-odd point-in-polygon, used only to attribute a pick to its polygon.
-bool insideWorldPoly(int x, int z, const std::vector<XZ>& poly);
 
 } // namespace mouse

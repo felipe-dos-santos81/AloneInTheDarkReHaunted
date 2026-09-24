@@ -557,7 +557,8 @@ int initBgfxGlue(int argc, char* argv[])
     // imgui_impl_sdl3.cpp ~653), which fights the 2 s auto-hide and gameplay's own
     // cursor shape (mouseInputEndMainFrame, the only place allowed to call them).
     // ImGuiConfigFlags_NoMouseCursorChange makes that function return before any
-    // SDL cursor call (imgui_impl_sdl3.cpp ~634-635).
+    // SDL cursor call (imgui_impl_sdl3.cpp ~634-635); mouseInputEndMainFrame applies
+    // ImGui's requested shape on the main thread instead while ImGui wants the mouse.
     io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
 
     // Initialize TTF font system

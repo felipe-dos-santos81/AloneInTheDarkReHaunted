@@ -235,6 +235,35 @@ char* getRoomLink(unsigned int room1, unsigned int room2)
     return bestZone;
 }
 
+void getRoomLinkCenter(unsigned int room1, unsigned int room2, int* x, int* y, int* z)
+{
+    char* link = getRoomLink(room1, room2);
+    *x = *(s16*)(link + 0) + (((*(s16*)(link + 2)) - (*(s16*)(link + 0))) / 2);
+    *y = *(s16*)(link + 4) + (((*(s16*)(link + 6)) - (*(s16*)(link + 4))) / 2);
+    *z = *(s16*)(link + 8) + (((*(s16*)(link + 10)) - (*(s16*)(link + 8))) / 2);
+}
+
+void turnActorToward(tObject* actor, int x, int z)
+{
+    int angleModif = CapObjet(actor->roomX + actor->stepX, actor->roomZ + actor->stepZ, actor->beta, x, z);
+
+    if ((actor->rotate.numSteps == 0) || (actor->direction != angleModif))
+    {
+        InitRealValue(actor->beta, actor->beta - (angleModif * 256), 60, &actor->rotate);
+    }
+
+    actor->direction = angleModif;
+
+    if (actor->direction == 0)
+    {
+        actor->rotate.numSteps = 0;
+    }
+    else
+    {
+        actor->beta = updateActorRotation(&actor->rotate);
+    }
+}
+
 void processTrack(void)
 {
     switch(currentProcessedActorPtr->trackMode)
@@ -304,17 +333,12 @@ void processTrack(void)
                 int targetX = followedActorPtr->roomX;
                 int targetY = followedActorPtr->roomY;
                 int targetZ = followedActorPtr->roomZ;
-                int angleModif;
 
                 if (g_gameId == AITD1) {
                     // in AITD1, if the target entity is in a different room, the entity would aim for the center of the trigger zone to get to that room
                     if (currentProcessedActorPtr->room != targetRoomNumber)
                     {
-                        char* link = getRoomLink(currentProcessedActorPtr->room, targetRoomNumber);
-
-                        targetX = *(s16*)(link + 0) + (((*(s16*)(link + 2)) - (*(s16*)(link + 0))) / 2);
-                        targetY = *(s16*)(link + 4) + (((*(s16*)(link + 6)) - (*(s16*)(link + 4))) / 2);
-                        targetZ = *(s16*)(link + 8) + (((*(s16*)(link + 10)) - (*(s16*)(link + 8))) / 2);
+                        getRoomLinkCenter(currentProcessedActorPtr->room, targetRoomNumber, &targetX, &targetY, &targetZ);
                     }
                 }
                 else {
@@ -329,25 +353,7 @@ void processTrack(void)
                     }
                 }
 
-                angleModif = CapObjet( currentProcessedActorPtr->roomX + currentProcessedActorPtr->stepX,
-                    currentProcessedActorPtr->roomZ + currentProcessedActorPtr->stepZ,
-                    currentProcessedActorPtr->beta, targetX, targetZ);
-
-                if( (currentProcessedActorPtr->rotate.numSteps == 0) || (currentProcessedActorPtr->direction != angleModif) )
-                {
-                    InitRealValue( currentProcessedActorPtr->beta, currentProcessedActorPtr->beta - (angleModif * 256), 60, &currentProcessedActorPtr->rotate);
-                }
-
-                currentProcessedActorPtr->direction = angleModif;
-
-                if( currentProcessedActorPtr->direction == 0 )
-                {
-                    currentProcessedActorPtr->rotate.numSteps = 0;
-                }
-                else
-                {
-                    currentProcessedActorPtr->beta = updateActorRotation(&currentProcessedActorPtr->rotate);
-                }
+                turnActorToward(currentProcessedActorPtr, targetX, targetZ);
 
                 currentProcessedActorPtr->speed = 4;
 

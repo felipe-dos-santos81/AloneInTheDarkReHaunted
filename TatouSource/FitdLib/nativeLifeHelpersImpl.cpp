@@ -44,11 +44,11 @@ void life_Picture(int pictureIndex, int delay, int sampleId)
     startChrono(&chrono);
     playSound(sampleId);
 
-    mouseWorldTakeOver(); // entered mid-frame from play (I2)
+    mouseWorldTakeOver(); // opened by a script, mid-frame, straight from play
     do
     {
         process_events();
-        if (menuMouseClicked())
+        if (menuMouseSkipClicked())
             break;
         osystem_startFrame();
         osystem_drawBackground();
@@ -67,13 +67,13 @@ void life_Picture(int pictureIndex, int delay, int sampleId)
 
 void life_WaitGameOver()
 {
-    mouseWorldTakeOver(); // entered mid-frame from play (I2)
+    mouseWorldTakeOver(); // opened by a script, mid-frame, straight from play
     while (key || JoyD || Click)
         process_events();
     while (!key && !JoyD && !Click)
     {
         process_events();
-        if (menuMouseClicked())
+        if (menuMouseSkipClicked())
             break;
     }
     FlagGameOver = 1;

@@ -50,7 +50,7 @@ bool g_windowWasResized = false;
 Uint32 g_menuItemClickMs = 0;
 
 // A double-click this soon after a menu item click is that item's, not fullscreen's.
-static const Uint32 kMenuItemDoubleClickGuardMs = 1000;
+static const Uint32 MENU_ITEM_DOUBLE_CLICK_GUARD_MS = 1000;
 
 void resetWindowResizeFlag()
 {
@@ -118,7 +118,7 @@ void readKeyboard(void)
             // double-click-and-hold runs), and never when it activated a menu item.
             if (!remasterOptionsIsOpen() && event.button.clicks == 2 && event.button.button == SDL_BUTTON_LEFT
                 && !mouseWorldIsActive()
-                && (Uint32)SDL_GetTicks() - g_menuItemClickMs >= kMenuItemDoubleClickGuardMs)
+                && (Uint32)SDL_GetTicks() - g_menuItemClickMs >= MENU_ITEM_DOUBLE_CLICK_GUARD_MS)
             {
                 toggleFullscreen();
             }

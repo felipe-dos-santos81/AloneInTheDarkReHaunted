@@ -1,3 +1,8 @@
+///////////////////////////////////////////////////////////////////////////////
+// Alone In The Dark Re-Haunted
+// Engine unit tests: projection replica and floor picking.
+///////////////////////////////////////////////////////////////////////////////
+
 #include <cstdlib>
 
 #include "doctest.h"
@@ -11,14 +16,14 @@ namespace
 // Level camera 100 room units (1000 scaled) above floor y=0, looking along +z.
 Camera levelCamera()
 {
-    return frameCamera(0, 0, 0, /*cam*/ 0, 100, 0, /*focal*/ 1000, 300, 300,
+    return frameCamera(CameraData{ 0, 0, 0, /*cam*/ 0, 100, 0, /*focal*/ 1000, 300, 300 },
                        RoomOrigin{ 0, 0, 0 }, testCosTable());
 }
 }
 
 TEST_CASE("frameCamera frames the camera in the picked room's coordinate space")
 {
-    Camera c = frameCamera(1, 2, 3, 50, 60, 70, 11, 12, 13, RoomOrigin{ 10, 20, 30 }, testCosTable());
+    Camera c = frameCamera(CameraData{ 1, 2, 3, 50, 60, 70, 11, 12, 13 }, RoomOrigin{ 10, 20, 30 }, testCosTable());
     CHECK(c.posX == (50 - 10) * 10);
     CHECK(c.posY == (20 - 60) * 10);
     CHECK(c.posZ == (30 - 70) * 10);
@@ -47,7 +52,7 @@ TEST_CASE("projectPoint applies the fixed-point beta rotation with truncation")
 {
     // beta = 0x100: cs = 32767, sn = table[512] = 0.
     // x = (X*0 - Z*32767) / 0x10000 * 2 = trunc(-499.98) * 2 = -998; z = 0.
-    Camera c = frameCamera(0, 0x100, 0, 0, 0, 0, 1000, 300, 300, RoomOrigin{}, testCosTable());
+    Camera c = frameCamera(CameraData{ 0, 0x100, 0, 0, 0, 0, 1000, 300, 300 }, RoomOrigin{}, testCosTable());
     auto p = projectPoint(c, 0, 0, 1000);
     REQUIRE(p);
     CHECK(p->x == doctest::Approx(-998.0 * 300.0 / 1000.0 + 160.0));
@@ -98,7 +103,11 @@ TEST_CASE("reframe uses FITD's AdjustZV signs")
 
 namespace
 {
-const std::vector<XZ> kSquare{ XZ{ -2000, 1000 }, XZ{ 2000, 1000 }, XZ{ 2000, 5000 }, XZ{ -2000, 5000 } };
+// Cover units (room / 10): x -2000..2000, z 1000..5000 in room units.
+const std::vector<XZ> kSquare{ XZ{ -200, 100 }, XZ{ 200, 100 }, XZ{ 200, 500 }, XZ{ -200, 500 } };
+// A U open towards +z: arms x -2000..-1000 and 1000..2000, base z 1000..2000.
+const std::vector<XZ> kU{ XZ{ -200, 100 }, XZ{ 200, 100 }, XZ{ 200, 500 }, XZ{ 100, 500 },
+                          XZ{ 100, 200 },  XZ{ -100, 200 }, XZ{ -100, 500 }, XZ{ -200, 500 } };
 
 Point pixelOf(const Camera& c, int x, int z)
 {
@@ -128,8 +137,8 @@ TEST_CASE("pickFloor refuses pixels whose floor point lies outside every polygon
 TEST_CASE("fitFloor skips polygons with fewer than four usable vertices")
 {
     Camera c = levelCamera();
-    std::vector<XZ> triangle{ XZ{ 0, 1000 }, XZ{ 1000, 1000 }, XZ{ 0, 2000 } };
-    std::vector<XZ> duplicated{ XZ{ 0, 1000 }, XZ{ 0, 1000 }, XZ{ 1000, 1000 }, XZ{ 1000, 1000 } };
+    std::vector<XZ> triangle{ XZ{ 0, 100 }, XZ{ 100, 100 }, XZ{ 0, 200 } };
+    std::vector<XZ> duplicated{ XZ{ 0, 100 }, XZ{ 0, 100 }, XZ{ 100, 100 }, XZ{ 100, 100 } };
     CHECK(fitFloor(c, { triangle, duplicated }, 0).empty());
 }
 
@@ -153,9 +162,18 @@ TEST_CASE("steerPoint has no bearing when the hero's feet are off screen or unde
     CHECK_FALSE(steerPoint(c, fits, 0, XZ{ 0, 2000 }, feet));
 }
 
-TEST_CASE("insideWorldPoly is an even-odd test")
+TEST_CASE("pickFloor judges inside with the engine's two-ray rule, notch of a U included")
 {
-    CHECK(insideWorldPoly(0, 3000, kSquare));
-    CHECK_FALSE(insideWorldPoly(2500, 3000, kSquare));
-    CHECK_FALSE(insideWorldPoly(0, 6000, kSquare));
+    Camera c = levelCamera();
+    auto fits = fitFloor(c, { kU }, 0);
+    REQUIRE(fits.size() == 1);
+    // z = 4000 projects to whole pixels here, so the picks recover exactly.
+    // Between the arms: the engine's isInPoly calls it inside (both X rays hit
+    // an arm), where an even-odd test would call it outside.
+    auto notch = pickFloor(fits, pixelOf(c, 0, 4000));
+    REQUIRE(notch);
+    CHECK(std::abs(notch->x) <= 15);
+    CHECK(std::abs(notch->z - 4000) <= 15);
+    CHECK(pickFloor(fits, pixelOf(c, -1500, 4000))); // on an arm
+    CHECK_FALSE(pickFloor(fits, pixelOf(c, 2400, 4000))); // right of everything
 }

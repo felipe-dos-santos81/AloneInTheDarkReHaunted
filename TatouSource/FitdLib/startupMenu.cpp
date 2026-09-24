@@ -207,10 +207,10 @@ void LanguageSelectionMenu(void)
 
         // Mouse: hover selects, click confirms (keyboard/gamepad take priority)
         {
-            static ImVec2 s_langMouse = { -1.0f, -1.0f };
+            static MenuHoverAnchor s_langHover;
             ImVec2 gm = menuGetGameMouse();
             int startY = 100 - (availableCount * 16) / 2;
-            if (menuMouseMoved(s_langMouse, JoyD || key))
+            if (menuMouseMoved(s_langHover, JoyD || key))
             {
                 int hit = menuMouseHitList(gm.x, gm.y, 8, 311, startY, 16, availableCount);
                 if (hit >= 0 && hit != currentSelectedEntry)
@@ -225,7 +225,6 @@ void LanguageSelectionMenu(void)
                 int hit = menuMouseHitList(gm.x, gm.y, 8, 311, startY, 16, availableCount);
                 if (hit >= 0)
                 {
-                    menuNoteItemClick();
                     playMenuSound("Select.wav");
                     selectedEntry = hit;
                 }
@@ -346,9 +345,9 @@ int MainMenu(void)
 
 		// Mouse: hover selects, click confirms (keyboard/gamepad take priority)
 		{
-			static ImVec2 s_mainMenuMouse = { -1.0f, -1.0f };
+            static MenuHoverAnchor s_mainMenuHover;
 			ImVec2 gm = menuGetGameMouse();
-			if (menuMouseMoved(s_mainMenuMouse, JoyD || key))
+            if (menuMouseMoved(s_mainMenuHover, JoyD || key))
 			{
 				// 3 items starting at Y=76, 16px each
 				int hit = menuMouseHitList(gm.x, gm.y, 8, 311, 76, 16, 3);
@@ -365,7 +364,6 @@ int MainMenu(void)
 				int hit = menuMouseHitList(gm.x, gm.y, 8, 311, 76, 16, 3);
 				if (hit >= 0)
 				{
-					menuNoteItemClick();
 					playMenuSound("Select.wav");
 					selectedEntry = hit;
 				}

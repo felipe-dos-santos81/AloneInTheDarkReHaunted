@@ -32,19 +32,20 @@ inline bool isHud(ClickKind kind)
     return kind == ClickKind::HudInventory || kind == ClickKind::HudMap || kind == ClickKind::HudMenu;
 }
 
-// Walk/Steer/Target/Push: destination x,z in `room`'s frame; `object` is the
-// world object (-1 for walk/steer). Attack: `object` is the target actor index.
+// Walk/Steer/Target/Push: destination x,z in `room`'s frame, and the clicked
+// world object (-1 for walk/steer). Attack: the target actor.
 struct Payload
 {
     int x = 0;
     int z = 0;
     int room = -1;
-    int object = -1;
+    int object = -1; // world object index
+    int actor = -1;  // actor index (Attack only)
 };
 
 inline bool operator==(const Payload& a, const Payload& b)
 {
-    return a.x == b.x && a.z == b.z && a.room == b.room && a.object == b.object;
+    return a.x == b.x && a.z == b.z && a.room == b.room && a.object == b.object && a.actor == b.actor;
 }
 inline bool operator!=(const Payload& a, const Payload& b) { return !(a == b); }
 
@@ -69,9 +70,8 @@ struct PointerState
     std::optional<Point> pos;
     // Last destination issued during this hold; re-issued only when the
     // resolution differs (also the one-shot latch after an arrival).
-    std::optional<Payload> followLast;
-    ClickKind followKind = ClickKind::Blocked;
-    // Pixel followLast was resolved at; empty = resolve next frame regardless.
+    std::optional<ClickResult> follow;
+    // Pixel follow was resolved at; empty = resolve next frame regardless.
     std::optional<Point> followPos;
     // Camera slot followPos was resolved under; a mismatch means a cut.
     std::optional<int> followCamera;
@@ -82,8 +82,7 @@ struct PointerState
     // This hold began with a double press: the hero runs.
     bool run = false;
     // What the hold that just ended was heading for, for a double press.
-    std::optional<Payload> resumeLast;
-    ClickKind resumeKind = ClickKind::Blocked;
+    std::optional<ClickResult> resume;
     std::optional<Point> resumePos;
 };
 
@@ -107,7 +106,6 @@ struct Decision
 void resetPointer(PointerState& s);
 void onPress(PointerState& s, std::optional<Point> pos);
 void onMove(PointerState& s, std::optional<Point> pos);
-void onRelease(PointerState& s);
 bool settling(const PointerState& s);
 
 // What a press means. `clicks` is SDL's consecutive-click count for this press.
@@ -119,7 +117,7 @@ Decision holdDecision(PointerState& s, std::optional<Point> pos, int camera,
                       const Resolver& resolve, bool latchedPush, bool intentAlive);
 
 void dropDestination(PointerState& s);
-// Button-up or focus loss. A steer is never stashed for resume.
+// Button-up: the hold ends. A steer is never stashed for resume.
 void endHold(PointerState& s, bool steering);
 // A floor change: the destination indexes an unloaded floor, but the hold survives.
 void rebase(PointerState& s);

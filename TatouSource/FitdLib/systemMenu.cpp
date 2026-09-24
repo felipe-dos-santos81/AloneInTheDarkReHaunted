@@ -411,6 +411,7 @@ static int getSystemMenuItemAtMouse(bool useHDBG)
 
 void processSystemMenu(void)
 {
+    mouseWorldTakeOver(); // also shows the cursor
     struct MenuGuard { MenuGuard() { setLanternMenuActive(true); } ~MenuGuard() { setLanternMenuActive(false); } } menuGuard;
 
     //int entry = -1;
@@ -469,7 +470,7 @@ void processSystemMenu(void)
 	currentSelectedEntry = 0;
 
 	int previewFrameCounter = 0;
-	ImVec2 lastMousePos = { -1.0f, -1.0f }; // reset each menu open so hover requires deliberate movement
+    MenuHoverAnchor hover; // seeds on the first poll, so hover requires deliberate movement
 
 	while(!exitMenu)
 	{
@@ -526,7 +527,7 @@ void processSystemMenu(void)
 
             // Mouse: hover selects, click confirms (keyboard/gamepad take priority)
             {
-                if (menuMouseMoved(lastMousePos, localKey || localJoyD))
+                if (menuMouseMoved(hover, localKey || localJoyD))
                 {
                     int mouseItem = getSystemMenuItemAtMouse(useHDBG);
                     if (mouseItem >= 0 && mouseItem != currentSelectedEntry)
@@ -777,6 +778,7 @@ void processSystemMenu(void)
 
 void processMapScreen(void)
 {
+    mouseWorldTakeOver(); // also shows the cursor
 	int exitMenu = 0;
 
 	bool useHDBG = g_currentBackgroundIsHD;
@@ -895,9 +897,8 @@ void processMapScreen(void)
 			localClick = Click;
 
 			// Mouse click anywhere closes the map screen
-			if (!AntiRebond && menuMouseClicked())
+            if (!AntiRebond && menuMouseSkipClicked())
 			{
-				menuNoteItemClick();
 				localClick = 1;
 			}
 

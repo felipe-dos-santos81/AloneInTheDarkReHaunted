@@ -8,6 +8,7 @@
 #include <atomic>
 
 #include "bgfxGlue.h"
+#include "imgui.h"
 
 namespace
 {
@@ -19,14 +20,14 @@ int s_appliedShape = -1;
 int s_appliedVisible = -1;
 SDL_Cursor* s_cursors[(int)mouse::CursorShape::Count] = {};
 
-bool mapPoint(float wx, float wy, mouse::Point* out)
+std::optional<mouse::Point> mapPoint(float wx, float wy)
 {
     if (!gWindowBGFX)
-        return false;
+        return std::nullopt;
     int w = 0;
     int h = 0;
     SDL_GetWindowSize(gWindowBGFX, &w, &h); // points, like event coordinates
-    return mouse::windowToLogical(wx, wy, w, h, out);
+    return mouse::windowToLogical(wx, wy, w, h);
 }
 
 SDL_SystemCursor systemCursorFor(mouse::CursorShape shape)
@@ -37,7 +38,32 @@ SDL_SystemCursor systemCursorFor(mouse::CursorShape shape)
     case mouse::CursorShape::Crosshair:  return SDL_SYSTEM_CURSOR_CROSSHAIR;
     case mouse::CursorShape::Move:       return SDL_SYSTEM_CURSOR_MOVE;
     case mouse::CursorShape::NotAllowed: return SDL_SYSTEM_CURSOR_NOT_ALLOWED;
+    case mouse::CursorShape::Text:       return SDL_SYSTEM_CURSOR_TEXT;
+    case mouse::CursorShape::ResizeNS:   return SDL_SYSTEM_CURSOR_NS_RESIZE;
+    case mouse::CursorShape::ResizeEW:   return SDL_SYSTEM_CURSOR_EW_RESIZE;
+    case mouse::CursorShape::ResizeNESW: return SDL_SYSTEM_CURSOR_NESW_RESIZE;
+    case mouse::CursorShape::ResizeNWSE: return SDL_SYSTEM_CURSOR_NWSE_RESIZE;
     default:                             return SDL_SYSTEM_CURSOR_DEFAULT;
+    }
+}
+
+// The shape ImGui asked for in its last frame. ImGui's own backend may not set
+// cursors (ImGuiConfigFlags_NoMouseCursorChange, bgfxGlue.cpp): it would do so
+// from the game thread. This runs between the game thread's frames, so the
+// value is the finished frame's.
+mouse::CursorShape imguiShape()
+{
+    switch (ImGui::GetMouseCursor())
+    {
+    case ImGuiMouseCursor_TextInput:  return mouse::CursorShape::Text;
+    case ImGuiMouseCursor_ResizeAll:  return mouse::CursorShape::Move;
+    case ImGuiMouseCursor_ResizeNS:   return mouse::CursorShape::ResizeNS;
+    case ImGuiMouseCursor_ResizeEW:   return mouse::CursorShape::ResizeEW;
+    case ImGuiMouseCursor_ResizeNESW: return mouse::CursorShape::ResizeNESW;
+    case ImGuiMouseCursor_ResizeNWSE: return mouse::CursorShape::ResizeNWSE;
+    case ImGuiMouseCursor_Hand:       return mouse::CursorShape::Pointer;
+    case ImGuiMouseCursor_NotAllowed: return mouse::CursorShape::NotAllowed;
+    default:                          return mouse::CursorShape::Default;
     }
 }
 }
@@ -49,20 +75,19 @@ void mouseInputOnEvent(const SDL_Event& event)
     {
     case SDL_EVENT_MOUSE_MOTION:
         e.type = mouse::EventType::Motion;
-        e.inside = mapPoint(event.motion.x, event.motion.y, &e.pos);
+        e.pos = mapPoint(event.motion.x, event.motion.y);
         break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
         if (event.button.button != SDL_BUTTON_LEFT)
             return;
         e.type = mouse::EventType::Down;
-        e.inside = mapPoint(event.button.x, event.button.y, &e.pos);
+        e.pos = mapPoint(event.button.x, event.button.y);
         e.clicks = event.button.clicks;
         break;
     case SDL_EVENT_MOUSE_BUTTON_UP:
         if (event.button.button != SDL_BUTTON_LEFT)
             return;
         e.type = mouse::EventType::Up;
-        e.inside = mapPoint(event.button.x, event.button.y, &e.pos);
         break;
     case SDL_EVENT_WINDOW_FOCUS_LOST:
         e.type = mouse::EventType::FocusLost;
@@ -78,11 +103,10 @@ void mouseInputEndMainFrame(bool blocked)
     float fx = 0.0f;
     float fy = 0.0f;
     const SDL_MouseButtonFlags buttons = SDL_GetMouseState(&fx, &fy);
-    mouse::Point pos;
-    const bool inside = mapPoint(fx, fy, &pos);
-    s_queue.publish(inside, pos, (buttons & SDL_BUTTON_LMASK) != 0, blocked);
+    s_queue.publish(mapPoint(fx, fy), (buttons & SDL_BUTTON_LMASK) != 0, blocked);
 
-    const int shape = s_wantShape.load();
+    // While the F1 dialog or another ImGui window wants the mouse, it owns the shape.
+    const int shape = blocked ? (int)imguiShape() : s_wantShape.load();
     if (shape != s_appliedShape && shape >= 0 && shape < (int)mouse::CursorShape::Count)
     {
         if (!s_cursors[shape])

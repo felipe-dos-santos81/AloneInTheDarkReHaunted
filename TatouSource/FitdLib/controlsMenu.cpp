@@ -287,7 +287,7 @@ void processControlsMenu(bool hdMode)
 	int backEntry = ACTION_COUNT;
 	int defaultsEntry = ACTION_COUNT + 1;
 
-	mouseWorldTakeOver();
+    mouseWorldTakeOver();
 
 	// Drain stale input from system menu (Enter key that selected Controls)
 	AntiRebond = 1;
@@ -546,12 +546,12 @@ void processControlsMenu(bool hdMode)
 		// Mouse: hover selects, click confirms (disabled while remapping)
 		if (!remapping)
 		{
-			static ImVec2 s_ctrlMouse = { -1.0f, -1.0f };
+            static MenuHoverAnchor s_ctrlHover;
 			ImVec2 gm = menuGetGameMouse();
 			// topY = WindowY1 + 4(title) + 12 + 11(controller) + 10(headers) = WindowY1 + 37
 			int mouseTopY = WindowY1 + 37;
 			int mouseTotalH = totalEntries * 11;
-			if (menuMouseMoved(s_ctrlMouse, lKey || lJoyD))
+            if (menuMouseMoved(s_ctrlHover, lKey || lJoyD))
 			{
 				int hov = menuMouseHitList(gm.x, gm.y, WindowX1, WindowX2, mouseTopY, 11, totalEntries);
 				if (hov >= 0 && hov != currentEntry)
@@ -565,7 +565,6 @@ void processControlsMenu(bool hdMode)
 				int clicked = menuMouseHitList(gm.x, gm.y, WindowX1, WindowX2, mouseTopY, 11, totalEntries);
 				if (clicked >= 0)
 				{
-					menuNoteItemClick();
 					currentEntry = clicked;
 					playMenuSound("Select.wav");
 					if (currentEntry == backEntry)

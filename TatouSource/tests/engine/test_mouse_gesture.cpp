@@ -1,3 +1,8 @@
+///////////////////////////////////////////////////////////////////////////////
+// Alone In The Dark Re-Haunted
+// Engine unit tests: mouse gesture rules.
+///////////////////////////////////////////////////////////////////////////////
+
 #include "doctest.h"
 #include "mouseGesture.h"
 
@@ -42,7 +47,8 @@ TEST_CASE("a walk press opens a held follow")
     CHECK(d.kind == ClickKind::Walk);
     CHECK(d.payload == kWalkA);
     CHECK_FALSE(d.run);
-    CHECK(s.followLast == kWalkA);
+    REQUIRE(s.follow);
+    CHECK(s.follow->payload == kWalkA);
     CHECK(s.followPos == kAt);
     CHECK(s.followCamera == 2);
     CHECK_FALSE(s.spent);
@@ -54,7 +60,7 @@ TEST_CASE("a blocked press does nothing and opens no follow")
     PointerState s;
     onPress(s, kAt);
     CHECK(pressDecision(s, kAt, 1, 0, r.fn(), false).type == DecisionType::Nothing);
-    CHECK_FALSE(s.followLast.has_value());
+    CHECK_FALSE(s.follow.has_value());
 }
 
 TEST_CASE("HUD, attack and push presses spend the hold")
@@ -71,12 +77,12 @@ TEST_CASE("HUD, attack and push presses spend the hold")
     }
     SUBCASE("attack")
     {
-        FakeResolver r{ { ClickKind::Attack, Payload{ 0, 0, -1, 7 } } };
+        FakeResolver r{ { ClickKind::Attack, Payload{ 0, 0, -1, -1, 7 } } };
         PointerState s;
         onPress(s, kAt);
         Decision d = pressDecision(s, kAt, 1, 0, r.fn(), false);
         CHECK(d.type == DecisionType::Attack);
-        CHECK(d.payload.object == 7);
+        CHECK(d.payload.actor == 7);
         CHECK(s.spent);
     }
     SUBCASE("push")
@@ -88,7 +94,7 @@ TEST_CASE("HUD, attack and push presses spend the hold")
         CHECK(d.type == DecisionType::Issue);
         CHECK(d.kind == ClickKind::Push);
         CHECK(s.spent);
-        CHECK_FALSE(s.followLast.has_value()); // a push is latched, never re-resolved
+        CHECK_FALSE(s.follow.has_value()); // a push is latched, never re-resolved
     }
 }
 
@@ -109,7 +115,6 @@ TEST_CASE("run comes only from the press being decided having clicks >= 2")
     onPress(s, kAt);
     CHECK(pressDecision(s, kAt, 2, 0, r.fn(), false).run);
     CHECK(s.run);
-    onRelease(s);
     endHold(s, false);
     onPress(s, kAt);
     CHECK_FALSE(pressDecision(s, kAt, 1, 0, r.fn(), false).run);
@@ -119,7 +124,6 @@ TEST_CASE("a double press resumes the first press's destination within the resum
 {
     FakeResolver first{ { ClickKind::Walk, kWalkA } };
     PointerState s = heldAfterPress(first);
-    onRelease(s);
     endHold(s, false);
 
     FakeResolver second{ { ClickKind::Walk, kWalkB } };
@@ -137,14 +141,12 @@ TEST_CASE("a double press beyond the resume radius, or a single press, picks afr
     FakeResolver second{ { ClickKind::Walk, kWalkB } };
 
     PointerState far = heldAfterPress(first);
-    onRelease(far);
     endHold(far, false);
     Point away{ kAt.x + kResumePx + 1, kAt.y };
     onPress(far, away);
     CHECK(pressDecision(far, away, 2, 0, second.fn(), false).payload == kWalkB);
 
     PointerState single = heldAfterPress(first);
-    onRelease(single);
     endHold(single, false);
     onPress(single, kAt);
     CHECK(pressDecision(single, kAt, 1, 0, second.fn(), false).payload == kWalkB);
@@ -154,9 +156,8 @@ TEST_CASE("a steer is never stashed for resume")
 {
     FakeResolver steer{ { ClickKind::Steer, kSteer } };
     PointerState s = heldAfterPress(steer);
-    onRelease(s);
     endHold(s, true);
-    CHECK_FALSE(s.resumeLast.has_value());
+    CHECK_FALSE(s.resume.has_value());
 }
 
 TEST_CASE("a still pointer is never re-resolved, even across a camera cut")
@@ -235,7 +236,7 @@ TEST_CASE("a spent, released or push-latched hold never follows")
 
     FakeResolver walk{ { ClickKind::Walk, kWalkA } };
     PointerState released = heldAfterPress(walk);
-    onRelease(released);
+    endHold(released, false);
     CHECK(holdDecision(released, moved, 0, r.fn(), false, false).type == DecisionType::Nothing);
 
     PointerState latched = heldAfterPress(walk);
@@ -246,7 +247,7 @@ TEST_CASE("HUD, attack and push under a held pointer need a fresh press")
 {
     FakeResolver r{ { ClickKind::Walk, kWalkA } };
     PointerState s = heldAfterPress(r);
-    r.result = { ClickKind::Attack, Payload{ 0, 0, -1, 9 } };
+    r.result = { ClickKind::Attack, Payload{ 0, 0, -1, -1, 9 } };
     Point moved{ kAt.x + 10, kAt.y };
     CHECK(holdDecision(s, moved, 0, r.fn(), false, true).type == DecisionType::Nothing);
 }
@@ -255,12 +256,12 @@ TEST_CASE("endHold clears the hold, rebase keeps it, resetPointer clears everyth
 {
     FakeResolver r{ { ClickKind::Walk, kWalkA } };
     PointerState ended = heldAfterPress(r, kAt, 2);
-    onRelease(ended);
     endHold(ended, false);
     CHECK_FALSE(ended.run);
     CHECK_FALSE(ended.spent);
-    CHECK_FALSE(ended.followLast.has_value());
-    CHECK(ended.resumeLast == kWalkA);
+    CHECK_FALSE(ended.follow.has_value());
+    REQUIRE(ended.resume);
+    CHECK(ended.resume->payload == kWalkA);
     CHECK(ended.resumePos == kAt);
 
     PointerState rebased = heldAfterPress(r, kAt, 2);
@@ -268,12 +269,12 @@ TEST_CASE("endHold clears the hold, rebase keeps it, resetPointer clears everyth
     CHECK(rebased.held);
     CHECK(rebased.run);
     CHECK_FALSE(rebased.followPos.has_value());
-    CHECK_FALSE(rebased.resumeLast.has_value());
+    CHECK_FALSE(rebased.resume.has_value());
 
     PointerState reset = heldAfterPress(r, kAt, 2);
     resetPointer(reset);
     CHECK_FALSE(reset.held);
     CHECK_FALSE(reset.run);
     CHECK_FALSE(reset.pos.has_value());
-    CHECK_FALSE(reset.followLast.has_value());
+    CHECK_FALSE(reset.follow.has_value());
 }

@@ -222,7 +222,7 @@ static unsigned char* tryLoadHDSequenceFrame(const char* seqName, int frameId, i
 
 void playSequence(int sequenceIdx, int fadeStart, int fadeOutVar)
 {
-    mouseWorldTakeOver(); // entered mid-frame from play (I2)
+    mouseWorldTakeOver(); // opened by a script, mid-frame, straight from play
 
     int frames=0;                   /* Number of frames displayed */
 
@@ -348,15 +348,15 @@ void playSequence(int sequenceIdx, int fadeStart, int fadeOutVar)
 
             currentFrameId++;
 
-			bool mouseSkip = false;
+            bool mouseSkip = false;
 			for(int i=0;i<5;i++) // display the frame 5 times (original seems to wait 5 sync)
 			{
 				process_events();
-				if (menuMouseClicked())
-					mouseSkip = true;
+                if (menuMouseSkipClicked())
+                    mouseSkip = true;
 			}
 
-			if(key || mouseSkip)
+            if(key || mouseSkip)
 			{
 				//stopSample();
 				quitPlayback = 1;

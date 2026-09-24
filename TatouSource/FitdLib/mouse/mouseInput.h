@@ -12,7 +12,8 @@
 // Main thread, from readKeyboard()'s event loop.
 void mouseInputOnEvent(const SDL_Event& event);
 // Main thread, once per readKeyboard() after the event loop: publishes the
-// frame and applies the latest cursor requests.
+// frame and applies the latest cursor requests. `blocked`: the F1 dialog or
+// another ImGui window wants the mouse, and then also owns the cursor shape.
 void mouseInputEndMainFrame(bool blocked);
 
 // Game thread: this frame's mouse events (false when none were published).

@@ -26,11 +26,6 @@ void onMove(PointerState& s, std::optional<Point> pos)
     s.pos = pos;
 }
 
-void onRelease(PointerState& s)
-{
-    s.held = false;
-    s.pos.reset();
-}
 
 bool settling(const PointerState& s)
 {
@@ -41,15 +36,13 @@ namespace
 {
 // The second press of a double press is the same finger on the same spot
 // saying "faster": it resumes what the first press committed to.
-bool resumeDestination(const PointerState& s, Point pos, Payload* payload, ClickKind* kind)
+std::optional<ClickResult> resumed(const PointerState& s, Point pos)
 {
-    if (!s.run || !s.resumeLast || !s.resumePos)
-        return false;
+    if (!s.run || !s.resume || !s.resumePos)
+        return std::nullopt;
     if (std::abs(pos.x - s.resumePos->x) > kResumePx || std::abs(pos.y - s.resumePos->y) > kResumePx)
-        return false;
-    *payload = *s.resumeLast;
-    *kind = s.resumeKind;
-    return true;
+        return std::nullopt;
+    return s.resume;
 }
 }
 
@@ -77,31 +70,25 @@ Decision pressDecision(PointerState& s, Point pos, int clicks, int camera,
     if (latchedPush || r.kind == ClickKind::Blocked)
         return d;
 
-    Payload payload = r.payload;
-    ClickKind kind = r.kind;
-    const bool isPush = kind == ClickKind::Push;
-    if (!isPush)
-        resumeDestination(s, pos, &payload, &kind);
-
-    if (isPush)
+    ClickResult issued = r;
+    if (r.kind == ClickKind::Push)
     {
-        s.followLast.reset();
-        s.followPos.reset();
-        s.followCamera.reset();
+        dropDestination(s); // a push is latched, never re-resolved
+        s.spent = true;
     }
     else
     {
-        s.followLast = payload;
-        s.followKind = kind;
+        issued = resumed(s, pos).value_or(r);
+        s.follow = issued;
         s.followPos = pos;
         s.followCamera = camera;
+        s.settleOrigin.reset();
+        s.spent = false;
     }
-    s.settleOrigin.reset();
-    s.spent = isPush;
 
     d.type = DecisionType::Issue;
-    d.kind = kind;
-    d.payload = payload;
+    d.kind = issued.kind;
+    d.payload = issued.payload;
     d.run = s.run;
     return d;
 }
@@ -132,10 +119,9 @@ Decision holdDecision(PointerState& s, std::optional<Point> pos, int camera,
     const ClickResult r = resolve(*pos);
     if (r.kind == ClickKind::Walk || r.kind == ClickKind::Target || r.kind == ClickKind::Steer)
     {
-        if (s.followLast && *s.followLast == r.payload)
+        if (s.follow && s.follow->payload == r.payload)
             return d;
-        s.followLast = r.payload;
-        s.followKind = r.kind;
+        s.follow = r;
         d.type = DecisionType::Issue;
         d.kind = r.kind;
         d.payload = r.payload;
@@ -144,7 +130,7 @@ Decision holdDecision(PointerState& s, std::optional<Point> pos, int camera,
     }
     if (r.kind == ClickKind::Blocked)
     {
-        s.followLast.reset();
+        s.follow.reset();
         if (intentAlive)
             d.type = DecisionType::Cancel;
         return d;
@@ -154,7 +140,7 @@ Decision holdDecision(PointerState& s, std::optional<Point> pos, int camera,
 
 void dropDestination(PointerState& s)
 {
-    s.followLast.reset();
+    s.follow.reset();
     s.followPos.reset();
     s.followCamera.reset();
     s.settleOrigin.reset();
@@ -162,20 +148,18 @@ void dropDestination(PointerState& s)
 
 void endHold(PointerState& s, bool steering)
 {
+    s.held = false;
+    s.pos.reset();
     s.spent = false;
     s.run = false;
-    if (steering)
-        s.resumeLast.reset();
-    else
-        s.resumeLast = s.followLast;
-    s.resumeKind = s.followKind;
+    s.resume = steering ? std::nullopt : s.follow;
     s.resumePos = s.followPos;
     dropDestination(s);
 }
 
 void rebase(PointerState& s)
 {
-    s.resumeLast.reset();
+    s.resume.reset();
     s.resumePos.reset();
     dropDestination(s);
 }

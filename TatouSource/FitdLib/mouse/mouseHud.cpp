@@ -24,29 +24,32 @@ float logicalScale()
     return (float)outputResolution[1] / 200.0f;
 }
 
-void drawIcon(ImDrawList* dl, int index, const mouse::Rect& r, bool enabled, bool hover)
+// Lighter than the menu buttons: the icons sit over live gameplay.
+constexpr MenuButtonStyle HUD_ICON_STYLE = {
+    IM_COL32(12, 12, 12, 170), IM_COL32(12, 12, 12, 110),
+    IM_COL32(215, 215, 195, 230), IM_COL32(255, 230, 150, 255), IM_COL32(120, 120, 110, 140),
+    3.0f,
+};
+
+void drawIcon(ImDrawList* dl, mouse::HudIcon icon, const mouse::Rect& r, bool enabled, bool hover)
 {
-    const ImVec2 a = menuGameToScreen((float)r.x1, (float)r.y1);
-    const ImVec2 b = menuGameToScreen((float)(r.x2 + 1), (float)(r.y2 + 1));
-    const float t = std::max(1.0f, (b.y - a.y) * 0.08f);
-    const ImU32 fill = IM_COL32(12, 12, 12, enabled ? 170 : 110);
-    const ImU32 line = !enabled ? IM_COL32(120, 120, 110, 140)
-                     : hover    ? IM_COL32(255, 230, 150, 255)
-                                : IM_COL32(215, 215, 195, 230);
-    dl->AddRectFilled(a, b, fill, 3.0f);
-    dl->AddRect(a, b, line, 3.0f, 0, t);
+    const MenuButtonGeometry g = menuButtonGeometry(r, 0.08f);
+    const ImVec2 a = g.a;
+    const ImVec2 b = g.b;
+    const float t = g.thickness;
+    const ImU32 line = menuDrawButtonFrame(dl, g, hover, enabled, HUD_ICON_STYLE);
     const float w = b.x - a.x;
     const float h = b.y - a.y;
     auto P = [&](float fx, float fy) { return ImVec2(a.x + w * fx, a.y + h * fy); };
-    switch (index)
+    switch (icon)
     {
-    case 0: // inventory: a satchel
+    case mouse::HudIcon::Inventory: // a satchel
         dl->AddRect(P(0.25f, 0.40f), P(0.75f, 0.80f), line, 2.0f, 0, t);
         dl->AddLine(P(0.40f, 0.40f), P(0.40f, 0.24f), line, t);
         dl->AddLine(P(0.40f, 0.24f), P(0.60f, 0.24f), line, t);
         dl->AddLine(P(0.60f, 0.24f), P(0.60f, 0.40f), line, t);
         break;
-    case 1: // map: a folded sheet
+    case mouse::HudIcon::Map: // a folded sheet
         dl->AddLine(P(0.20f, 0.30f), P(0.40f, 0.22f), line, t);
         dl->AddLine(P(0.40f, 0.22f), P(0.60f, 0.30f), line, t);
         dl->AddLine(P(0.60f, 0.30f), P(0.80f, 0.22f), line, t);
@@ -58,7 +61,7 @@ void drawIcon(ImDrawList* dl, int index, const mouse::Rect& r, bool enabled, boo
         dl->AddLine(P(0.60f, 0.30f), P(0.60f, 0.78f), line, t);
         dl->AddLine(P(0.80f, 0.22f), P(0.80f, 0.70f), line, t);
         break;
-    default: // menu: three bars
+    case mouse::HudIcon::Menu: // three bars
         for (float fy : { 0.32f, 0.50f, 0.68f })
             dl->AddLine(P(0.25f, fy), P(0.75f, fy), line, t);
         break;
@@ -97,16 +100,19 @@ void mouseHudDraw()
     if (!g_imguiFrameActive)
         return;
     MouseHudState st;
-    if (!mouseWorldHudState(&st) || !st.visible)
+    if (!mouseWorldHudState(&st))
         return;
     ImDrawList* dl = ImGui::GetForegroundDrawList();
     const auto rects = mouse::hudIconRects();
     for (int i = 0; i < mouse::kHudIconCount; ++i)
-        drawIcon(dl, i, rects[i], st.iconEnabled[i], st.hoverIcon == i && st.iconEnabled[i]);
-    if (st.hasPreview)
-        drawDiamond(dl, st.previewX, st.previewY, false);
-    if (st.hasDestination)
-        drawDiamond(dl, st.destX, st.destY, true);
-    if (st.held && st.hasPointer)
-        drawRing(dl, st.pointerX, st.pointerY, st.settling);
+    {
+        const mouse::HudIcon icon = (mouse::HudIcon)i;
+        drawIcon(dl, icon, rects[i], st.iconEnabled[i], st.hoverIcon == icon && st.iconEnabled[i]);
+    }
+    if (st.preview)
+        drawDiamond(dl, (float)st.preview->x, (float)st.preview->y, false);
+    if (st.destination)
+        drawDiamond(dl, (float)st.destination->x, (float)st.destination->y, true);
+    if (st.held && st.pointer)
+        drawRing(dl, st.pointer->x, st.pointer->y, st.settling);
 }

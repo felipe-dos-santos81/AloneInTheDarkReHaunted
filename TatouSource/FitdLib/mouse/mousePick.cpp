@@ -13,19 +13,18 @@
 namespace mouse
 {
 
-Camera frameCamera(int alpha, int beta, int gamma, int camX, int camY, int camZ,
-                   int focal1, int focal2, int focal3, RoomOrigin room, const int16_t* cosTable)
+Camera frameCamera(const CameraData& cam, RoomOrigin room, const int16_t* cosTable)
 {
     Camera c;
-    c.alpha = alpha;
-    c.beta = beta;
-    c.gamma = gamma;
-    c.posX = (camX - room.worldX) * 10;
-    c.posY = (room.worldY - camY) * 10;
-    c.posZ = (room.worldZ - camZ) * 10;
-    c.focal1 = focal1;
-    c.focal2 = focal2;
-    c.focal3 = focal3;
+    c.alpha = cam.alpha;
+    c.beta = cam.beta;
+    c.gamma = cam.gamma;
+    c.posX = (cam.x - room.worldX) * 10;
+    c.posY = (room.worldY - cam.y) * 10;
+    c.posZ = (room.worldZ - cam.z) * 10;
+    c.focal1 = cam.focal1;
+    c.focal2 = cam.focal2;
+    c.focal3 = cam.focal3;
     c.cosTable = cosTable;
     return c;
 }
@@ -218,15 +217,18 @@ int reframeY(int y, RoomOrigin from, RoomOrigin to)
     return y + 10 * (to.worldY - from.worldY);
 }
 
-std::vector<PolyFit> fitFloor(const Camera& camera, const std::vector<std::vector<XZ>>& polysWorld, int floorY)
+std::vector<PolyFit> fitFloor(const Camera& camera, const std::vector<std::vector<XZ>>& coverPolys, int floorY)
 {
     std::vector<PolyFit> fits;
-    for (const std::vector<XZ>& poly : polysWorld)
+    for (const std::vector<XZ>& poly : coverPolys)
     {
         std::vector<std::pair<XZ, Vec2>> usable;
-        for (XZ w : poly)
+        for (XZ c : poly)
+        {
+            const XZ w{ c.x * kCoverScale, c.z * kCoverScale };
             if (auto s = projectPoint(camera, w.x, floorY, w.z))
                 usable.push_back({ w, *s });
+        }
         if (usable.size() < 4)
             continue;
 
@@ -293,7 +295,7 @@ std::optional<XZ> pickFloor(const std::vector<PolyFit>& fits, Point pixel)
             continue;
         if (std::fabs(forward->x - pixel.x) > kReprojectPx || std::fabs(forward->y - pixel.y) > kReprojectPx)
             continue; // the fit does not explain this pixel
-        if (insideWorldPoly(wx, wz, fit.world))
+        if (insideCoverZone(wx, wz, fit.cover))
             return XZ{ wx, wz };
     }
     return std::nullopt;
@@ -330,22 +332,5 @@ std::optional<XZ> steerPoint(const Camera& camera, const std::vector<PolyFit>& f
     return std::nullopt;
 }
 
-bool insideWorldPoly(int x, int z, const std::vector<XZ>& poly)
-{
-    bool inside = false;
-    const size_t n = poly.size();
-    for (size_t k = 0; k < n; ++k)
-    {
-        const XZ a = poly[k];
-        const XZ b = poly[(k + 1) % n];
-        if ((a.z > z) != (b.z > z) && a.z != b.z)
-        {
-            const double crossing = (double)(b.x - a.x) * (z - a.z) / (double)(b.z - a.z) + a.x;
-            if (x < crossing)
-                inside = !inside;
-        }
-    }
-    return inside;
-}
 
 } // namespace mouse

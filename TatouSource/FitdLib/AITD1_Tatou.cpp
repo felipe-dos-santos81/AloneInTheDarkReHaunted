@@ -178,7 +178,7 @@ int make3dTatou(void)
 
                 process_events();
 
-                if (menuMouseClicked())
+                if (menuMouseSkipClicked())
                 {
                     mouseSkip = true;
                     break;

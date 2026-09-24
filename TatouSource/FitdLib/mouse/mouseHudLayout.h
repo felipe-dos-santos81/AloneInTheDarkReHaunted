@@ -15,25 +15,6 @@
 namespace mouse
 {
 
-// Inclusive rectangle in logical coordinates.
-struct Rect
-{
-    int x1 = 0;
-    int y1 = 0;
-    int x2 = 0;
-    int y2 = 0;
-};
-
-inline bool operator==(const Rect& a, const Rect& b)
-{
-    return a.x1 == b.x1 && a.y1 == b.y1 && a.x2 == b.x2 && a.y2 == b.y2;
-}
-
-inline bool contains(const Rect& r, Point p)
-{
-    return p.x >= r.x1 && p.x <= r.x2 && p.y >= r.y1 && p.y <= r.y2;
-}
-
 enum class HudIcon : uint8_t
 {
     Inventory = 0,
@@ -57,45 +38,37 @@ inline std::array<Rect, kHudIconCount> hudIconRects()
     return r;
 }
 
-// Pad, grow to the minimum size (centred), then slide inside the 320x200 frame.
-inline Rect forgivingBox(Rect box, int pad = kHitPad, int minimum = kHitMinimum)
+// One axis of forgivingBox: pad, grow to the minimum size (centred), then
+// slide inside [0, last].
+inline void forgivingSpan(int& lo, int& hi, int last)
 {
-    Rect r{ box.x1 - pad, box.y1 - pad, box.x2 + pad, box.y2 + pad };
-    const int w = r.x2 - r.x1 + 1;
-    if (w < minimum)
+    lo -= kHitPad;
+    hi += kHitPad;
+    const int size = hi - lo + 1;
+    if (size < kHitMinimum)
     {
-        const int grow = minimum - w;
-        r.x1 -= grow / 2;
-        r.x2 += grow - grow / 2;
+        const int grow = kHitMinimum - size;
+        lo -= grow / 2;
+        hi += grow - grow / 2;
     }
-    const int h = r.y2 - r.y1 + 1;
-    if (h < minimum)
+    if (lo < 0)
     {
-        const int grow = minimum - h;
-        r.y1 -= grow / 2;
-        r.y2 += grow - grow / 2;
+        hi -= lo;
+        lo = 0;
     }
-    if (r.x1 < 0)
+    if (hi > last)
     {
-        r.x2 -= r.x1;
-        r.x1 = 0;
+        lo = std::max(0, lo - (hi - last));
+        hi = last;
     }
-    if (r.x2 > kLogicalW - 1)
-    {
-        r.x1 = std::max(0, r.x1 - (r.x2 - (kLogicalW - 1)));
-        r.x2 = kLogicalW - 1;
-    }
-    if (r.y1 < 0)
-    {
-        r.y2 -= r.y1;
-        r.y1 = 0;
-    }
-    if (r.y2 > kLogicalH - 1)
-    {
-        r.y1 = std::max(0, r.y1 - (r.y2 - (kLogicalH - 1)));
-        r.y2 = kLogicalH - 1;
-    }
-    return r;
+}
+
+// Pad, grow to the minimum size (centred), then slide inside the 320x200 frame.
+inline Rect forgivingBox(Rect box)
+{
+    forgivingSpan(box.x1, box.x2, kLogicalW - 1);
+    forgivingSpan(box.y1, box.y2, kLogicalH - 1);
+    return box;
 }
 
 // Forgiving HUD hit rects; overlaps between neighbours split at the midpoint.

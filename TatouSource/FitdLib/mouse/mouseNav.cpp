@@ -15,60 +15,20 @@
 namespace mouse
 {
 
-int testCrossProduct(int x1, int z1, int x2, int z2, int x3, int z3, int x4, int z4)
+int Grid::column(int x) const
 {
-    int returnFlag = 0;
-    const int xAB = x1 - x2;
-    const int yCD = z3 - z4;
-    const int xCD = x3 - x4;
-    const int yAB = z1 - z2;
-    const int xAC = x1 - x3;
-    const int yAC = z1 - z3;
-    int dot = (xAB * yCD) - (xCD * yAC);
-    if (dot)
-    {
-        int dda = xAC * yCD - xCD * yAC;
-        int dmu = -xAB * yAC + xAC * yAB;
-        if (dot < 0)
-        {
-            dot = -dot;
-            dda = -dda;
-            dmu = -dmu;
-        }
-        if (dda >= 0 && dmu >= 0 && dot >= dda && dot >= dmu)
-            returnFlag = 1;
-    }
-    return returnFlag;
+    return floorDiv(x - x0 + step / 2, step);
 }
 
-bool insideTwoRay(int x, int z, const std::vector<XZ>& poly)
+int Grid::row(int z) const
 {
-    int flag = 0;
-    const size_t n = poly.size();
-    for (size_t j = 0; j < n; ++j)
-    {
-        const XZ a = poly[j];
-        const XZ b = poly[(j + 1) % n];
-        if (testCrossProduct(x, z, x - 10000, z, a.x, a.z, b.x, b.z))
-            flag |= 1;
-        if (testCrossProduct(x, z, x + 10000, z, a.x, a.z, b.x, b.z))
-            flag |= 2;
-    }
-    return flag == 3;
-}
-
-int floorDiv(int a, int b)
-{
-    int q = a / b;
-    if ((a % b != 0) && ((a < 0) != (b < 0)))
-        --q;
-    return q;
+    return floorDiv(z - z0 + step / 2, step);
 }
 
 bool Grid::cellOf(int x, int z, int* i, int* j) const
 {
-    const int ci = floorDiv(x - x0 + step / 2, step);
-    const int cj = floorDiv(z - z0 + step / 2, step);
+    const int ci = column(x);
+    const int cj = row(z);
     if (ci < 0 || cj < 0 || ci >= nx || cj >= nz)
         return false;
     *i = ci;
@@ -116,15 +76,8 @@ std::optional<Grid> buildGrid(const std::vector<std::vector<XZ>>& coverPolys,
         {
             const int wx = g.x0 + i * step;
             const int wz = g.z0 + j * step;
-            const int cx = floorDiv(wx, kCoverScale);
-            const int cz = floorDiv(wz, kCoverScale);
-            bool inside = false;
-            for (const auto& poly : coverPolys)
-                if (insideTwoRay(cx, cz, poly))
-                {
-                    inside = true;
-                    break;
-                }
+            const bool inside = std::any_of(coverPolys.begin(), coverPolys.end(),
+                                            [&](const std::vector<XZ>& poly) { return insideCoverZone(wx, wz, poly); });
             if (!inside)
                 continue;
             bool blocked = false;
@@ -144,6 +97,46 @@ std::optional<Grid> buildGrid(const std::vector<std::vector<XZ>>& coverPolys,
     return g;
 }
 
+namespace
+{
+constexpr int kApproachRings = 12;
+
+// The lowest-scoring accepted walkable cell centre on the first Chebyshev ring
+// around (oi, oj), from firstRadius out to maxCells, that has one.
+template <typename Score>
+std::optional<XZ> ringSearch(const Grid& grid, int oi, int oj, int firstRadius, int maxCells,
+                             const Accept& accept, Score score)
+{
+    for (int radius = firstRadius; radius <= maxCells; ++radius)
+    {
+        std::optional<XZ> best;
+        double bestScore = 0.0;
+        for (int di = -radius; di <= radius; ++di)
+            for (int dj = -radius; dj <= radius; ++dj)
+            {
+                if (std::max(std::abs(di), std::abs(dj)) != radius)
+                    continue;
+                const int i = oi + di;
+                const int j = oj + dj;
+                if (!grid.at(i, j))
+                    continue;
+                const XZ c = grid.center(i, j);
+                if (accept && !accept(c))
+                    continue;
+                const double s = score(i, j);
+                if (!best || s < bestScore)
+                {
+                    best = c;
+                    bestScore = s;
+                }
+            }
+        if (best)
+            return best;
+    }
+    return std::nullopt;
+}
+}
+
 std::optional<XZ> nearestWalkable(const Grid& grid, XZ p, int maxCells, const Accept& accept)
 {
     if (grid.isWalkable(p.x, p.z))
@@ -152,74 +145,52 @@ std::optional<XZ> nearestWalkable(const Grid& grid, XZ p, int maxCells, const Ac
     int oj = 0;
     if (!grid.cellOf(p.x, p.z, &oi, &oj))
         return std::nullopt;
-    for (int radius = 1; radius <= maxCells; ++radius)
-    {
-        bool found = false;
-        int bestDist = 0;
-        XZ best;
-        for (int di = -radius; di <= radius; ++di)
-            for (int dj = -radius; dj <= radius; ++dj)
-            {
-                if (std::max(std::abs(di), std::abs(dj)) != radius)
-                    continue;
-                const int i = oi + di;
-                const int j = oj + dj;
-                if (!grid.at(i, j))
-                    continue;
-                const XZ c = grid.center(i, j);
-                if (accept && !accept(c))
-                    continue;
-                const int dist = di * di + dj * dj;
-                if (!found || dist < bestDist)
-                {
-                    found = true;
-                    bestDist = dist;
-                    best = c;
-                }
-            }
-        if (found)
-            return best;
-    }
-    return std::nullopt;
+    return ringSearch(grid, oi, oj, 1, maxCells, accept, [&](int i, int j) {
+        return (double)((i - oi) * (i - oi) + (j - oj) * (j - oj));
+    });
 }
 
-std::optional<XZ> approachCell(const Grid& grid, XZ target, XZ from, int maxCells, const Accept& accept)
+std::optional<XZ> approachCell(const Grid& grid, XZ target, XZ from, const Accept& accept)
 {
-    if (grid.isWalkable(target.x, target.z))
+    if (grid.isWalkable(target.x, target.z) && (!accept || accept(target)))
         return target;
-    const int oi = std::clamp(floorDiv(target.x - grid.x0 + grid.step / 2, grid.step), 0, grid.nx - 1);
-    const int oj = std::clamp(floorDiv(target.z - grid.z0 + grid.step / 2, grid.step), 0, grid.nz - 1);
+    const int oi = std::clamp(grid.column(target.x), 0, grid.nx - 1);
+    const int oj = std::clamp(grid.row(target.z), 0, grid.nz - 1);
     const double fi = (double)(from.x - grid.x0) / grid.step;
     const double fj = (double)(from.z - grid.z0) / grid.step;
-    for (int radius = 0; radius <= maxCells; ++radius)
+    return ringSearch(grid, oi, oj, 0, kApproachRings, accept, [&](int i, int j) {
+        return (i - fi) * (i - fi) + (j - fj) * (j - fj);
+    });
+}
+
+std::optional<Reach> reachFrom(const Grid& grid, XZ start)
+{
+    int si = 0;
+    int sj = 0;
+    if (!grid.cellOf(start.x, start.z, &si, &sj) || !grid.at(si, sj))
+        return std::nullopt;
+    Reach reach{ grid };
+    std::fill(reach.grid.walk.begin(), reach.grid.walk.end(), 0);
+    std::vector<std::pair<int, int>> open{ { si, sj } };
+    reach.grid.walk[(size_t)si * grid.nz + sj] = 1;
+    while (!open.empty())
     {
-        bool found = false;
-        double bestScore = 0.0;
-        XZ best;
-        for (int di = -radius; di <= radius; ++di)
-            for (int dj = -radius; dj <= radius; ++dj)
+        const auto [ci, cj] = open.back();
+        open.pop_back();
+        for (int di = -1; di <= 1; ++di)
+            for (int dj = -1; dj <= 1; ++dj)
             {
-                if (std::max(std::abs(di), std::abs(dj)) != radius)
+                if ((!di && !dj) || !grid.canStep(ci, cj, di, dj))
                     continue;
-                const int i = oi + di;
-                const int j = oj + dj;
-                if (!grid.at(i, j))
-                    continue;
-                const XZ c = grid.center(i, j);
-                if (accept && !accept(c))
-                    continue;
-                const double score = (i - fi) * (i - fi) + (j - fj) * (j - fj);
-                if (!found || score < bestScore)
+                uint8_t& seen = reach.grid.walk[(size_t)(ci + di) * grid.nz + (cj + dj)];
+                if (!seen)
                 {
-                    found = true;
-                    bestScore = score;
-                    best = c;
+                    seen = 1;
+                    open.push_back({ ci + di, cj + dj });
                 }
             }
-        if (found)
-            return best;
     }
-    return std::nullopt;
+    return reach;
 }
 
 namespace
@@ -237,12 +208,8 @@ bool lineClear(const Grid& g, std::pair<int, int> a, std::pair<int, int> b)
     {
         const int i = (int)std::lround(a.first + (double)(b.first - a.first) * k / steps);
         const int j = (int)std::lround(a.second + (double)(b.second - a.second) * k / steps);
-        if (!g.at(i, j))
+        if (!g.canStep(pi, pj, i - pi, j - pj))
             return false;
-        const int di = i - pi;
-        const int dj = j - pj;
-        if (di && dj && !(g.at(i, pj) && g.at(pi, j)))
-            return false; // never cut a blocked corner
         pi = i;
         pj = j;
     }
@@ -304,10 +271,8 @@ std::optional<std::vector<XZ>> findPath(const Grid& g, XZ start, XZ goal)
             const int dj = n[1];
             const int ni = ci + di;
             const int nj = cj + dj;
-            if (!g.at(ni, nj))
+            if (!g.canStep(ci, cj, di, dj))
                 continue;
-            if (di && dj && !(g.at(ci + di, cj) && g.at(ci, cj + dj)))
-                continue; // never cut a blocked corner
             const int nidx = ni * g.nz + nj;
             const int next = cost[idx] + ((di && dj) ? 14 : 10);
             if (next < cost[nidx])
@@ -359,7 +324,7 @@ int joydMirror(int capResult)
 
 void resetStall(NavIntent& intent)
 {
-    intent.hasStallTarget = false;
+    intent.stallTarget.reset();
     intent.stallBest = 0;
     intent.stallSinceMs = 0;
 }
@@ -400,9 +365,8 @@ void repath(NavIntent& in, const HeroPose& hero, const NavEnv& env)
 
 bool stalled(NavIntent& in, XZ target, int distance, uint32_t nowMs)
 {
-    if (!in.hasStallTarget || in.stallTarget != target || distance < in.stallBest)
+    if (in.stallTarget != target || distance < in.stallBest)
     {
-        in.hasStallTarget = true;
         in.stallTarget = target;
         in.stallBest = distance;
         in.stallSinceMs = nowMs;
@@ -412,8 +376,7 @@ bool stalled(NavIntent& in, XZ target, int distance, uint32_t nowMs)
 }
 }
 
-NavDecision decide(NavIntent& in, const HeroPose& hero, const NavEnv& env,
-                   uint32_t nowMs, bool stopAtDestination)
+NavDecision decide(NavIntent& in, const HeroPose& hero, const NavEnv& env, uint32_t nowMs)
 {
     if (!in.planned || in.pathRoom != hero.room || in.waypoints.empty())
         repath(in, hero, env);
@@ -425,7 +388,8 @@ NavDecision decide(NavIntent& in, const HeroPose& hero, const NavEnv& env,
     d.target = in.waypoints.front();
     const int distance = giveDistance2D(hero.at.x, hero.at.z, d.target.x, d.target.z);
     // Only the destination room reports arrival: a cross-room waypoint is the doorway.
-    if (stopAtDestination && in.room == hero.room && in.waypoints.size() == 1 && distance < kArriveDistance)
+    // A push in contact never arrives: it leans until it stalls.
+    if (!in.engaged && in.room == hero.room && in.waypoints.size() == 1 && distance < kArriveDistance)
     {
         d.arrived = true;
         return d;
@@ -435,7 +399,7 @@ NavDecision decide(NavIntent& in, const HeroPose& hero, const NavEnv& env,
         const bool close = distance < kGiveUpDistance;
         // A stall this close still counts as arrival only in the destination
         // room: a cross-room waypoint is the doorway, and a foundable behind a
-        // closed door in a neighbouring room must never dispatch (I5).
+        // closed door in a neighbouring room must never dispatch.
         d.arrived = close && in.room == hero.room;
         d.abandoned = !d.arrived;
         return d;

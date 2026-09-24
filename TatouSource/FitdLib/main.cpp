@@ -849,10 +849,9 @@ void readBook(int index, int type, int vocIndex)
 }
 
 // Mouse page buttons along the bottom edge of the book (320x200 space).
-static const int kLireBtnY1 = 186, kLireBtnY2 = 198;
-static const int kLirePrevX1 = 8, kLirePrevX2 = 36;
-static const int kLireCloseX1 = 146, kLireCloseX2 = 174;
-static const int kLireNextX1 = 284, kLireNextX2 = 312;
+static const mouse::Rect LIRE_PREV_RECT{ 8, 186, 36, 198 };
+static const mouse::Rect LIRE_CLOSE_RECT{ 146, 186, 174, 198 };
+static const mouse::Rect LIRE_NEXT_RECT{ 284, 186, 312, 198 };
 int Lire(int index, int startx, int top, int endx, int bottom, int demoMode, int color, int shadow, int vocIndex)
 {
     bool lastPageReached = false;
@@ -1209,32 +1208,24 @@ int Lire(int index, int startx, int top, int endx, int bottom, int demoMode, int
                     bool canPrev = page > 0;
                     bool canNext = !lastPageReached;
                     bool inside = gm.x >= 0.0f;
-                    bool overPrev = inside && menuMouseHitRect(gm.x, gm.y, kLirePrevX1, kLireBtnY1, kLirePrevX2, kLireBtnY2);
-                    bool overClose = inside && menuMouseHitRect(gm.x, gm.y, kLireCloseX1, kLireBtnY1, kLireCloseX2, kLireBtnY2);
-                    bool overNext = inside && menuMouseHitRect(gm.x, gm.y, kLireNextX1, kLireBtnY1, kLireNextX2, kLireBtnY2);
+                    // A click on a disabled arrow still counts as a click on an item.
+                    bool overPrev = inside && menuMouseHitRect(gm.x, gm.y, LIRE_PREV_RECT);
+                    bool overClose = inside && menuMouseHitRect(gm.x, gm.y, LIRE_CLOSE_RECT);
+                    bool overNext = inside && menuMouseHitRect(gm.x, gm.y, LIRE_NEXT_RECT);
 
-                    menuDrawArrowButton(kLirePrevX1, kLireBtnY1, kLirePrevX2, kLireBtnY2, -1, overPrev, canPrev);
-                    menuDrawCloseButton(kLireCloseX1, kLireBtnY1, kLireCloseX2, kLireBtnY2, overClose);
-                    menuDrawArrowButton(kLireNextX1, kLireBtnY1, kLireNextX2, kLireBtnY2, +1, overNext, canNext);
+                    menuDrawArrowButton(LIRE_PREV_RECT, -1, overPrev, canPrev);
+                    menuDrawCloseButton(LIRE_CLOSE_RECT, overClose);
+                    menuDrawArrowButton(LIRE_NEXT_RECT, +1, overNext, canNext);
 
                     if (clicked && overClose)
                     {
-                        menuNoteItemClick();
                         quit = 1;
                         break;
                     }
-                    if (clicked && overPrev)
-                    {
-                        menuNoteItemClick(); // M4: stamp even while disabled (page 1)
-                        if (canPrev)
-                            mousePrev = true;
-                    }
-                    if (clicked && overNext)
-                    {
-                        menuNoteItemClick(); // M4: stamp even while disabled (last page)
-                        if (canNext)
-                            mouseNext = true;
-                    }
+                    if (clicked && overPrev && canPrev)
+                        mousePrev = true;
+                    if (clicked && overNext && canNext)
+                        mouseNext = true;
                 }
 
                 if ((localKey == 1) || localClick)
@@ -1303,7 +1294,7 @@ int Lire(int index, int startx, int top, int endx, int bottom, int demoMode, int
                 {
                     break;
                 }
-                if (menuMouseClicked())
+                if (menuMouseSkipClicked())
                 {
                     demoClicked = true;
                     break;
@@ -5368,9 +5359,9 @@ int parseAllSaves(int arg)
         // Mouse: hover selects slot, click confirms (keyboard/gamepad take priority)
         if (initialDelay == 0)
         {
-            static ImVec2 s_saveMouse = { -1.0f, -1.0f };
+            static MenuHoverAnchor s_saveHover;
             ImVec2 gm = menuGetGameMouse();
-            if (menuMouseMoved(s_saveMouse, localKey || localJoyD))
+            if (menuMouseMoved(s_saveHover, localKey || localJoyD))
             {
                 // Slots are in the left column: X 28-160, startY=30, lineHeight=16
                 int hit = menuMouseHitList(gm.x, gm.y, 28, 160, 30, 16, NUM_SAVE_SLOTS);
@@ -5386,7 +5377,6 @@ int parseAllSaves(int arg)
                 int hit = menuMouseHitList(gm.x, gm.y, 28, 160, 30, 16, NUM_SAVE_SLOTS);
                 if (hit >= 0)
                 {
-                    menuNoteItemClick();
                     localClick = 1; // treat as confirm on the hovered slot
                 }
             }

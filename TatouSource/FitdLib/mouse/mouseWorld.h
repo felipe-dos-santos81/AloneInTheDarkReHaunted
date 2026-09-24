@@ -5,6 +5,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
 
+#include <array>
+#include <optional>
+
+#include "mouseHudLayout.h"
+#include "mousePick.h"
+
 // Call first thing when any screen opens from gameplay (menus, map, inventory,
 // found object, book) and when PlayWorld exits: cancels the walk, clears
 // attack/push, resets gestures and arms the screen click gate.
@@ -40,22 +46,16 @@ bool mouseNavSteer(tObject* actor);
 // What the HUD should draw this frame (logical 320x200 coordinates).
 struct MouseHudState
 {
-    bool visible = false;
-    bool iconEnabled[3] = { false, false, false };
-    int hoverIcon = -1;
-    bool hasDestination = false;
-    float destX = 0.0f;
-    float destY = 0.0f;
-    bool hasPreview = false;
-    float previewX = 0.0f;
-    float previewY = 0.0f;
-    bool hasPointer = false;
-    int pointerX = 0;
-    int pointerY = 0;
+    std::array<bool, mouse::kHudIconCount> iconEnabled{}; // indexed by mouse::HudIcon
+    std::optional<mouse::HudIcon> hoverIcon;
+    std::optional<mouse::Vec2> destination;
+    std::optional<mouse::Vec2> preview;
+    std::optional<mouse::Point> pointer;
     bool held = false;
     bool settling = false;
 };
 
+// False when no HUD shows this frame.
 bool mouseWorldHudState(MouseHudState* out);
 
 // True while the mouse drives gameplay and was the last input: the idle

@@ -166,7 +166,7 @@ int makeIntroScreens(void)
     {
         process_events();
 
-        if (menuMouseClicked())
+        if (menuMouseSkipClicked())
             break;
 
         if (evalChrono(&chrono) >= 0x80)
@@ -198,7 +198,7 @@ int makeIntroScreens(void)
 
         process_events();
 
-        if (menuMouseClicked())
+        if (menuMouseSkipClicked())
             break;
 
         time = evalChrono(&chrono);
@@ -419,10 +419,10 @@ int ChoosePerso(void)
 
             // Mouse: hovering/clicking on a portrait selects or confirms
             {
-                static ImVec2 s_chooseMouse = { -1.0f, -1.0f };
+                static MenuHoverAnchor s_chooseHover;
                 ImVec2 gm = menuGetGameMouse();
                 bool anyKey = (JoyD != 0);
-                if (menuMouseMoved(s_chooseMouse, anyKey) && gm.x >= 0.0f)
+                if (menuMouseMoved(s_chooseHover, anyKey) && gm.x >= 0.0f)
                 {
                     int newChoice = (gm.x < 160.0f) ? 0 : 1;
                     if (newChoice != choice)

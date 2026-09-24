@@ -345,11 +345,11 @@ void PlayWorld(int allowSystemMenu, int deltaTime)
 		localJoyD = JoyD;
 		localClick = Click;
 
-		// Keyboard or gamepad input takes the hero back from the mouse.
-		if (key || JoyD || Click)
-			mouseWorldKeyboardTookOver();
-		// Mouse gameplay: cutscene skips, HUD icons, hold-to-walk (mouse/mouseWorld.h).
-		mouseWorldFrame(allowSystemMenu);
+        // Keyboard or gamepad input takes the hero back from the mouse.
+        if (key || JoyD || Click)
+            mouseWorldKeyboardTookOver();
+        // Mouse gameplay: cutscene skips, HUD icons, hold-to-walk (mouse/mouseWorld.h).
+        mouseWorldFrame(allowSystemMenu);
 
         if(localKey)
         {
@@ -370,10 +370,6 @@ void PlayWorld(int allowSystemMenu, int deltaTime)
 
                 // Pause HD background animation when entering menu
                 pauseCurrentAnimatedHDBackground();
-
-                // Ensure cursor is visible in menu
-                mouseWorldTakeOver();
-                menuRestoreCursorForMenu();
 
                 // Notify TTF that we're entering the menu
                 notifyTTFMenuStateChanged(true, true);
@@ -411,10 +407,6 @@ void PlayWorld(int allowSystemMenu, int deltaTime)
 
                     // Pause HD background animation when entering map
                     pauseCurrentAnimatedHDBackground();
-
-                    // Ensure cursor is visible in map
-                    mouseWorldTakeOver();
-                    menuRestoreCursorForMenu();
 
                     // Notify TTF that we're entering the map screen
                     notifyTTFMenuStateChanged(true, true);
@@ -457,10 +449,6 @@ void PlayWorld(int allowSystemMenu, int deltaTime)
 
                     // Pause HD background animation when entering inventory
                     pauseCurrentAnimatedHDBackground();
-
-                    // Ensure cursor is visible in inventory
-                    mouseWorldTakeOver();
-                    menuRestoreCursorForMenu();
 
                     // Notify TTF that we're entering the inventory/status screen
                     notifyTTFMenuStateChanged(true, true);
