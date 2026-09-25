@@ -1,0 +1,79 @@
+# Builds the Tatou engine and runs the test suites on every supported
+# desktop platform. Mirrors the local flow: `make build-fitd`,
+# `make test-engine`, `make test-tools` (see BUILDING.md and the Makefile).
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-latest
+            preset: linux-release
+            builddir: build/linux-release
+            config: Release
+          - name: macOS
+            os: macos-latest
+            preset: macos-arm64
+            builddir: build/macos-arm64
+            config: Release
+          # windows-2022 provides the "Visual Studio 17 2022" generator the
+          # windows-release preset selects.
+          - name: Windows
+            os: windows-2022
+            preset: windows-release
+            builddir: build/vs2026
+            config: RelWithDebInfo
+    steps:
+      - uses: actions/checkout@v4
+
+      # Windows runners ship VS2022, CMake and Ninja already.
+      - name: Install dependencies
+        if: runner.os != 'Windows'
+        run: bash TatouSource/install_deps.sh
+
+      - name: Configure
+        working-directory: TatouSource
+        run: cmake --preset ${{ matrix.preset }}
+
+      - name: Build
+        working-directory: TatouSource
+        run: cmake --build --preset ${{ matrix.preset }} --target Fitd engine_tests --parallel
+
+      - name: Engine tests
+        working-directory: TatouSource
+        run: ctest --test-dir ${{ matrix.builddir }} --build-config ${{ matrix.config }} --output-on-failure -R engine_tests
+
+  tools-tests:
+    name: Tool tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r tools/requirements-dev.txt
+
+      - name: Run tool tests
+        run: python -m pytest tests/tools -q

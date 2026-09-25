@@ -355,10 +355,10 @@ cmake -DUSE_SANITIZER=ON ...
 
 ## Continuous Integration
 
-The project includes a GitHub Actions workflow (`.github/workflows/cmake-multi-platform.yml`) that builds on:
+The project includes a GitHub Actions workflow (`.github/workflows/build.yml`) that runs on pushes and pull requests to `main`:
 
-- **Windows** (latest MSVC) — Debug + Release
-- **Ubuntu** (GCC and Clang) — Debug + Release
+- **Windows** (VS2022, RelWithDebInfo), **Ubuntu** (Release) and **macOS** (Apple Silicon, Release) — builds `Fitd` and runs the doctest engine suite (`engine_tests`)
+- **Tool tests** — runs the pytest suite for `tools/` on Ubuntu (real-data tests skip without game files)
 
 ---
 
