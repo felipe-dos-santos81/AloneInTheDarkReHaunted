@@ -1,9 +1,11 @@
-# Unit tests for the engine-free modules: mouse gameplay (FitdLib/mouse) and
-# the HD character model math (FitdLib/models). These sources include only
+# Unit tests for the engine-free modules: mouse gameplay (FitdLib/mouse), the
+# HD character model math (FitdLib/models) and the accessibility assists
+# (FitdLib/assist). These sources include only
 # standard headers, so the test binary links neither FitdLib nor bgfx/SDL.
 # Engine-coupled mouse behaviour is covered by docs/mouse-gameplay-checklist.md.
 set(MOUSE_DIR "${CMAKE_SOURCE_DIR}/FitdLib/mouse")
 set(MODELS_DIR "${CMAKE_SOURCE_DIR}/FitdLib/models")
+set(ASSIST_DIR "${CMAKE_SOURCE_DIR}/FitdLib/assist")
 
 # Engine-free mouse sources compiled into the tests.
 set(MOUSE_CORE_SOURCES
@@ -19,10 +21,15 @@ set(MODELS_CORE_SOURCES
     "${MODELS_DIR}/renderCamera.cpp"
 )
 
+# Engine-free assist sources compiled into the tests.
+set(ASSIST_CORE_SOURCES
+    "${ASSIST_DIR}/counterRule.cpp"
+)
+
 file(GLOB ENGINE_TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cpp")
 
-add_executable(engine_tests ${ENGINE_TEST_SOURCES} ${MOUSE_CORE_SOURCES} ${MODELS_CORE_SOURCES})
-target_include_directories(engine_tests PRIVATE "${THIRD_PARTY}/doctest" "${MOUSE_DIR}" "${MODELS_DIR}")
+add_executable(engine_tests ${ENGINE_TEST_SOURCES} ${MOUSE_CORE_SOURCES} ${MODELS_CORE_SOURCES} ${ASSIST_CORE_SOURCES})
+target_include_directories(engine_tests PRIVATE "${THIRD_PARTY}/doctest" "${MOUSE_DIR}" "${MODELS_DIR}" "${ASSIST_DIR}")
 target_compile_definitions(engine_tests PRIVATE FITD_SOURCE_DIR="${CMAKE_SOURCE_DIR}/FitdLib")
 target_compile_definitions(engine_tests PRIVATE FITD_EXE_DIR="${CMAKE_SOURCE_DIR}/Fitd")
 set_target_properties(engine_tests PROPERTIES
