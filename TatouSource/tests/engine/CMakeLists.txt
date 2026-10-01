@@ -25,6 +25,7 @@ set(MODELS_CORE_SOURCES
 # Engine-free assist sources compiled into the tests.
 set(ASSIST_CORE_SOURCES
     "${ASSIST_DIR}/counterRule.cpp"
+    "${ASSIST_DIR}/paceRule.cpp"
 )
 
 file(GLOB ENGINE_TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cpp")
