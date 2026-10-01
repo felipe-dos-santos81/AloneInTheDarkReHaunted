@@ -101,6 +101,10 @@ set(ZLIB_LIBRARY zlibstatic)
 set(ZLIB_TESTS OFF CACHE BOOL "Build zlib tests")
 add_subdirectory(${THIRD_PARTY}/zlib ${CMAKE_BINARY_DIR}/zlib/zlib-build)
 
+if(WIN32)
+    add_compile_definitions(NOMINMAX)
+endif()
+
 add_subdirectory( tools )
 add_subdirectory( FitdLib )
 add_subdirectory( Fitd )

@@ -30,11 +30,13 @@ jobs:
             preset: linux-release
             builddir: build/linux-release
             config: Release
+            parallel: 4
           - name: macOS
             os: macos-latest
             preset: macos-arm64
             builddir: build/macos-arm64
             config: Release
+            parallel: 3
           # windows-2022 provides the "Visual Studio 17 2022" generator the
           # windows-release preset selects.
           - name: Windows
@@ -42,6 +44,7 @@ jobs:
             preset: windows-release
             builddir: build/vs2026
             config: RelWithDebInfo
+            parallel: 4
     steps:
       - uses: actions/checkout@v4
 
@@ -56,7 +59,7 @@ jobs:
 
       - name: Build
         working-directory: TatouSource
-        run: cmake --build --preset ${{ matrix.preset }} --target Fitd engine_tests --parallel
+        run: cmake --build --preset ${{ matrix.preset }} --target Fitd engine_tests --parallel ${{ matrix.parallel }}
 
       - name: Engine tests
         working-directory: TatouSource
