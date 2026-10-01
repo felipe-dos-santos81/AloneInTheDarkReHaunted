@@ -23,7 +23,9 @@ Guidance for anyone (human or agent) changing this repository.
 - `TatouSource/FitdLib/assist/` — accessibility assists. The automatic
   counter-attack: `counterRule.*` is engine-free (standard headers only) and
   unit-tested in `TatouSource/tests/engine/`; `counterAttack.*` is its engine
-  adapter, the only assist file that touches engine globals. In-game sign-off:
+  adapter. The enemy attack pace: `paceRule.*` is engine-free and unit-tested
+  likewise; `attackPace.*` is its engine adapter. The adapters are the only
+  assist files that touch engine globals. In-game sign-off:
   `docs/combat-assist-checklist.md`.
 - `TatouSource/FitdLib/physics/` — collision rules, engine-free and header-only,
   unit-tested in `TatouSource/tests/engine/`: `collisionEscape.h` (how an
@@ -126,3 +128,11 @@ lock. SDL cursor and window calls belong on the main thread.
    a player would (Actions → Fight; left, or up for a gun, + Action held) and never applies
    damage or calls `hit()`/`FoundObjet` itself. Any input of the player's own
    cancels it. New behaviour in `counterRule.*` gets a doctest first.
+5. **Enemy attack pace** (`FitdLib/assist/`): it runs only through its four
+   hooks — `attackPaceAllowsHit` and `attackPaceNoteHit` (`hit()`),
+   `attackPaceHoldChase` (`processTrack` case 2, after `speed = 4`) and
+   `attackPaceForget` (`InitObjet`). On Normal, or outside AITD1, the game
+   behaves exactly as before. It only refuses or delays the start of an
+   enemy's melee attack and holds its chase; it never applies damage, never
+   calls `hit()` for anyone and never changes an animation. The hero is never
+   paced. New behaviour in `paceRule.*` gets a doctest first.

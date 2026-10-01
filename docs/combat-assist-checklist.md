@@ -40,3 +40,23 @@ controls after the enemy's blow lands.
 | 28 | Mouse gameplay on, a left click in the world after the blow: the waiting counter is cancelled; the click does what it normally does | | |
 | 29 | Attacker standing just across a room boundary: the hero turns toward it (not a wrong angle) and strikes once | | |
 | 30 | An enemy that swings again at once (the attic monster): the counter lands between its blows and it flinches | | |
+
+## Enemy attack pace
+
+Manual sign-off for "Enemy attack pace" (spec:
+`docs/superpowers/specs/2026-10-01-enemy-attack-pace-design.md`, local only).
+Alone in the Dark 1, the bedroom window creature (floor 1, room 4) unless a
+row says otherwise; stand still and let it attack. Set the pace in F1 →
+Controls → Combat. With `debug.mouseNavOverlay` off.
+
+| # | Check | Emily | Carnby |
+|---|---|---|---|
+| 31 | Normal: it hits about every 2 s (100 ticks), exactly as before | | |
+| 32 | Slower: about twice the time between hits; Much slower: about three times | | |
+| 33 | While it waits within reach it stands still facing the hero; step well away (over ~1.2 m) and it chases again | | |
+| 34 | Slower/Much slower: the hero's own strikes, punches and shots are unaffected | | |
+| 35 | When the wait ends it attacks normally and the blow lands as before | | |
+| 36 | Two enemies at once (e.g. the dining room): each waits on its own; one's attack never delays the other | | |
+| 37 | Save during the wait, load: the enemy attacks again within its normal wait, never frozen out | | |
+| 38 | Options window: the combo "Enemy attack pace" shows Normal by default; choosing Much slower, quitting and relaunching keeps it (aitd_remaster.cfg has controls.enemyAttackPace = 2) | | |
+| 39 | AITD2 / AITD3 with the option on Much slower: enemies behave as before | | |

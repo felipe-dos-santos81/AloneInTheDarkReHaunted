@@ -12,6 +12,7 @@
 #include "math.h"
 #include "mouse/mouseWorld.h"
 #include "assist/counterAttack.h"
+#include "assist/attackPace.h"
 
 #define	TL_INIT_COOR		0
 #define	TL_GOTO			1
@@ -359,6 +360,7 @@ void processTrack(void)
                 turnActorToward(currentProcessedActorPtr, targetX, targetZ);
 
                 currentProcessedActorPtr->speed = 4;
+                attackPaceHoldChase(currentProcessedActorPtr, followedActorIdx, targetX, targetZ); // (assist/attackPace.h)
 
             }
             break;

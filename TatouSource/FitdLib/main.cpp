@@ -26,6 +26,7 @@ extern void playMenuSound(const char* soundName);
 #include "resourceGC.h"
 #include "track.h"
 #include "physics/collisionEscape.h"
+#include "assist/attackPace.h"
 #include "lanternLighting.h"
 #include "menuMouse.h"
 #include <math.h>
@@ -5728,8 +5729,11 @@ void makeMessage(int messageIdx)
 
 void hit(int animNumber, int arg_2, int arg_4, int arg_6, int hitForce, int arg_A)
 {
+    if (!attackPaceAllowsHit(currentProcessedActorIdx)) // enemy attack pace (assist/attackPace.h)
+        return;
     if (InitAnim(animNumber, 0, arg_A))
     {
+        attackPaceNoteHit(currentProcessedActorIdx, animNumber, arg_A);
         currentProcessedActorPtr->animActionANIM = animNumber;
         currentProcessedActorPtr->animActionFRAME = arg_2;
         currentProcessedActorPtr->animActionType = 1;

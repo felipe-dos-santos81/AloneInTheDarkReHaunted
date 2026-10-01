@@ -8,6 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "common.h"
+#include "assist/attackPace.h"
 #include "consoleLog.h"
 
 int InitObjet(int body, int typeZv, int hardZvIdx, s16 objectType, int x, int y, int z, int stage, int room, int alpha, int beta, int gamma, int anim, int frame, int animtype, int animInfo)
@@ -30,6 +31,8 @@ int InitObjet(int body, int typeZv, int hardZvIdx, s16 objectType, int x, int y,
 
     currentProcessedActorPtr = actorPtr;
     currentProcessedActorIdx = i;
+
+    attackPaceForget(i); // a reused slot starts with no attack-pace record (assist/attackPace.h)
 
     actorPtr->bodyNum = body;
     actorPtr->objectType = objectType;
