@@ -25,6 +25,9 @@ Guidance for anyone (human or agent) changing this repository.
   unit-tested in `TatouSource/tests/engine/`; `counterAttack.*` is its engine
   adapter, the only assist file that touches engine globals. In-game sign-off:
   `docs/combat-assist-checklist.md`.
+- `TatouSource/FitdLib/physics/` — collision rules, engine-free and header-only,
+  unit-tested in `TatouSource/tests/engine/`: `collisionEscape.h` (how an
+  actor already inside a blocker may move, used by `GereCollision`).
 - `tools/` + `tests/tools/` — the Python texture pipeline and the HD model
   export (`tools/aitd_models/`, `make export-models`; contract in
   `docs/model-contract.md`); `make test-tools` runs both suites.

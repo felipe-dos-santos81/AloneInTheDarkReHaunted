@@ -25,6 +25,7 @@ extern void playMenuSound(const char* soundName);
 #include "hdBackgroundRenderer.h"
 #include "resourceGC.h"
 #include "track.h"
+#include "physics/collisionEscape.h"
 #include "lanternLighting.h"
 #include "menuMouse.h"
 #include <math.h>
@@ -4321,11 +4322,16 @@ void GereCollision(ZVStruct* oldZv, ZVStruct* animatedZv, ZVStruct* fixZv)
     {
         if (oldpos == 0)
         {
-            oldtype = 0;
-
-            hardColStepZ = 0;
-            hardColStepX = 0;
-
+            // Already inside the box. FITD zeroes the step here, which traps
+            // the actor for good; keep what does not press deeper in
+            // (physics/collisionEscape.h).
+            int stepX = hardColStepX;
+            int stepZ = hardColStepZ;
+            physics::escapeStep(physics::Span{ oldZv->ZVX1, oldZv->ZVX2 }, physics::Span{ oldZv->ZVZ1, oldZv->ZVZ2 },
+                                physics::Span{ fixZv->ZVX1, fixZv->ZVX2 }, physics::Span{ fixZv->ZVZ1, fixZv->ZVZ2 },
+                                &stepX, &stepZ);
+            hardColStepX = (s16)stepX;
+            hardColStepZ = (s16)stepZ;
             return;
         }
         else
