@@ -35,3 +35,7 @@ controls after the enemy's blow lands.
 | 23 | Keyboard-only and gamepad-only fights with the option off: unchanged from before | | |
 | 24 | Save, load, map, inventory and system menu during and after combat: no counter survives them | | |
 | 25 | Options window: F1 → Controls shows a "Combat" heading above "Controller behavior" with the unticked checkbox "Hit back automatically when an enemy strikes you"; hovering (?) shows the help text; ticking it, quitting and relaunching keeps it ticked (aitd_remaster.cfg has controls.autoCounterAttack = true) | | |
+| 26 | The strike misses (the attacker steps out of reach before the blow): exactly one swing, then the hero stands; no second swing | | |
+| 27 | A key pressed during the hurt animation (not held before the blow): the waiting counter is cancelled and the key acts normally | | |
+| 28 | Mouse gameplay on, a left click in the world after the blow: the waiting counter is cancelled; the click does what it normally does | | |
+| 29 | Attacker standing just across a room boundary: the hero turns toward it (not a wrong angle) and strikes once | | |
