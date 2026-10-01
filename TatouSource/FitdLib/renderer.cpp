@@ -668,6 +668,17 @@ int RotateNuage(int x,int y,int z,int alpha,int beta,int gamma, sBody* pBody)
 
             Z += cameraPerspective;
 
+            // Clipping, as AnimNuage does: a vertex behind the near plane would
+            // divide into a mirrored, huge point and stretch the actor's screen
+            // box over the whole screen (the attic chest behind camera 4).
+            if(Z <= 50)
+            {
+                *(outPtr++) = -10000;
+                *(outPtr++) = -10000;
+                *(outPtr++) = -10000;
+                continue;
+            }
+
             transformedX = ((X * cameraFovX) / Z) + cameraCenterX;
 
             *(outPtr++) = transformedX;
