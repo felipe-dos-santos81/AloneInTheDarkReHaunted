@@ -133,6 +133,28 @@ TEST_CASE("the strike is held until the hero's strike arms and then resolves")
     CHECK(rule.phase() == CounterPhase::Idle);
 }
 
+TEST_CASE("a strike flag already set when striking begins is not the counter's strike")
+{
+    CounterRule rule = pending();
+    CounterFrame f = freeHero(1000);
+    f.strikeArmed = true; // stale: set before the counter injected anything
+    CounterCommand c = rule.step(f);
+    CHECK(rule.phase() == CounterPhase::Striking);
+    CHECK(c.holdStrike);
+
+    f.nowMs = 1016; // the stale flag is still set: no change, so not the counter's strike
+    CHECK(rule.step(f).holdStrike);
+    CHECK(rule.step(freeHero(1032)).holdStrike); // it clears: not a resolved blow
+    CHECK(rule.phase() == CounterPhase::Striking);
+
+    f = freeHero(1048);
+    f.strikeArmed = true; // the counter's own strike arms
+    CHECK(rule.step(f).holdStrike);
+
+    CHECK(none(rule.step(freeHero(1400)))); // and resolves
+    CHECK(rule.phase() == CounterPhase::Idle);
+}
+
 TEST_CASE("one pending counter strikes only once")
 {
     CounterRule rule = striking();

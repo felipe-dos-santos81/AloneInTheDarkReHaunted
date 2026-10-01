@@ -20,6 +20,7 @@ void CounterRule::noteHit(int attackerIdx, uint32_t nowMs)
     attacker_ = attackerIdx;
     sinceMs_ = nowMs;
     strikeSeen_ = false;
+    strikePrev_ = false;
 }
 
 CounterCommand CounterRule::step(const CounterFrame& f)
@@ -54,15 +55,19 @@ CounterCommand CounterRule::step(const CounterFrame& f)
         phase_ = CounterPhase::Striking;
         sinceMs_ = f.nowMs;
         strikeSeen_ = false;
+        strikePrev_ = f.strikeArmed; // a flag already set now is stale, not our strike
         cmd.face = true;
         cmd.holdStrike = true;
         return cmd;
     }
 
-    // Striking: hold until the strike has armed and then resolved.
-    if (f.strikeArmed)
+    // Striking: hold until the strike has armed (a false -> true change) and
+    // then resolved.
+    if (f.strikeArmed && !strikePrev_)
         strikeSeen_ = true;
-    else if (strikeSeen_)
+    const bool resolved = strikeSeen_ && !f.strikeArmed;
+    strikePrev_ = f.strikeArmed;
+    if (resolved)
     {
         reset();
         return {};
@@ -78,6 +83,7 @@ void CounterRule::reset()
     sinceMs_ = 0;
     fistsTried_ = false;
     strikeSeen_ = false;
+    strikePrev_ = false;
 }
 
 } // namespace assist

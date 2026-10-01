@@ -62,7 +62,8 @@ private:
     int attacker_ = -1;
     uint32_t sinceMs_ = 0;    // when the current phase's budget started
     bool fistsTried_ = false; // this counter already switched to fists
-    bool strikeSeen_ = false; // the strike armed since Striking began
+    bool strikeSeen_ = false; // the strike armed (false -> true) since Striking began
+    bool strikePrev_ = false; // strikeArmed on the previous frame (the entering frame is the baseline)
 };
 
 } // namespace assist
