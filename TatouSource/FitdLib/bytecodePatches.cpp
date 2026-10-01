@@ -14,7 +14,6 @@
 #include "bytecodePatches.h"
 #include "life.h"
 #include "consoleLog.h"
-#include "track.h"
 #include "dustParticles.h"
 #include "lanternLighting.h"
 #include <vector>
@@ -34,20 +33,10 @@ extern s16 g_currentFloor; // Current floor number
 // Patch Registry
 // ============================================================================
 
-// Track stuck zombie chicken actors for teleportation fallback
-// Map of actor index -> stuck detection count
-static std::map<int, int> s_zombieChickenStuckCount;
-
-// Track when zombie chicken first got stuck (for 10-second delay before intervention)
-// Map of actor index -> timestamp when stuck was first detected
-static std::map<int, std::chrono::high_resolution_clock::time_point> s_zombieChickenStuckTime;
-
-// Track last known position to detect if actor is making progress
-// Map of actor index -> last position coordinates
+// A world position, as the patches below record it.
 struct ActorPosition {
     int x, y, z;
 };
-static std::map<int, ActorPosition> s_zombieChickenLastPosition;
 
 // Track player stuck state at CAMERA05_000
 // Timestamp when player first detected stuck in CAMERA05_000
@@ -79,18 +68,6 @@ static std::set<int> s_zombieChickenHiddenShadow;
 // Used to decide when the actor has moved far enough to be considered
 // "crashed through the window".
 static std::map<int, ActorPosition> s_zombieChickenShadowInitialPosition;
-
-// Timestamp of when each zombie chicken was first observed post-crash (i.e.
-// the frame its shadow-hidden flag was cleared). Used to enforce a grace
-// period before the stuck-detection patch can intervene, so the scripted
-// crash -> jump -> land animation sequence has time to complete without us
-// cutting it short and stranding the chicken mid-air.
-static std::map<int, std::chrono::high_resolution_clock::time_point> s_zombieChickenPostCrashTime;
-
-// Track last observed worldY per zombie chicken to detect whether it is
-// airborne (Y is changing). While airborne we must not intervene.
-static std::map<int, int> s_zombieChickenLastY;
-static std::map<int, std::chrono::high_resolution_clock::time_point> s_zombieChickenLastYChangeTime;
 
 // Track actors whose camera mask (BgOverlay) occlusion should be skipped.
 // Populated by the "frog in the intro" patch (body 267) and similar cases
@@ -345,19 +322,7 @@ static void patchAction_AnimationValidation(int lifeNum, int opcode, tObject* ac
 }
 
 ///
-/// PATCH: Fix zombie chicken enemies stuck at windows after crash
-///
-/// Issue:
-///   When zombie chicken enemies crash through a window, they sometimes get stuck next to it
-///   with zero speed and won't chase the player until they get very close.
-///   This occurs because movement speed is reset to 0 during collision recovery.
-///
-/// Solution:
-///   Detect when zombie chicken actors have speed=0 during movement.
-///   Reset their speed to resume normal AI behavior (chasing/pathfinding).
-///   Only applies to zombie chicken body types (024, 071, 094, 234).
-///
-/// Zombie chicken body numbers:
+/// Zombie chicken body numbers (the creatures that crash through windows):
 ///   24  (LISTBODY_024 / LISTBOD2_024)
 ///   71  (LISTBODY_071 / LISTBOD2_071)
 ///   94  (LISTBODY_094 / LISTBOD2_094)
@@ -367,262 +332,6 @@ static void patchAction_AnimationValidation(int lifeNum, int opcode, tObject* ac
 static inline bool isZombieChickenBody(int bodyNum)
 {
     return bodyNum == 24 || bodyNum == 71 || bodyNum == 94 || bodyNum == 150 || bodyNum == 234;
-}
-
-///
-/// Simulate a "window refocus catch-up" for an actor whose interpolation
-/// state is frozen. Empirically, unfocusing and refocusing the game window
-/// instantly unfreezes the zombie chicken; the reason is that per-actor
-/// interpolation anchors (`RealValue::memoTicks`, and the body's keyframe
-/// start time at scratchBuffer[+4]) measure elapsed time as `timer - anchor`.
-/// When the engine resumes after a long pause this delta becomes huge and
-/// every in-flight interpolation trips its completion branch
-/// (`evaluateReal()` in anim.cpp:175, `SetInterAnimObjet()` in anim.cpp:864).
-///
-/// Rather than literally pausing, we rewind the actor's interpolation
-/// anchors so the same completion branches fire on the very next tick. We
-/// also clear pending anim actions and the pathfinding stuck counter, both
-/// of which can latch an actor out of chase mode.
-///
-static void wakeUpStuckActor(tObject* actor)
-{
-    if (!actor)
-        return;
-
-    // Force all RealValue interpolations to snap to their end values next
-    // frame by pushing their anchors well into the past.
-    const unsigned int kRewind = 10000;
-    unsigned int pastTick = (timer > kRewind) ? (timer - kRewind) : 0;
-    actor->speedChange.memoTicks = pastTick;
-    actor->rotate.memoTicks      = pastTick;
-    actor->YHandler.memoTicks    = pastTick;
-
-    // Push the body's keyframe start-time anchor into the past as well so
-    // the animation player advances past whatever keyframe it is wedged on.
-    if (actor->bodyNum >= 0)
-    {
-        sBody* pBody = HQR_Get(HQ_Bodys, actor->bodyNum);
-        if (pBody && !pBody->m_scratchBuffer.empty() && pBody->m_scratchBuffer.size() >= 6)
-        {
-            u16 newAnchor = (u16)((u16)timer - (u16)0x4000);
-            *(u16*)(pBody->m_scratchBuffer.data() + 4) = newAnchor;
-        }
-    }
-
-    // Let the life script reach its "animation finished" branch so it can
-    // pick the next action (usually chase/move). Do NOT clear ANIM itself
-    // - locomotion in AITD is animation-driven, wiping ANIM strands the
-    // actor mid-air.
-    actor->flagEndAnim = 1;
-    actor->animActionType = 0;
-
-    // Clear pathfinding stuck counters - these can disable active chase
-    // after too many failed waypoint-approach frames.
-    resetTrackStuckCounters(actor->indexInWorld);
-}
-
-static bool patchCondition_EnemyStuckAtWindow(int lifeNum, int opcode, tObject* actor)
-{
-    // Only apply to zombie chicken enemies, not other actors
-    if (actor == nullptr || !isZombieChickenBody(actor->bodyNum))
-        return false;
-
-    // Check on ALL opcodes for zombie chickens so we continuously monitor them
-    // This ensures we detect stuck state even when trackMode becomes 0 (when actor is stuck)
-    // We need to keep monitoring to detect when they need unsticking, even if trackMode changes
-    return true;
-}
-
-static void patchAction_EnemyStuckAtWindow(int lifeNum, int opcode, tObject* actor, int context)
-{
-    // Post-opcode: Check if zombie chicken is stuck after attempting to crash through window
-    // Only apply to zombie chicken enemies
-    if (context != 1 || !actor || !isZombieChickenBody(actor->bodyNum))
-        return;
-
-    int actorIdx = actor->indexInWorld;
-
-    // IMPORTANT: Do not interfere with the chicken while it is still behind
-    // the window. The shadow-hide patch keeps actors in
-    // s_zombieChickenHiddenShadow until they have moved far enough to be
-    // considered "crashed through". Before that point the chicken legitimately
-    // sits in its idle/approach animation with speed == 0, and forcing speed /
-    // trackMode / ANIM here would preempt the scripted approach + crash
-    // sequence. Also skip until we've at least observed the initial position.
-    if (s_zombieChickenShadowInitialPosition.count(actorIdx) == 0)
-        return;
-    if (s_zombieChickenHiddenShadow.count(actorIdx) > 0)
-    {
-        // Still behind the window - clear any lingering stuck record so we
-        // don't count pre-crash idle time against the post-crash timer.
-        s_zombieChickenStuckCount.erase(actorIdx);
-        s_zombieChickenStuckTime.erase(actorIdx);
-        s_zombieChickenLastPosition.erase(actorIdx);
-        s_zombieChickenPostCrashTime.erase(actorIdx);
-        s_zombieChickenLastY.erase(actorIdx);
-        s_zombieChickenLastYChangeTime.erase(actorIdx);
-        return;
-    }
-
-    auto now = std::chrono::high_resolution_clock::now();
-
-    // Stamp the moment the chicken was first observed post-crash. The
-    // shadow-hide threshold (~200 horizontal units) can be crossed during the
-    // mid-air portion of the crash/jump animation, so we must NOT start
-    // looking for "stuck" state until the scripted land has had time to
-    // complete. Enforce a grace period from this timestamp.
-    if (s_zombieChickenPostCrashTime.count(actorIdx) == 0)
-    {
-        s_zombieChickenPostCrashTime[actorIdx] = now;
-        s_zombieChickenLastY[actorIdx] = actor->worldY;
-        s_zombieChickenLastYChangeTime[actorIdx] = now;
-        printf(LIFE_TAG "Bytecode patch: Zombie chicken actor %d now post-crash - starting grace period" CON_RESET "\n", actorIdx);
-        return;
-    }
-
-    // Track whether the actor is airborne. If worldY has changed since the
-    // last observation it is still falling / jumping; refresh the timestamp.
-    {
-        auto lastYIt = s_zombieChickenLastY.find(actorIdx);
-        if (lastYIt != s_zombieChickenLastY.end() && lastYIt->second != actor->worldY)
-        {
-            lastYIt->second = actor->worldY;
-            s_zombieChickenLastYChangeTime[actorIdx] = now;
-        }
-    }
-
-    // Require a grace period after post-crash detection before any
-    // intervention so the scripted jump/land plays out untouched.
-    auto postCrashElapsed = std::chrono::duration_cast<std::chrono::seconds>(
-        now - s_zombieChickenPostCrashTime[actorIdx]).count();
-    const long POST_CRASH_GRACE_SECONDS = 5;
-    if (postCrashElapsed < POST_CRASH_GRACE_SECONDS)
-        return;
-
-    // Require the chicken to be grounded (worldY stable) for at least ~1s
-    // before we treat it as stuck - otherwise we might interrupt a jump.
-    auto yStableElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-        now - s_zombieChickenLastYChangeTime[actorIdx]).count();
-    if (yStableElapsed < 1000)
-        return;
-
-    // Check if we're still tracking this actor as stuck
-    bool hasStuckRecord = (s_zombieChickenStuckTime.count(actorIdx) > 0);
-
-    // Only detect stuck AFTER normal behavior has been attempted
-    // Detect stuck condition: zombie chicken with zero speed but active trackmode
-    if (actor->speed == 0 && actor->ANIM >= 0)
-    {
-        // First time detecting stuck - record the timestamp
-        if (!hasStuckRecord)
-        {
-            s_zombieChickenStuckCount[actorIdx] = 1;
-            s_zombieChickenStuckTime[actorIdx] = now;
-            s_zombieChickenLastPosition[actorIdx] = {actor->worldX, actor->worldY, actor->worldZ};
-            printf(LIFE_TAG "Bytecode patch: Zombie chicken stuck detected (post-crash) in life %d, actor %d, body %d - waiting 10 seconds before intervention..." CON_RESET "\n",
-                   lifeNum, actorIdx, actor->bodyNum);
-            return;  // Just record, don't intervene yet
-        }
-    }
-    else if (!hasStuckRecord)
-    {
-        // Not stuck and no record to clean up
-        return;
-    }
-
-    // If we have a stuck record, check the elapsed time
-    if (hasStuckRecord)
-    {
-        auto stuckStart = s_zombieChickenStuckTime[actorIdx];
-        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - stuckStart).count();
-
-        // After 10 seconds, FORCE intervention
-        if (elapsed >= 10)
-        {
-            printf(LIFE_TAG "Bytecode patch: Zombie chicken stuck for %ld seconds in life %d, actor %d - FORCING unstick!" CON_RESET "\n",
-                   elapsed, lifeNum, actorIdx);
-
-            // Replicate what unfocus+refocus does for the player: rewind
-            // the actor's interpolation anchors so frozen anim/speed
-            // interpolations snap to completion on the next tick. This is
-            // what actually unfreezes the chicken in practice.
-            wakeUpStuckActor(actor);
-
-            // Then nudge AI intent toward active chase.
-            actor->speed = 80;
-            actor->HIT = 3;
-            actor->speedChange.startValue = 0;
-            actor->speedChange.endValue = 80;
-            actor->speedChange.numSteps = 0;
-            actor->trackMode = 2;
-
-            // DO NOT update position here - keep comparing to ORIGINAL stuck position
-        }
-
-        // NOTE: Teleport fallback intentionally disabled - it was causing the
-        // chicken to end up outside the window geometry when it triggered.
-        // The 10-second force-unstick above is sufficient in practice.
-
-        // Check for real progress: actor moved significantly OR speed increased durably
-        // Don't clear tracking just because speed > 0 - verify actual movement
-        if (actor->speed > 0 && elapsed > 1)
-        {
-            // Check if actor actually moved from last known position
-            if (s_zombieChickenLastPosition.count(actorIdx) > 0)
-            {
-                auto lastPos = s_zombieChickenLastPosition[actorIdx];
-                int distX = actor->worldX - lastPos.x;
-                // Only check horizontal movement (X and Z), ignore Y (jumping doesn't count)
-                int distZ = actor->worldZ - lastPos.z;
-
-                // Distance threshold - if moved more than ~10 units horizontally, consider recovered
-                int distSquared = distX*distX + distZ*distZ;
-                int thresholdSquared = 100;  // sqrt(100) = ~10 units
-
-                if (distSquared >= thresholdSquared)
-                {
-                    printf(LIFE_TAG "Bytecode patch: Zombie chicken in life %d, actor %d moved %d units after %ld seconds - forcing chase on player" CON_RESET "\n",
-                           lifeNum, actorIdx, (int)sqrt(distSquared), elapsed);
-
-                    // Wake any frozen interpolations (same mechanism as
-                    // window refocus unfreezing the chicken) and nudge AI
-                    // intent toward active chase. Do NOT touch ANIM/newAnim
-                    // directly - the animation carries locomotion.
-                    wakeUpStuckActor(actor);
-                    actor->speed = 80;
-                    actor->HIT = 3;
-                    actor->trackMode = 2;
-                    actor->speedChange.startValue = 0;
-                    actor->speedChange.endValue = 80;
-                    actor->speedChange.numSteps = 0;
-
-                    // Re-baseline position and timer so we keep validating
-                    // that the chicken is continuing to move. If it stalls
-                    // again we'll re-trigger the full unstick path.
-                    s_zombieChickenLastPosition[actorIdx] = {actor->worldX, actor->worldY, actor->worldZ};
-                    s_zombieChickenStuckTime[actorIdx] = now;
-                }
-                else
-                {
-                    // Actor has speed but hasn't moved horizontally - still stuck, keep forcing
-                    printf(LIFE_TAG "Bytecode patch: Zombie chicken in life %d, actor %d has speed but no horizontal movement after %ld seconds - CONTINUING force" CON_RESET "\n",
-                           lifeNum, actorIdx, elapsed);
-                    // Keep waking interpolations and nudging intent. Leave
-                    // ANIM alone - clearing it kills locomotion.
-                    wakeUpStuckActor(actor);
-                    actor->speed = 80;
-                    actor->HIT = 3;
-                    actor->trackMode = 2;
-                }
-            }
-            else
-            {
-                // No position record - clear and stop tracking
-                s_zombieChickenStuckCount.erase(actorIdx);
-                s_zombieChickenStuckTime.erase(actorIdx);
-            }
-        }
-    }
 }
 
 ///
@@ -1443,9 +1152,6 @@ void initBytecodePatches()
     s_bytecodePatches.clear();
     s_zombieChickenHiddenShadow.clear();
     s_zombieChickenShadowInitialPosition.clear();
-    s_zombieChickenPostCrashTime.clear();
-    s_zombieChickenLastY.clear();
-    s_zombieChickenLastYChangeTime.clear();
     s_skipMaskActors.clear();
     s_permanentNoShadowActors.clear();
     s_carLastParticleSpawn.clear();
@@ -1489,11 +1195,6 @@ void initBytecodePatches()
                          patchCondition_CollisionVolumeBounds,
                          patchAction_CollisionVolumeBounds,
                          "Validate collision volume (ZV) coordinate bounds");
-
-    registerBytecodePatch(-1, -1,
-                         patchCondition_EnemyStuckAtWindow,
-                         patchAction_EnemyStuckAtWindow,
-                         "Fix enemies stuck at windows after crash");
 
     registerBytecodePatch(-1, -1,
                          patchCondition_PlayerStuckAtCamera05,
