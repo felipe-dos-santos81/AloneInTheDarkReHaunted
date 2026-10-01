@@ -22,7 +22,13 @@ int s_attackerWorldIdx = -1; // the attacker's world object, to tell it from a r
 constexpr int kActionsObject = 2;       // AITD1 "Actions" (text 200): bare hands, found-life 561
 constexpr int kFightActionBit = 1 << 4; // inventory text 27 "Fight" (= 23 + 4)
 constexpr int kFightModeVar = 90;       // vars[90]: the action chosen for Actions
-constexpr int kJoyForward = 1;          // forward: weapon strike, bare-hand kick, the only gun-firing direction
+// The stick held with Action picks the strike. Left is the quickest melee blow
+// for fists and every weapon (strike frame after 20-25 anim units, against
+// 30-40 for the others: LISTANIM/LISTANI2 anims 37/39/40/41, 262/263/265);
+// guns fire on up alone.
+constexpr int kJoyLeft = 4;
+constexpr int kJoyUp = 1;
+constexpr int kGunFoundLives[] = { 12, 365 }; // rifle, revolver
 
 // AITD1 found-lives that strike on Action (LISTLIFE.PAK): rifle 12, saber 49,
 // sword 130, daggers 187-189, knives 354/355, revolver 365.
@@ -58,6 +64,19 @@ bool armed()
     if (!w)
         return false;
     for (int life : kWeaponFoundLives)
+        if (w->foundLife == life)
+            return true;
+    return false;
+}
+
+bool gunInHand()
+{
+    if (currentInventory < 0 || currentInventory >= NUM_MAX_INVENTORY)
+        return false;
+    const tWorldObject* w = worldObjectAt(inHandTable[currentInventory]);
+    if (!w)
+        return false;
+    for (int life : kGunFoundLives)
         if (w->foundLife == life)
             return true;
     return false;
@@ -145,7 +164,7 @@ void counterAttackFrame(bool playerInput, int allowSystemMenu)
         faceActorToward(*h, ListObjets[s_rule.attacker()]);
     if (cmd.holdStrike)
     {
-        localJoyD = kJoyForward;
+        localJoyD = gunInHand() ? kJoyUp : kJoyLeft;
         localClick = 1; // PlayWorld turns this into action = 0x2000
         s_wroteInput = true;
     }

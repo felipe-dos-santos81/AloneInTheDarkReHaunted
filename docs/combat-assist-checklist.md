@@ -11,16 +11,16 @@ controls after the enemy's blow lands.
 | # | Check | Emily | Carnby |
 |---|---|---|---|
 | 1 | Option off: being hit plays the hurt animation and nothing else, exactly as before | | |
-| 2 | Bare hands (Actions/Fight chosen): after the hurt animation the hero turns to the attacker and kicks once, then stands | | |
-| 3 | Sword: one forward strike after the hurt animation; the hero does not walk forward | | |
+| 2 | Bare hands (Actions/Fight chosen): after the hurt animation the hero turns to the attacker and punches once, then stands | | |
+| 3 | Sword: one strike after the hurt animation; the hero does not walk forward | | |
 | 4 | Saber: as row 3 | | |
 | 5 | Knife: as row 3 | | |
 | 6 | Dagger: as row 3 | | |
 | 7 | Revolver with ammo: draws, fires once at the attacker, one round spent | | |
 | 8 | Rifle with ammo: aims, fires once at the attacker, one round spent | | |
 | 9 | Revolver or rifle without ammo: draws/aims, no shot, control returns within about 2.5 s | | |
-| 10 | Lamp in hand: the hero switches to Actions/Fight (as choosing Fight in the inventory), kicks once, and Actions stays in hand afterwards | | |
-| 11 | Actions with Push chosen: switches to Fight, kicks once; the inventory shows Fight chosen afterwards | | |
+| 10 | Lamp in hand: the hero switches to Actions/Fight (as choosing Fight in the inventory), punches once, and Actions stays in hand afterwards | | |
+| 11 | Actions with Push chosen: switches to Fight, punches once; the inventory shows Fight chosen afterwards | | |
 | 12 | Holding a direction key or Action when the blow lands: no counter; the player's own input works normally | | |
 | 13 | Mouse gameplay on, left button held in the world when the blow lands: no counter | | |
 | 14 | Gamepad input right after the blow: the waiting counter is cancelled | | |
@@ -39,3 +39,4 @@ controls after the enemy's blow lands.
 | 27 | A key pressed during the hurt animation (not held before the blow): the waiting counter is cancelled and the key acts normally | | |
 | 28 | Mouse gameplay on, a left click in the world after the blow: the waiting counter is cancelled; the click does what it normally does | | |
 | 29 | Attacker standing just across a room boundary: the hero turns toward it (not a wrong angle) and strikes once | | |
+| 30 | An enemy that swings again at once (the attic monster): the counter lands between its blows and it flinches | | |

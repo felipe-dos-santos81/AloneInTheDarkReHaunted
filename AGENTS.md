@@ -120,6 +120,6 @@ lock. SDL cursor and window calls belong on the main thread.
    `counterAttackSteer` (`processTrack` case 1, after `mouseNavSteer`) and
    `counterAttackReset` (inside `mouseWorldTakeOver()`). With the option off,
    or outside AITD1, the game behaves exactly as before. It only produces what
-   a player would (Actions → Fight; forward + Action held) and never applies
+   a player would (Actions → Fight; left, or up for a gun, + Action held) and never applies
    damage or calls `hit()`/`FoundObjet` itself. Any input of the player's own
    cancels it. New behaviour in `counterRule.*` gets a doctest first.
