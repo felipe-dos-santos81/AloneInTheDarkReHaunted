@@ -47,6 +47,23 @@ file(GLOB_RECURSE SRC_ROOT
     "*.cpp"
     "*.h"
 )
+# LockedFiles/ holds reference copies of older sources; never build them.
+list(FILTER SRC_ROOT EXCLUDE REGEX "/LockedFiles/")
+
+# Two compiled .cpp files with the same name become two same-named members of
+# libFitdLib.a, and the linker silently keeps one: a stale copy can shadow the
+# real file (LockedFiles/animAction.cpp hid every change to animAction.cpp).
+set(_fitd_cpp_names "")
+foreach(_src IN LISTS SRC_ROOT)
+    if(_src MATCHES "\\.cpp$")
+        get_filename_component(_name "${_src}" NAME)
+        if(_name IN_LIST _fitd_cpp_names)
+            message(FATAL_ERROR "FitdLib compiles two files named ${_name} (one is ${_src}); "
+                                "the linker would keep only one. Remove or exclude the stale copy.")
+        endif()
+        list(APPEND _fitd_cpp_names "${_name}")
+    endif()
+endforeach()
 
 
 
