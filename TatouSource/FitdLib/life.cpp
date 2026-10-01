@@ -247,6 +247,14 @@ int randRange(int min, int max)
     return((rand() % (max - min)) + min);
 }
 
+// A particle effect's HQ_Memory buffer, all s16: color, point count, an X/Y/Z
+// offset per point, then a (velocity, lifetime) pair per point.
+static constexpr int particleBufferSize(int numPoints)
+{
+    return 2 + 2 + numPoints * 3 * 2 + numPoints * 2 * 2;
+}
+static_assert(particleBufferSize(30) == 304, "FITD's evaporate buffer");
+
 int InitSpecialObjet(int mode, int X, int Y, int Z, int stage, int room, int alpha, int beta, int gamma, ZVStruct* zvPtr)
 {
     s16 localSpecialTable[4];
@@ -315,7 +323,7 @@ int InitSpecialObjet(int mode, int X, int Y, int Z, int stage, int room, int alp
         actorZvPtr->ZVZ1 -= Z;
         actorZvPtr->ZVZ2 -= Z;
 
-        currentActorPtr->frame = HQ_Malloc(HQ_Memory, 304);
+        currentActorPtr->frame = HQ_Malloc(HQ_Memory, particleBufferSize(30));
 
         flowPtr = HQ_PtrMalloc(HQ_Memory, currentActorPtr->frame);
 
@@ -366,7 +374,7 @@ int InitSpecialObjet(int mode, int X, int Y, int Z, int stage, int room, int alp
         char* flowPtr;
         int j;
 
-        currentActorPtr->frame = HQ_Malloc(HQ_Memory, 184);
+        currentActorPtr->frame = HQ_Malloc(HQ_Memory, particleBufferSize(20));
 
         flowPtr = HQ_PtrMalloc(HQ_Memory, currentActorPtr->frame);
 
@@ -448,7 +456,7 @@ int InitSpecialObjet(int mode, int X, int Y, int Z, int stage, int room, int alp
         char* flowPtr;
         int j;
 
-        currentActorPtr->frame = HQ_Malloc(HQ_Memory, 244);
+        currentActorPtr->frame = HQ_Malloc(HQ_Memory, particleBufferSize(25));
 
         flowPtr = HQ_PtrMalloc(HQ_Memory, currentActorPtr->frame);
 
