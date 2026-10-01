@@ -86,6 +86,9 @@ void initDefaultRemasterConfig()
     // Mouse gameplay (left button walks, runs and interacts in the world)
     g_remasterConfig.controls.mouseGameplay = true;
 
+    // Accessibility: automatic counter-attack (assist/counterAttack.h)
+    g_remasterConfig.controls.autoCounterAttack = false;
+
     // Controls defaults (matching initDefaultKeyBindings)
     g_remasterConfig.controls.keyBindings[0] = SDL_SCANCODE_UP;
     g_remasterConfig.controls.keyBindings[1] = SDL_SCANCODE_DOWN;
@@ -295,6 +298,8 @@ void loadRemasterConfig()
             // Controls settings
             else if (strcmp(key, "controls.mouseGameplay") == 0)
                 g_remasterConfig.controls.mouseGameplay = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
+            else if (strcmp(key, "controls.autoCounterAttack") == 0)
+                g_remasterConfig.controls.autoCounterAttack = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
             else if (strcmp(key, "controls.key.up") == 0)
                 g_remasterConfig.controls.keyBindings[0] = atoi(value);
             else if (strcmp(key, "controls.key.down") == 0)
@@ -502,6 +507,7 @@ void saveRemasterConfig()
 
     fprintf(file, "\n# Controls Settings\n");
     fprintf(file, "controls.mouseGameplay = %s\n", g_remasterConfig.controls.mouseGameplay ? "true" : "false");
+    fprintf(file, "controls.autoCounterAttack = %s\n", g_remasterConfig.controls.autoCounterAttack ? "true" : "false");
     fprintf(file, "controls.key.up = %d\n", g_remasterConfig.controls.keyBindings[0]);
     fprintf(file, "controls.key.down = %d\n", g_remasterConfig.controls.keyBindings[1]);
     fprintf(file, "controls.key.left = %d\n", g_remasterConfig.controls.keyBindings[2]);

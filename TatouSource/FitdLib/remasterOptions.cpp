@@ -244,6 +244,14 @@ static void drawControllerTab()
                     &g_remasterConfig.controls.mouseGameplay);
     ImGui::Spacing();
 
+    ImGui::TextDisabled("Combat");
+    ImGui::Separator();
+    ImGui::Checkbox("Hit back automatically when an enemy strikes you",
+                    &g_remasterConfig.controls.autoCounterAttack);
+    helpMarker("After an enemy's melee blow, the hero turns and strikes back once with the weapon in hand, "
+               "or with bare fists. Any input of your own cancels it. Alone in the Dark 1 only.");
+    ImGui::Spacing();
+
     ImGui::TextDisabled("Controller behavior");
     ImGui::Separator();
     ImGui::Checkbox("Enable controller", &g_remasterConfig.controller.enableController);

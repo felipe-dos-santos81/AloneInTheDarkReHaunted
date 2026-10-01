@@ -104,6 +104,7 @@ struct RemasterConfig
         int keyBindings[10];     // SDL_Scancode per action (ACTION_COUNT = 10)
         int gamepadBindings[10]; // SDL_GamepadButton per action
         bool mouseGameplay;      // Left-button mouse gameplay in the world (default: true)
+        bool autoCounterAttack;  // Accessibility: hit back once after an enemy's melee blow, AITD1 (default: false)
     } controls;
 
     // Mask dumping/loading settings
