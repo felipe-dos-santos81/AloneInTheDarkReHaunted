@@ -66,6 +66,15 @@ TEST_CASE("an attack with no measurable cycle never blocks")
     CHECK(assist::mayStrike(AttackPace::MuchSlower, assist::startedAttack(1000, 0), 1000));
 }
 
+TEST_CASE("holdsChase leaves the enemy's own attack and recovery alone")
+{
+    // During the natural cycle the enemy keeps its follow speed, which carries
+    // its strike forward; the hold starts only once the cycle is over.
+    CHECK_FALSE(assist::holdsChase(AttackPace::MuchSlower, kWindowCreatureAt1000, 1000, 600));
+    CHECK_FALSE(assist::holdsChase(AttackPace::MuchSlower, kWindowCreatureAt1000, 1099, 600));
+    CHECK(assist::holdsChase(AttackPace::MuchSlower, kWindowCreatureAt1000, 1100, 600));
+}
+
 TEST_CASE("holdsChase only while waiting, within reach, and never on Normal")
 {
     CHECK(assist::holdsChase(AttackPace::Slower, kWindowCreatureAt1000, 1150, 600));

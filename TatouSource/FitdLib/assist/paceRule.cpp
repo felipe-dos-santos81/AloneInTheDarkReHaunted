@@ -47,7 +47,11 @@ bool mayStrike(AttackPace pace, const PaceRecord& last, unsigned now)
 
 bool holdsChase(AttackPace pace, const PaceRecord& last, unsigned now, int distanceToHero)
 {
-    return pace != AttackPace::Normal && !mayStrike(pace, last, now) && distanceToHero < kHoldReach;
+    if (pace == AttackPace::Normal || mayStrike(pace, last, now) || distanceToHero >= kHoldReach)
+        return false;
+    // The enemy's own attack and recovery keep their follow speed, which
+    // carries the strike forward: the hold covers only the added wait.
+    return now - last.startTick >= last.cycleTicks;
 }
 
 } // namespace assist

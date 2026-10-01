@@ -35,7 +35,8 @@ struct PaceRecord
 PaceRecord startedAttack(unsigned now, unsigned cycleTicks);
 // May the enemy start an attack now?
 bool mayStrike(AttackPace pace, const PaceRecord& last, unsigned now);
-// Should a following enemy hold still this frame?
+// Should a following enemy hold still this frame? Only during the added wait,
+// never during its own attack and recovery.
 bool holdsChase(AttackPace pace, const PaceRecord& last, unsigned now, int distanceToHero);
 
 } // namespace assist
