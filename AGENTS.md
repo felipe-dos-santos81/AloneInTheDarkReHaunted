@@ -38,6 +38,17 @@ make test-tools          # Python texture-tool tests
 make test                # both
 ```
 
+## CI
+
+`.github/workflows/build.yml` mirrors `make build-fitd` plus the test suites
+on Linux, macOS and Windows (push and PR to `main`). Two platform facts keep
+it green: with a Makefile generator always give `cmake --build` a numbered
+`--parallel N` (bare `--parallel` is unbounded `make -j` and OOMs the Linux
+runner), and never name identifiers `min`, `max`, `near` or `far` in engine
+code — windows.h macros; the `NOMINMAX` target define in
+`TatouSource/CMakeLists.txt` keeps `min`/`max` out, MSVC defines
+`near`/`far` anyway.
+
 ## Git
 
 `TatouSource/build/` holds the CMake build trees and is ignored (only the
