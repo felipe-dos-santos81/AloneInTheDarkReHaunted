@@ -281,11 +281,46 @@ mouse::ClickResult steerToward(mouse::Point p)
     return mouse::ClickResult{ mouse::ClickKind::Steer, mouse::Payload{ target->x, target->z, h.room, -1 } };
 }
 
+constexpr int kHardColRoomLink = 4; // the lintel over a doorway; its parameter is the room beyond (getRoomLink)
+
+// A doorway into another room whose opening holds p: walk through it to the
+// first walkable cell beyond. The opening is the lintel's footprint from the
+// hero's floor up to the lintel. Asked only where no floor shows: in the
+// dressing room the dresser hides the doorway's own floor and the opening
+// above it shows only the bedroom's walls.
+std::optional<mouse::ClickResult> doorwayAt(mouse::Point p)
+{
+    const tObject& h = hero();
+    mouse::Camera camera;
+    if (!cameraForRoom(h.room, &camera))
+        return std::nullopt;
+    for (const hardColStruct& col : roomDataTable[h.room].hardColTable)
+    {
+        const int to = (int)col.parameter;
+        if (col.type != kHardColRoomLink || to == h.room || !roomValid(to) || col.zv.ZVY2 >= h.roomY)
+            continue;
+        const mouse::Box opening{ col.zv.ZVX1, col.zv.ZVX2, col.zv.ZVY2, h.roomY, col.zv.ZVZ1, col.zv.ZVZ2 };
+        if (!mouse::boxSilhouetteContains(camera, opening, p))
+            continue;
+        const mouse::Grid* grid = gridFor(to, agentIn(to));
+        if (!grid)
+            continue;
+        const mouse::XZ middle{ (opening.x1 + opening.x2) / 2, (opening.z1 + opening.z2) / 2 };
+        if (auto spot = mouse::nearestWalkable(*grid, mouse::reframe(middle, originOf(h.room), originOf(to))))
+            return mouse::ClickResult{ mouse::ClickKind::Walk, mouse::Payload{ spot->x, spot->z, to, -1 } };
+    }
+    return std::nullopt;
+}
+
 mouse::ClickResult pickFloorOrSteer(mouse::Point p)
 {
     auto floor = floorUnder(p);
     if (!floor)
+    {
+        if (auto doorway = doorwayAt(p))
+            return *doorway;
         return steerToward(p);
+    }
     mouse::XZ dest = floor->at;
     const mouse::Grid* grid = gridFor(floor->room, agentIn(floor->room));
     if (grid && grid->any())
