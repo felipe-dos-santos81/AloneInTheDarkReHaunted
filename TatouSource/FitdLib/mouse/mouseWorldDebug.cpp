@@ -66,6 +66,39 @@ void mouseWorldDrawDebugOverlay()
         }
     }
 
+    // MTRACE (temporary): where the game believes the click went. Magenta X =
+    // the intent's destination, cyan ring = the waypoint steered at, yellow =
+    // hero toward that waypoint (1500 units), red = the hero's last 0.5 s.
+    if (g_world.intent && g_world.decision)
+    {
+        const mouse::XZ at = heroPose().at;
+        auto mark = [&](mouse::XZ p) -> std::optional<ImVec2> {
+            auto s = screenOf(h.room, p);
+            if (!s || std::fabs(s->x) > 2000.0 || std::fabs(s->y) > 2000.0)
+                return std::nullopt;
+            return menuGameToScreen((float)s->x, (float)s->y);
+        };
+        if (auto d = mark(g_world.intent->dest))
+        {
+            dl->AddLine(ImVec2(d->x - 8, d->y - 8), ImVec2(d->x + 8, d->y + 8), IM_COL32(255, 0, 255, 255), 3.0f);
+            dl->AddLine(ImVec2(d->x + 8, d->y - 8), ImVec2(d->x - 8, d->y + 8), IM_COL32(255, 0, 255, 255), 3.0f);
+        }
+        const mouse::XZ wp = g_world.decision->target;
+        if (auto w = mark(wp))
+            dl->AddCircle(*w, 9.0f, IM_COL32(0, 255, 255, 255), 16, 2.5f);
+        const double wx = wp.x - at.x, wz = wp.z - at.z, n = std::hypot(wx, wz);
+        auto feet = mark(at);
+        if (feet && n > 0.0)
+            if (auto ahead = mark(mouse::XZ{ at.x + (int)(wx * 1500.0 / n), at.z + (int)(wz * 1500.0 / n) }))
+                dl->AddLine(*feet, *ahead, IM_COL32(255, 230, 0, 255), 3.0f);
+        static mouse::XZ s_trail[30];
+        static int s_trailAt = 0;
+        s_trail[s_trailAt++ % 30] = at;
+        if (feet && s_trailAt >= 30)
+            if (auto past = mark(s_trail[s_trailAt % 30]))
+                dl->AddLine(*past, *feet, IM_COL32(255, 40, 40, 255), 3.0f);
+    }
+
     // Cross-check the projection replica against the renderer's live globals
     // (valid after AllRedraw) whenever the hero stands in the camera's room.
     if (h.room == currentRoom)

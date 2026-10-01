@@ -10,11 +10,15 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <iterator>
 
 namespace mouseworld
 {
+bool g_traceResolve = false; // MTRACE (temporary)
+#define MTRACE(...) do { if (g_traceResolve) printf("MTRACE " __VA_ARGS__); } while (0)
+
 namespace
 {
 bool isInteractable(int idx)
@@ -72,7 +76,12 @@ int pickActorAt(mouse::Point p, bool forgiving)
         if (forgiving)
             box = mouse::forgivingBox(box);
         if (mouse::contains(box, p))
+        {
+            MTRACE("  actor hit idx=%d %s box=(%d,%d)-(%d,%d) world=%d body=%d type=0x%x life=%d room=%d at=(%d,%d,%d)\n", idx,
+                   forgiving ? "forgiving" : "exact", a.screenXMin, a.screenYMin, a.screenXMax, a.screenYMax, a.indexInWorld,
+                   a.bodyNum, a.objectType, a.life, a.room, a.roomX, a.roomY, a.roomZ);
             return idx;
+        }
     }
     return -1;
 }
@@ -105,6 +114,7 @@ mouse::ClickResult targetFor(int actorIdx)
         else if (auto reachableSpot = mouse::approachCell(*grid, dest, from, reachable))
             dest = *reachableSpot;
     }
+    MTRACE("  -> target actor=%d dest=(%d,%d) room=%d\n", actorIdx, dest.x, dest.z, t.room);
     return mouse::ClickResult{ mouse::ClickKind::Target, mouse::Payload{ dest.x, dest.z, t.room, t.indexInWorld } };
 }
 
@@ -134,7 +144,9 @@ std::optional<FloorHit> floorUnder(mouse::Point p)
         const auto* fits = fitsFor(room, floorY);
         if (!fits)
             continue;
-        if (auto hit = mouse::pickFloor(*fits, p))
+        auto hit = mouse::pickFloor(*fits, p);
+        MTRACE("  floor room=%d y=%d pick=%s(%d,%d)\n", room, floorY, hit ? "" : "none", hit ? hit->x : 0, hit ? hit->z : 0);
+        if (hit)
             return FloorHit{ room, floorY, *hit };
     }
     return std::nullopt;
@@ -188,6 +200,8 @@ std::optional<mouse::ClickResult> exitAt(mouse::Point p)
                     return false;
             return true;
         });
+        MTRACE("  exit zone hit (%d..%d, %d..%d) spot=%s(%d,%d)\n", outline.x1, outline.x2, outline.z1, outline.z2,
+               spot ? "" : "none", spot ? spot->x : 0, spot ? spot->z : 0);
         if (spot)
             return mouse::ClickResult{ mouse::ClickKind::Exit, mouse::Payload{ spot->x, spot->z, h.room, -1 } };
     }
@@ -204,7 +218,15 @@ mouse::ClickResult steerToward(mouse::Point p)
         return {};
     auto target = mouse::steerPoint(camera, *fits, h.roomY, heroPose().at, p);
     if (!target)
+    {
+        MTRACE("  -> steer: no bearing (feet off screen or pointer on hero)\n");
         return {}; // the hero's feet are off screen, or the pointer is on the hero
+    }
+    {
+        const double dx = target->x - heroPose().at.x, dz = target->z - heroPose().at.z, n = std::hypot(dx, dz);
+        MTRACE("  -> steer hero=(%d,%d) target=(%d,%d) dir=(%.3f,%.3f)\n", heroPose().at.x, heroPose().at.z, target->x,
+               target->z, dx / n, dz / n);
+    }
     return mouse::ClickResult{ mouse::ClickKind::Steer, mouse::Payload{ target->x, target->z, h.room, -1 } };
 }
 
@@ -225,9 +247,13 @@ mouse::ClickResult pickFloorOrSteer(mouse::Point p)
             return s && std::fabs(s->x - p.x) <= mouse::kSnapBudgetPx && std::fabs(s->y - p.y) <= mouse::kSnapBudgetPx;
         });
         if (!snapped)
+        {
+            MTRACE("  floor pick has no walkable cell within the snap budget\n");
             return steerToward(p);
+        }
         dest = *snapped;
     }
+    MTRACE("  -> walk dest=(%d,%d) room=%d\n", dest.x, dest.z, floor->room);
     return mouse::ClickResult{ mouse::ClickKind::Walk, mouse::Payload{ dest.x, dest.z, floor->room, -1 } };
 }
 }
@@ -348,6 +374,8 @@ mouse::ClickResult resolveAt(mouse::Point p)
             return {};
         return mouse::ClickResult{ kHudIconActions[(size_t)*icon].kind, {} };
     }
+    MTRACE("resolve logical=(%d,%d) camera=%d hero room=%d at=(%d,%d) beta=%d\n", p.x, p.y, NumCamera, hero().room,
+           heroPose().at.x, heroPose().at.z, hero().beta);
     if (hero().trackMode != 1)
         return {}; // a script walks the hero: nothing to walk to or strike (the HUD still works)
     int actor = pickActorAt(p, false);
@@ -355,6 +383,7 @@ mouse::ClickResult resolveAt(mouse::Point p)
         actor = pickActorAt(p, true);
     if (actor >= 0 && isCombatTarget(actor))
     {
+        MTRACE("  -> combat target %d (canStrike=%d)\n", actor, (int)canStrike(true));
         if (!canStrike(true))
             return {}; // aimed at the enemy: never a fall-through to a walk
         return mouse::ClickResult{ mouse::ClickKind::Attack, mouse::Payload{ 0, 0, -1, -1, actor } };
@@ -363,7 +392,11 @@ mouse::ClickResult resolveAt(mouse::Point p)
     {
         if (isHoldActionTarget(actor))
             if (auto payload = holdActionApproach(actor))
+            {
+                MTRACE("  -> push actor=%d stand=(%d,%d)\n", actor, payload->x, payload->z);
                 return mouse::ClickResult{ mouse::ClickKind::Push, *payload };
+            }
+        MTRACE("  actor %d is inert scenery: falls through\n", actor);
         actor = -1; // inert scenery: the pixel means what the floor behind it means
     }
     if (actor >= 0)
@@ -371,7 +404,10 @@ mouse::ClickResult resolveAt(mouse::Point p)
     const tObject& h = hero();
     if (h.screenXMax >= 0 && h.screenYMax >= 0 &&
         mouse::contains(mouse::Rect{ h.screenXMin, h.screenYMin, h.screenXMax, h.screenYMax }, p))
+    {
+        MTRACE("  -> on the hero: blocked\n");
         return {}; // on the hero: blocked, never the floor behind the hero
+    }
     if (auto exit = exitAt(p))
         return *exit;
     return pickFloorOrSteer(p);

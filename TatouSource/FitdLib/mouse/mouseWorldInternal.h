@@ -74,6 +74,8 @@ int hudKeyFor(mouse::ClickKind kind);
 std::optional<mouse::Payload> holdActionApproach(int targetIdx);
 // What a click at p would do. Hovering never changes game state.
 mouse::ClickResult resolveAt(mouse::Point p);
+// MTRACE (temporary): resolveAt prints each step while this is set.
+extern bool g_traceResolve;
 
 // ---- the live mouse state (mouseWorld.cpp) ----------------------------------
 
