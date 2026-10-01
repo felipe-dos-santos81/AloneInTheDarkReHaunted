@@ -17,6 +17,7 @@ namespace
 {
 assist::CounterRule s_rule;
 bool s_wroteInput = false; // localJoyD/localClick written by the counter this frame
+int s_attackerWorldIdx = -1; // the attacker's world object, to tell it from a reused ListObjets slot
 
 constexpr int kActionsObject = 2;       // AITD1 "Actions" (text 200): bare hands, found-life 561
 constexpr int kFightActionBit = 1 << 4; // inventory text 27 "Fight" (= 23 + 4)
@@ -93,7 +94,7 @@ bool attackerValid(int idx)
         return false;
     const tObject& a = ListObjets[idx];
     const tWorldObject* w = worldObjectAt(a.indexInWorld);
-    return w && (a.objectType & AF_ANIMATED) && w->stage == g_currentFloor;
+    return w && a.indexInWorld == s_attackerWorldIdx && (a.objectType & AF_ANIMATED) && w->stage == g_currentFloor;
 }
 
 // InitAnim's own AITD1 test (anim.cpp): it refuses new animations now.
@@ -107,6 +108,9 @@ void counterAttackNoteHit(int victimIdx, int attackerIdx)
 {
     if (!enabled() || victimIdx != currentCameraTargetActor)
         return;
+    if (attackerIdx < 0 || attackerIdx >= NUM_MAX_OBJECT)
+        return;
+    s_attackerWorldIdx = ListObjets[attackerIdx].indexInWorld;
     s_rule.noteHit(attackerIdx, (uint32_t)SDL_GetTicks());
 }
 
