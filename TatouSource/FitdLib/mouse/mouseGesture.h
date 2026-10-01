@@ -52,6 +52,19 @@ inline SceneryUse sceneryUse(int armedAction)
     return armedAction == kArmedNothing || armedAction == kArmedPush ? SceneryUse::Push : SceneryUse::TouchAction;
 }
 
+// The longest a touch keeps Action held for the animation it started.
+constexpr uint32_t kActionHoldMs = 5000;
+
+// Whether Action sent on a touch is still held, like the key: while the hero
+// plays the animation the Action started (heroAnim differs from the one it had
+// when Action went out) and that animation has not ended. Scripts read the
+// held button (life 549 skips its move handling, which would cut an
+// interruptible gesture short); an Action that started nothing is one frame.
+inline bool holdAction(int animAtAction, int heroAnim, bool animEnded, uint32_t heldMs)
+{
+    return heroAnim != animAtAction && !animEnded && heldMs < kActionHoldMs;
+}
+
 // Kinds that walk the hero and that a held pointer follows as it moves.
 inline bool isWalkLike(ClickKind kind)
 {

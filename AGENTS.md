@@ -78,10 +78,12 @@ lock. SDL cursor and window calls belong on the main thread.
      divide), never a float render path.
    - Every screen entered from gameplay calls `mouseWorldTakeOver()` first.
    - A clicked object acts only on touch: the hero leans into it and the
-     engine's own collision opens `FoundObjet`; a found script gets one frame
-     of Action on the touch. Scripted scenery is held-pushed, unless an
-     inventory action other than push is armed (`sceneryUse`): then it too is
-     touched and gets one frame of Action. The mouse never calls `FoundObjet`
+     engine's own collision opens `FoundObjet`; a found script gets Action on
+     the touch. Scripted scenery is held-pushed, unless an inventory action
+     other than push is armed (`sceneryUse`): then it too is touched and gets
+     Action. Action stays held, like the key, only while the hero plays the
+     animation it started (`holdAction`), even if the button is released; one
+     that starts nothing is one frame. The mouse never calls `FoundObjet`
      itself.
    - While a script owns the hero (`trackMode != 1`) world clicks resolve to
      blocked (the HUD still works) and a held button is spent.

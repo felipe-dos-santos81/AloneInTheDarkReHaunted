@@ -153,13 +153,14 @@ void releaseAll()
     mouse::resetPointer(g_world.pointer);
     cancelIntent();
     clearAttack();
+    g_world.actionHold.reset();
 }
 
 // Not driving the world this frame (option off, cutscene, no hero).
 void leaveWorld()
 {
     s_worldActive = false;
-    if (g_world.intent || g_world.attackTarget >= 0 || g_world.pointer.held)
+    if (g_world.intent || g_world.attackTarget >= 0 || g_world.pointer.held || g_world.actionHold)
         releaseAll();
     mouseInputRequestCursor(mouse::CursorShape::Default);
 }
@@ -187,7 +188,7 @@ bool beginContact(mouse::NavIntent& in)
 }
 
 // One frame of leaning into a clicked object. False when the intent ended.
-bool tickContact()
+bool tickContact(uint32_t now)
 {
     const tObject* a = targetActor(g_world.intent->targetObject);
     if (!a || g_world.actionSent)
@@ -202,12 +203,36 @@ bool tickContact()
         cancelIntent(); // the engine opened FoundObjet on the touch, or refused it
         return false;
     }
-    // A found script, or scripted scenery with an inventory action armed: one
-    // frame of Action while still leaning in, so the object's life sees the
-    // touch and the Action together.
+    // A found script, or scripted scenery with an inventory action armed:
+    // Action while still leaning in, so the object's life sees the touch and
+    // the Action together; tickActionHold keeps it held through the gesture.
     localClick = 1; // PlayWorld turns this into action = 0x2000
     g_world.actionSent = true;
+    g_world.actionHold = ActionHold{ hero().ANIM, now };
+    if (g_remasterConfig.debug.mouseNavOverlay) // MTRACE (temporary)
+        printf("MTRACE contact: Action sent on touch of world %d, hero anim %d\n", a->indexInWorld, hero().ANIM);
     return true;
+}
+
+// Keep Action held, like the key, while the hero plays the animation it
+// started: the hero's life skips its move handling only while the button is
+// held, and that handling would cut an interruptible gesture (the attic
+// trunk's open) short before the object's script sees it end.
+void tickActionHold(uint32_t now)
+{
+    if (!g_world.actionHold)
+        return;
+    const tObject& h = hero();
+    const ActionHold& hold = *g_world.actionHold;
+    if (mouse::holdAction(hold.animAtAction, h.ANIM, h.flagEndAnim != 0, now - hold.sinceMs))
+    {
+        localClick = 1;
+        return;
+    }
+    if (g_remasterConfig.debug.mouseNavOverlay) // MTRACE (temporary)
+        printf("MTRACE contact: Action released, hero anim %d ended=%d after %u ms\n", h.ANIM, (int)h.flagEndAnim,
+               now - hold.sinceMs);
+    g_world.actionHold.reset();
 }
 
 // An arrived or abandoned decision: it neither advances nor holds the stick.
@@ -244,14 +269,17 @@ void tickNavigation(uint32_t now)
     }
     if (in.requiresHold && !refreshHeldTarget())
         return;
-    if (!in.requiresHold && in.engaged && !tickContact())
+    if (!in.requiresHold && in.engaged && !tickContact(now))
         return;
     mouse::NavEnv env;
     env.grid = gridFor(h.room, agentOf(h));
     env.linkMidpoint = [](int from, int to) { return linkMidpoint(from, to); };
     env.reframe = [](mouse::XZ p, int from, int to) { return mouse::reframe(p, originOf(from), originOf(to)); };
     env.capObjet = [](int x1, int z1, int beta, int x2, int z2) { return CapObjet(x1, z1, beta, x2, z2); };
-    const mouse::NavDecision d = mouse::decide(in, heroPose(), env, now);
+    mouse::HeroPose pose = heroPose();
+    if (const tObject* target = in.targetObject >= 0 ? targetActor(in.targetObject) : nullptr)
+        pose.touchingTarget = target->COL_BY == currentCameraTargetActor; // last frame's collisions
+    const mouse::NavDecision d = mouse::decide(in, pose, env, now);
     g_world.decision = d;
     if (g_remasterConfig.debug.mouseNavOverlay) // MTRACE (temporary)
     {
@@ -368,6 +396,7 @@ void mouseWorldFrame(int allowSystemMenu)
         if (g_world.pointer.held)
             mouse::rebase(g_world.pointer);
         cancelIntent();
+        g_world.actionHold.reset();
         g_world.intentFloor = g_currentFloor;
     }
 
@@ -415,10 +444,12 @@ void mouseWorldFrame(int allowSystemMenu)
     {
         cancelIntent();
         clearAttack();
+        g_world.actionHold.reset();
         if (g_world.pointer.held)
             g_world.pointer.spent = true;
     }
 
+    tickActionHold(now); // before tickContact, which starts a hold this frame
     // An accepted enemy click owns the hero until the swing finishes.
     if (!tickAttack(now))
         tickNavigation(now);
@@ -434,6 +465,7 @@ void mouseWorldKeyboardTookOver()
         cancelIntent();
         clearAttack();
     }
+    g_world.actionHold.reset(); // the keyboard holds its own Action
     if (g_world.pointer.held)
         g_world.pointer.spent = true; // no follow resumes on this hold
 }

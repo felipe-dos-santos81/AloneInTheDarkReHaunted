@@ -138,6 +138,7 @@ struct HeroPose
     int room = -1;
     XZ at;  // roomX + stepX, roomZ + stepZ
     int beta = 0;
+    bool touchingTarget = false; // the intent's object has the hero in its COL_BY
 };
 
 struct NavEnv

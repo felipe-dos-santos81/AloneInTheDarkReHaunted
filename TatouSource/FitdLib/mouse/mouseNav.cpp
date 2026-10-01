@@ -432,6 +432,13 @@ NavDecision decide(NavIntent& in, const HeroPose& hero, const NavEnv& env, uint3
 
     NavDecision d;
     d.target = in.waypoints.front();
+    // Touching the clicked object is arriving: a pushed object is unknown to
+    // the walk grid, so the walk aims at its centre and never gets near it.
+    if (!in.engaged && !in.requiresHold && in.targetObject >= 0 && hero.touchingTarget)
+    {
+        d.arrived = true;
+        return d;
+    }
     const int distance = giveDistance2D(hero.at.x, hero.at.z, d.target.x, d.target.z);
     // Only the destination room reports arrival: a cross-room waypoint is the doorway.
     // A push in contact never arrives: it leans until it stalls. Nor does an

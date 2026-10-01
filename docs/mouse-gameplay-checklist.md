@@ -53,6 +53,6 @@ with a one-line note. Build: `make build-fitd`; run: `make run data=DIR`.
 | 44 | Click floor spots in the corners of L-shaped rooms: the hero walks to the spot clicked, not just toward it | | |
 | 45 | Attic, far camera on the arched alcove: the cursor turns to a doorway with an arrow (sharp on a Retina screen) over the pillar right of the arch; holding there walks the hero into the alcove and behind the pillar, and the floor changes (the stairwell is hidden, the only way out) | | |
 | 46 | Attic: with the hero pressed against the alcove's left wall, hold on the main-room floor: the hero walks out round the wall instead of grinding into it | | |
-| 47 | Attic trunk: with Push armed (the default) a hold on the trunk pushes it; arm Open/Close in the inventory, then click the trunk while standing in front of it (the side facing into the room, away from the north wall): the cursor is a hand, the hero walks up, touches it, plays the open gesture and the trunk opens (rifle found) | | |
+| 47 | Attic trunk (world object 0, life 0; also after it was pushed): with Push armed (the default) a hold on it pushes it; arm Open/Search in the inventory, then hold on the trunk from its west (-x) side, the side its life script accepts (POSREL 2): the cursor is a hand, the hero walks up and, as soon as he touches it, plays the open gesture to the end even if the button is released, and the trunk opens | | |
 
 Signed off by: ______  Date: ______  Build: `git rev-parse --short HEAD` = ______

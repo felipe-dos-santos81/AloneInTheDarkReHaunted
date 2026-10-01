@@ -112,6 +112,14 @@ struct HeldPush
     int lateral = 0;                        // the coordinate frozen across that axis
 };
 
+// Action sent on a touch and still held, like the key, while the hero plays
+// the animation it started (mouse::holdAction).
+struct ActionHold
+{
+    int animAtAction = -1; // the hero's ANIM when Action went out
+    uint32_t sinceMs = 0;
+};
+
 struct World
 {
     mouse::PointerState pointer;
@@ -122,6 +130,7 @@ struct World
     uint32_t attackStartMs = 0;
     int attackFrames = 0;
     bool actionSent = false; // the live intent's touched object got its Action
+    std::optional<ActionHold> actionHold;
     bool lastInputMouse = false;
     int intentFloor = -1;
     int allowSystemMenu = 0; // PlayWorld's allowSystemMenu this frame

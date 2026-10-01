@@ -321,3 +321,16 @@ TEST_CASE("scripted scenery is pushed unless an inventory action other than push
     CHECK(sceneryUse(128) == SceneryUse::TouchAction);
     CHECK(sceneryUse(32) == SceneryUse::TouchAction);
 }
+
+TEST_CASE("Action stays held, like the key, only while the animation it started runs")
+{
+    const int walk = 254;
+    const int open = 2;
+    // The Action started nothing: one frame, as before.
+    CHECK_FALSE(holdAction(walk, walk, false, 16));
+    // It started the open gesture: held until that animation ends.
+    CHECK(holdAction(walk, open, false, 16));
+    CHECK(holdAction(walk, open, false, kActionHoldMs - 1));
+    CHECK_FALSE(holdAction(walk, open, true, 500));             // ended: let go
+    CHECK_FALSE(holdAction(walk, open, false, kActionHoldMs));  // never ends: let go anyway
+}

@@ -367,3 +367,23 @@ TEST_CASE("an exit walk never arrives by distance: the floor change ends it")
     CHECK_FALSE(d.arrived);
     CHECK(d.advance);
 }
+
+TEST_CASE("a walk to an object arrives on touching it, however far its centre")
+{
+    // A pushed object is unknown to the walk grid: the walk aims at its
+    // centre, which the hero never reaches, but touching it is arriving.
+    auto grid = buildGrid({ kRoom }, {}, kHero);
+    REQUIRE(grid);
+    NavEnv env = envWith(&*grid);
+    NavIntent in = walkTo(XZ{ 900, 500 }, 2);
+    in.targetObject = 4;
+    HeroPose hero{ 2, XZ{ 100, 100 }, 0 }; // 1200 away
+    CHECK_FALSE(decide(in, hero, env, 0).arrived);
+    hero.touchingTarget = true;
+    CHECK(decide(in, hero, env, 10).arrived);
+
+    NavIntent push = walkTo(XZ{ 900, 500 }, 2);
+    push.targetObject = 4;
+    push.requiresHold = true; // a held push plans its own face and leaning
+    CHECK_FALSE(decide(push, hero, env, 20).arrived);
+}
