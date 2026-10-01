@@ -17,17 +17,6 @@
 namespace mouse
 {
 
-// A hard-col box (room-scale units, the room's frame).
-struct Box
-{
-    int x1 = 0;
-    int x2 = 0;
-    int y1 = 0;
-    int y2 = 0;
-    int z1 = 0;
-    int z2 = 0;
-};
-
 // The hero's rotation-invariant footprint: larger horizontal half-extent and Y band.
 struct Agent
 {
@@ -81,6 +70,10 @@ std::optional<XZ> nearestWalkable(const Grid& grid, XZ p, int maxCells = 6, cons
 // that has one.
 std::optional<XZ> approachCell(const Grid& grid, XZ target, XZ from, const Accept& accept = {});
 
+// Where to stand inside `zone` (its x/z, edges included, as isPointInZV):
+// the accepted walkable cell centre in it nearest `from`, or nothing.
+std::optional<XZ> zoneCell(const Grid& grid, const Box& zone, XZ from, const Accept& accept = {});
+
 // The cells findPath can reach from one start cell.
 struct Reach
 {
@@ -89,7 +82,11 @@ struct Reach
 };
 // Nothing when `start` is not on a walkable cell.
 std::optional<Reach> reachFrom(const Grid& grid, XZ start);
+// How far (cells) findPath looks for a walkable start beside a blocked one.
+constexpr int kStartSnapCells = 2;
 // A* (8-connected, no corner cutting) then string-pulled; last waypoint is goal.
+// A start on a blocked cell plans from the nearest walkable cell within
+// kStartSnapCells (the hero hugging a wall the grid inflates).
 std::optional<std::vector<XZ>> findPath(const Grid& grid, XZ start, XZ goal);
 
 constexpr int kArriveDistance = 400;   // DISTANCE_TO_POINT_TRESSHOLD (track.cpp)
@@ -115,6 +112,9 @@ struct NavIntent
     // Leaning into the target (a push in contact, or walking into a reached
     // object): never arrives by distance, only stalls.
     bool engaged = false;
+    // Walking into a floor-change zone: never arrives by distance (the arrival
+    // radius would stop the hero short of the zone); the floor change ends it.
+    bool exit = false;
     std::vector<XZ> waypoints;
     bool planned = false;
     int pathRoom = -1;

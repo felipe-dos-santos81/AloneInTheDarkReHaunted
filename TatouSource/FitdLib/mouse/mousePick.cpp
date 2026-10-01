@@ -301,6 +301,48 @@ std::optional<XZ> pickFloor(const std::vector<PolyFit>& fits, Point pixel)
     return std::nullopt;
 }
 
+bool boxSilhouetteContains(const Camera& camera, const Box& box, Point pixel)
+{
+    std::vector<Vec2> corners;
+    for (int x : { box.x1, box.x2 })
+        for (int y : { box.y1, box.y2 })
+            for (int z : { box.z1, box.z2 })
+            {
+                auto s = projectPoint(camera, x, y, z);
+                if (!s)
+                    return false;
+                corners.push_back(*s);
+            }
+
+    // Monotone-chain convex hull, counter-clockwise.
+    std::sort(corners.begin(), corners.end(),
+              [](const Vec2& a, const Vec2& b) { return a.x < b.x || (a.x == b.x && a.y < b.y); });
+    auto cross = [](const Vec2& o, const Vec2& a, const Vec2& b) {
+        return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+    };
+    std::vector<Vec2> hull;
+    for (int pass = 0; pass < 2; ++pass)
+    {
+        const size_t floor = hull.size();
+        for (const Vec2& c : corners)
+        {
+            while (hull.size() >= floor + 2 && cross(hull[hull.size() - 2], hull.back(), c) <= 0.0)
+                hull.pop_back();
+            hull.push_back(c);
+        }
+        hull.pop_back(); // the next chain starts with it
+        std::reverse(corners.begin(), corners.end());
+    }
+    if (hull.size() < 3)
+        return false;
+
+    const Vec2 p{ (double)pixel.x, (double)pixel.y };
+    for (size_t i = 0; i < hull.size(); ++i)
+        if (cross(hull[i], hull[(i + 1) % hull.size()], p) < 0.0)
+            return false;
+    return true;
+}
+
 std::optional<XZ> steerPoint(const Camera& camera, const std::vector<PolyFit>& fits,
                              int floorY, XZ here, Point pixel)
 {

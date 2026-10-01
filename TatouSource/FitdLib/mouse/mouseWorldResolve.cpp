@@ -8,6 +8,7 @@
 #include "menuMouse.h"
 #include "mouseWorldInternal.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <iterator>
@@ -48,6 +49,7 @@ constexpr ClickKindInfo kClickKinds[] = {
     { "target", mouse::CursorShape::Pointer },
     { "push", mouse::CursorShape::Move },
     { "attack", mouse::CursorShape::Crosshair },
+    { "exit", mouse::CursorShape::Pointer },
     { "hud:inventory", mouse::CursorShape::Pointer },
     { "hud:map", mouse::CursorShape::Pointer },
     { "hud:menu", mouse::CursorShape::Pointer },
@@ -104,6 +106,39 @@ mouse::ClickResult targetFor(int actorIdx)
             dest = *reachableSpot;
     }
     return mouse::ClickResult{ mouse::ClickKind::Target, mouse::Payload{ dest.x, dest.z, t.room, t.indexInWorld } };
+}
+
+constexpr u32 kSceZoneFloorChange = 10; // GereDec's "stage" zone
+
+// A floor-change zone whose outline holds p: walk into it. The outline is a
+// hero-high box on the zone's floor, where the hero would be drawn standing in
+// it, so it answers even when a wall hides that floor (the attic stairwell
+// behind the pillar of camera 4, the only camera filming it).
+std::optional<mouse::ClickResult> exitAt(mouse::Point p)
+{
+    const tObject& h = hero();
+    const tWorldObject* w = worldObject(h.indexInWorld);
+    if (!w || w->floorLife == -1)
+        return std::nullopt; // GereDec ignores the zone for an actor with no floor life
+    const mouse::Grid* grid = gridFor(h.room, agentOf(h));
+    mouse::Camera camera;
+    if (!grid || !cameraForRoom(h.room, &camera))
+        return std::nullopt;
+    const mouse::XZ from = heroPose().at;
+    for (const sceZoneStruct& zone : roomDataTable[h.room].sceZoneTable)
+    {
+        if (zone.type != kSceZoneFloorChange)
+            continue;
+        const mouse::Box outline{ zone.zv.ZVX1, zone.zv.ZVX2, std::max(zone.zv.ZVY1, h.zv.ZVY1),
+                                  std::min(zone.zv.ZVY2, h.zv.ZVY2), zone.zv.ZVZ1, zone.zv.ZVZ2 };
+        if (outline.y1 > outline.y2 || !mouse::boxSilhouetteContains(camera, outline, p))
+            continue;
+        const mouse::Reach* reach = reachFor(*grid, from);
+        auto spot = mouse::zoneCell(*grid, outline, from, [&](mouse::XZ c) { return !reach || reach->contains(c); });
+        if (spot)
+            return mouse::ClickResult{ mouse::ClickKind::Exit, mouse::Payload{ spot->x, spot->z, h.room, -1 } };
+    }
+    return std::nullopt;
 }
 
 // A pixel with no reachable floor still names a direction to walk in.
@@ -301,6 +336,8 @@ mouse::ClickResult resolveAt(mouse::Point p)
     if (h.screenXMax >= 0 && h.screenYMax >= 0 &&
         mouse::contains(mouse::Rect{ h.screenXMin, h.screenYMin, h.screenXMax, h.screenYMax }, p))
         return {}; // on the hero: blocked, never the floor behind the hero
+    if (auto exit = exitAt(p))
+        return *exit;
     return pickFloorOrSteer(p);
 }
 

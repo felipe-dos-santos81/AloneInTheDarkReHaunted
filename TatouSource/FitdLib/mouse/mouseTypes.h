@@ -55,6 +55,17 @@ struct XZ
 inline bool operator==(XZ a, XZ b) { return a.x == b.x && a.z == b.z; }
 inline bool operator!=(XZ a, XZ b) { return !(a == b); }
 
+// An axis-aligned box in a room's frame (room-scale units): a hard col or a zone.
+struct Box
+{
+    int x1 = 0;
+    int x2 = 0;
+    int y1 = 0;
+    int y2 = 0;
+    int z1 = 0;
+    int z2 = 0;
+};
+
 // Window position (SDL window points, not pixels) -> logical 320x200.
 // The game view fills the whole window (bgfxGlue.cpp setViewRect), so this
 // is a plain stretch with no letterbox. Nothing when outside the window.

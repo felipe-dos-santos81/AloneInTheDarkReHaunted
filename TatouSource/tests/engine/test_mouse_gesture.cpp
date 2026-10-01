@@ -278,3 +278,16 @@ TEST_CASE("endHold clears the hold, rebase keeps it, resetPointer clears everyth
     CHECK_FALSE(reset.pos.has_value());
     CHECK_FALSE(reset.follow.has_value());
 }
+
+TEST_CASE("a held pointer moved onto an exit follows it like a walk")
+{
+    FakeResolver r{ { ClickKind::Walk, kWalkA } };
+    PointerState s = heldAfterPress(r);
+    r.result = { ClickKind::Exit, kWalkB };
+    Point moved{ kAt.x + 20, kAt.y };
+    onMove(s, moved);
+    Decision d = holdDecision(s, moved, 0, r.fn(), false, true);
+    CHECK(d.type == DecisionType::Issue);
+    CHECK(d.kind == ClickKind::Exit);
+    CHECK(d.payload == kWalkB);
+}

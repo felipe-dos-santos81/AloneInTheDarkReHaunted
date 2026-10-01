@@ -22,6 +22,7 @@ enum class ClickKind : uint8_t
     Target,
     Push,
     Attack,
+    Exit, // walk into a floor-change zone, often drawn behind a wall
     HudInventory,
     HudMap,
     HudMenu,
@@ -32,7 +33,7 @@ inline bool isHud(ClickKind kind)
     return kind == ClickKind::HudInventory || kind == ClickKind::HudMap || kind == ClickKind::HudMenu;
 }
 
-// Walk/Steer/Target/Push: destination x,z in `room`'s frame, and the clicked
+// Walk/Steer/Target/Push/Exit: destination x,z in `room`'s frame, and the clicked
 // world object (-1 for walk/steer). Attack: the target actor.
 struct Payload
 {

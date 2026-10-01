@@ -106,6 +106,11 @@ std::vector<PolyFit> fitFloor(const Camera& camera, const std::vector<std::vecto
 // isInPoly rule, or nothing.
 std::optional<XZ> pickFloor(const std::vector<PolyFit>& fits, Point pixel);
 
+// Whether `pixel` lies on the box's outline on screen: the convex hull of its
+// eight projected corners, false when any corner is culled. A box standing on
+// the floor under a camera above it covers no floor nearer the camera.
+bool boxSilhouetteContains(const Camera& camera, const Box& box, Point pixel);
+
 // A far destination along the bearing from `here` toward `pixel` (for pixels
 // with no reachable floor), or nothing when the hero's feet are off screen.
 std::optional<XZ> steerPoint(const Camera& camera, const std::vector<PolyFit>& fits,

@@ -163,6 +163,29 @@ std::optional<XZ> approachCell(const Grid& grid, XZ target, XZ from, const Accep
     });
 }
 
+std::optional<XZ> zoneCell(const Grid& grid, const Box& zone, XZ from, const Accept& accept)
+{
+    std::optional<XZ> best;
+    long long bestScore = 0;
+    for (int i = std::max(0, grid.column(zone.x1)); i < grid.nx && i <= grid.column(zone.x2); ++i)
+        for (int j = std::max(0, grid.row(zone.z1)); j < grid.nz && j <= grid.row(zone.z2); ++j)
+        {
+            const XZ c = grid.center(i, j);
+            if (c.x < zone.x1 || c.x > zone.x2 || c.z < zone.z1 || c.z > zone.z2 || !grid.at(i, j))
+                continue;
+            if (accept && !accept(c))
+                continue;
+            const long long dx = c.x - from.x;
+            const long long dz = c.z - from.z;
+            if (!best || dx * dx + dz * dz < bestScore)
+            {
+                best = c;
+                bestScore = dx * dx + dz * dz;
+            }
+        }
+    return best;
+}
+
 std::optional<Reach> reachFrom(const Grid& grid, XZ start)
 {
     int si = 0;
@@ -237,6 +260,11 @@ std::vector<XZ> stringPull(const Grid& g, const std::vector<std::pair<int, int>>
 
 std::optional<std::vector<XZ>> findPath(const Grid& g, XZ start, XZ goal)
 {
+    // A hero hugging a wall stands where the engine allows but its cell centre
+    // is inside the inflated wall: plan from the walkable cell next to it.
+    if (!g.isWalkable(start.x, start.z))
+        if (auto beside = nearestWalkable(g, start, kStartSnapCells))
+            start = *beside;
     int si = 0, sj = 0, gi = 0, gj = 0;
     if (!g.cellOf(start.x, start.z, &si, &sj) || !g.cellOf(goal.x, goal.z, &gi, &gj))
         return std::nullopt;
@@ -388,8 +416,9 @@ NavDecision decide(NavIntent& in, const HeroPose& hero, const NavEnv& env, uint3
     d.target = in.waypoints.front();
     const int distance = giveDistance2D(hero.at.x, hero.at.z, d.target.x, d.target.z);
     // Only the destination room reports arrival: a cross-room waypoint is the doorway.
-    // A push in contact never arrives: it leans until it stalls.
-    if (!in.engaged && in.room == hero.room && in.waypoints.size() == 1 && distance < kArriveDistance)
+    // A push in contact never arrives: it leans until it stalls. Nor does an
+    // exit walk: the floor change ends it.
+    if (!in.engaged && !in.exit && in.room == hero.room && in.waypoints.size() == 1 && distance < kArriveDistance)
     {
         d.arrived = true;
         return d;

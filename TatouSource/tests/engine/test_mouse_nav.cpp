@@ -127,6 +127,27 @@ TEST_CASE("approachCell honours accept, on the target itself and around it")
     CHECK_FALSE(approachCell(*grid, XZ{ 500, 300 }, XZ{ 0, 300 }, [](XZ) { return false; }));
 }
 
+TEST_CASE("zoneCell stands inside the zone, nearest the hero, on an accepted walkable cell")
+{
+    Box pillar{ 700, 800, -800, 0, 0, 250 }; // blocks the zone's southern cells
+    auto grid = buildGrid({ kRoom }, { pillar }, kHero);
+    REQUIRE(grid);
+    const Box zone{ 650, 950, -3750, 0, 100, 500 };
+    auto spot = zoneCell(*grid, zone, XZ{ 100, 500 });
+    REQUIRE(spot);
+    CHECK(grid->isWalkable(spot->x, spot->z));
+    CHECK(spot->x >= zone.x1);
+    CHECK(spot->x <= zone.x2);
+    CHECK(spot->z >= zone.z1);
+    CHECK(spot->z <= zone.z2);
+    CHECK(*spot == XZ{ 700, 500 }); // the corner the hero comes from
+    auto east = zoneCell(*grid, zone, XZ{ 100, 500 }, [](XZ c) { return c.x >= 900; });
+    REQUIRE(east);
+    CHECK(east->x == 900);
+    CHECK_FALSE(zoneCell(*grid, zone, XZ{ 100, 500 }, [](XZ) { return false; }));
+    CHECK_FALSE(zoneCell(*grid, Box{ 720, 780, -3750, 0, 100, 200 }, XZ{ 100, 500 })); // no walkable centre inside
+}
+
 TEST_CASE("reachFrom marks the cells findPath can reach, never through a cut corner")
 {
     // Two blocks leave the north-east corner joined to the rest only diagonally.
@@ -155,6 +176,23 @@ TEST_CASE("findPath routes around a wall and string-pulls to few waypoints")
     CHECK(path->back() == XZ{ 900, 100 });
     CHECK(path->size() >= 2);
     CHECK(path->size() <= 4);
+    for (XZ p : *path)
+        CHECK(grid->isWalkable(p.x, p.z));
+}
+
+TEST_CASE("findPath plans from the nearest walkable cell when the hero hugs a wall")
+{
+    // The attic stairwell: the engine lets the hero stand 3 units clear of a
+    // wall, but its cell centre falls inside the wall inflated by the hero.
+    Box wall{ 400, 460, -800, 0, 0, 300 }; // from the south edge, gap at the north
+    auto grid = buildGrid({ kRoom }, { wall }, kHero);
+    REQUIRE(grid);
+    const XZ hero{ 460 + kHero.half + 3, 100 };
+    REQUIRE_FALSE(grid->isWalkable(hero.x, hero.z));
+    auto path = findPath(*grid, hero, XZ{ 100, 100 }); // the other side of the wall
+    REQUIRE(path);
+    CHECK(path->back() == XZ{ 100, 100 });
+    CHECK(path->size() >= 2); // around the wall, not through it
     for (XZ p : *path)
         CHECK(grid->isWalkable(p.x, p.z));
 }
@@ -303,4 +341,16 @@ TEST_CASE("progress resets the stall clock")
     decide(in, HeroPose{ 2, XZ{ 0, 0 }, 0 }, env, 0);
     decide(in, HeroPose{ 2, XZ{ 100, 0 }, 0 }, env, kStallMs - 1);
     CHECK(decide(in, HeroPose{ 2, XZ{ 100, 0 }, 0 }, env, kStallMs + 10).advance);
+}
+
+TEST_CASE("an exit walk never arrives by distance: the floor change ends it")
+{
+    auto grid = buildGrid({ kRoom }, {}, kHero);
+    REQUIRE(grid);
+    NavEnv env = envWith(&*grid);
+    NavIntent in = walkTo(XZ{ 900, 500 }, 2);
+    in.exit = true;
+    NavDecision d = decide(in, HeroPose{ 2, XZ{ 800, 450 }, 0 }, env, 0); // within the arrival distance
+    CHECK_FALSE(d.arrived);
+    CHECK(d.advance);
 }

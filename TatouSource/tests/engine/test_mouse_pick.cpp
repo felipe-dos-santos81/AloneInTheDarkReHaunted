@@ -177,3 +177,23 @@ TEST_CASE("pickFloor judges inside with the engine's two-ray rule, notch of a U 
     CHECK(pickFloor(fits, pixelOf(c, -1500, 4000))); // on an arm
     CHECK_FALSE(pickFloor(fits, pixelOf(c, 2400, 4000))); // right of everything
 }
+
+TEST_CASE("boxSilhouetteContains is the box's outline on screen, never the floor in front of it")
+{
+    Camera c = levelCamera();
+    // A hero-high volume standing on the floor 3000..3400 ahead.
+    const Box exit{ -200, 200, -1500, 0, 3000, 3400 };
+    auto middle = projectPoint(c, 0, -700, 3200);
+    REQUIRE(middle);
+    CHECK(boxSilhouetteContains(c, exit, Point{ (int)middle->x, (int)middle->y }));
+    CHECK(boxSilhouetteContains(c, exit, pixelOf(c, 0, 3100))); // its own floor
+    CHECK_FALSE(boxSilhouetteContains(c, exit, pixelOf(c, 1500, 3200))); // beside it
+    CHECK_FALSE(boxSilhouetteContains(c, exit, pixelOf(c, 0, 2000)));    // floor in front of it
+}
+
+TEST_CASE("boxSilhouetteContains has no outline when a corner is culled")
+{
+    Camera c = levelCamera();
+    const Box straddling{ -200, 200, -1500, 0, -2000, 3400 }; // reaches behind the near plane
+    CHECK_FALSE(boxSilhouetteContains(c, straddling, pixelOf(c, 0, 3000)));
+}
