@@ -10,6 +10,7 @@
 #include "common.h"
 #include "consoleLog.h"
 #include "bloodParticles.h"
+#include "assist/counterAttack.h"
 #include <stdio.h>
 
 #define		NO_FRAPPE			0
@@ -92,6 +93,7 @@ void GereFrappe(void)
 
                 actorPtr2->HIT_BY = currentProcessedActorIdx;
                 actorPtr2->hitForce = currentProcessedActorPtr->hitForce;
+                counterAttackNoteHit(currentProcessedActorPtr->COL[i], currentProcessedActorIdx); // melee only (assist/counterAttack.h)
 
                 // Spawn blood particles on melee hit
                 spawnBloodAtActor(currentProcessedActorPtr->COL[i], static_cast<float>(currentProcessedActorPtr->hitForce));

@@ -16,6 +16,7 @@
 #include "lanternLighting.h"
 #include "menuMouse.h"
 #include "mouse/mouseWorld.h"
+#include "assist/counterAttack.h"
 #include "mouse/mouseHud.h"
 
 #ifndef WIN32
@@ -346,10 +347,13 @@ void PlayWorld(int allowSystemMenu, int deltaTime)
 		localClick = Click;
 
         // Keyboard or gamepad input takes the hero back from the mouse.
-        if (key || JoyD || Click)
+        const bool keyboardInput = key || JoyD || Click;
+        if (keyboardInput)
             mouseWorldKeyboardTookOver();
         // Mouse gameplay: cutscene skips, HUD icons, hold-to-walk (mouse/mouseWorld.h).
         mouseWorldFrame(allowSystemMenu);
+        // Accessibility: hit back once after an enemy's blow (assist/counterAttack.h).
+        counterAttackFrame(keyboardInput || mouseWorldDroveHeroThisFrame(), allowSystemMenu);
 
         if(localKey)
         {

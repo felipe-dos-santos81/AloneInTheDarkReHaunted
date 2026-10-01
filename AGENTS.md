@@ -20,6 +20,11 @@ Guidance for anyone (human or agent) changing this repository.
   Python twin is `tools/aitd_models/pose.py`) and `renderCamera.*` (the
   engine's camera and 320x200 projection in float). The game compiles them
   but does not call them yet.
+- `TatouSource/FitdLib/assist/` — accessibility assists. The automatic
+  counter-attack: `counterRule.*` is engine-free (standard headers only) and
+  unit-tested in `TatouSource/tests/engine/`; `counterAttack.*` is its engine
+  adapter, the only assist file that touches engine globals. In-game sign-off:
+  `docs/combat-assist-checklist.md`.
 - `tools/` + `tests/tools/` — the Python texture pipeline and the HD model
   export (`tools/aitd_models/`, `make export-models`; contract in
   `docs/model-contract.md`); `make test-tools` runs both suites.
@@ -109,3 +114,12 @@ lock. SDL cursor and window calls belong on the main thread.
      `mousePick.*`, `mousePoly.*`, `mouseNav.*`, `mouseHudLayout.h`) include
      no FitdLib, SDL or ImGui headers; new behaviour in them gets a doctest
      first.
+4. **Automatic counter-attack** (`FitdLib/assist/`): it runs only through its
+   four hooks — `counterAttackNoteHit` (`GereFrappe`'s melee strike),
+   `counterAttackFrame` (`PlayWorld`, after `mouseWorldFrame`),
+   `counterAttackSteer` (`processTrack` case 1, after `mouseNavSteer`) and
+   `counterAttackReset` (inside `mouseWorldTakeOver()`). With the option off,
+   or outside AITD1, the game behaves exactly as before. It only produces what
+   a player would (Actions → Fight; forward + Action held) and never applies
+   damage or calls `hit()`/`FoundObjet` itself. Any input of the player's own
+   cancels it. New behaviour in `counterRule.*` gets a doctest first.

@@ -7,6 +7,7 @@
 #include "menuMouse.h"
 #include "mouseWorldInternal.h"
 #include "mouseGate.h"
+#include "assist/counterAttack.h"
 
 #include <algorithm>
 
@@ -313,6 +314,7 @@ void mouseWorldTakeOver()
     s_worldActive = false;
     s_screenGate.arm();
     releaseAll();
+    counterAttackReset(); // the automatic counter-attack ends with play too
     if (g_world.wroteJoyD)
     {
         // A mid-frame takeover (e.g. FoundObjet opened by the hero's touch, or
@@ -328,6 +330,12 @@ void mouseWorldTakeOver()
 bool mouseWorldIsActive()
 {
     return s_worldActive;
+}
+
+bool mouseWorldDroveHeroThisFrame()
+{
+    return s_worldActive && (g_world.wroteJoyD || g_world.pointer.held || g_world.intent.has_value() ||
+                             g_world.attackTarget >= 0 || g_world.actionHold.has_value());
 }
 
 bool mouseScreenClickFilter(bool clickedThisFrame, bool downNow)

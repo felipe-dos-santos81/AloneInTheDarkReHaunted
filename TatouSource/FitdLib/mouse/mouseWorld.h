@@ -38,6 +38,11 @@ void mouseWorldFrame(int allowSystemMenu);
 // Keyboard or gamepad input this frame: the mouse lets go of the hero.
 void mouseWorldKeyboardTookOver();
 
+// True when mouse gameplay drove the hero this frame (a held button, a walk,
+// a click attack, an Action hold or a written stick): the automatic
+// counter-attack treats it as the player's own input.
+bool mouseWorldDroveHeroThisFrame();
+
 // processTrack case 1: true when the mouse steered `actor` this frame (the
 // tank-control code must not run), false to let keyboard controls run as before.
 struct tObject;
