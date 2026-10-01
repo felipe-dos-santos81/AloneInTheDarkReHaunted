@@ -323,7 +323,7 @@ Copy `fitd_remaster.cfg.example` to `aitd_remaster.cfg` alongside the game data 
 | **Post-processing** | `postprocessing.bloom`, `postprocessing.filmGrain`, `postprocessing.ssao`, `postprocessing.vignette`, `postprocessing.ssgi`, `postprocessing.lightProbes` |
 | **Music** | `music.external`, `music.folder` |
 | **Font** | `font.enableTTF`, `font.path`, `font.size`, `font.hideOriginal` |
-| **Controls** | `controls.key.*`, `controls.pad.*` — per-action keyboard scancode and gamepad button bindings; `controls.mouseGameplay` — left-button mouse play (default on) |
+| **Controls** | `controls.key.*`, `controls.pad.*` — per-action keyboard scancode and gamepad button bindings; `controls.mouseGameplay` — left-button mouse play (default on); `controls.autoCounterAttack` — hit back once after an enemy's melee blow (AITD1, default off); `controls.enemyAttackPace` — `0` Normal, `1` Slower, `2` Much slower time between enemy melee attacks (AITD1, default `0`) |
 | **Debug** | `debug.mouseNavOverlay` — draw the mouse walk grid and floor pick over the game, and print `MTRACE` lines to the console: what each click resolved to and why, the walk it started, and its steering |
 | **Gameplay** | `gameplay.hints` — interactive hint overlay |
 | **Masks** | `masks.dump`, `masks.load` — HD depth mask dumping and loading |

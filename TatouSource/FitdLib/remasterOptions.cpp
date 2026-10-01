@@ -250,6 +250,13 @@ static void drawControllerTab()
                     &g_remasterConfig.controls.autoCounterAttack);
     helpMarker("After an enemy's melee blow, the hero turns and strikes back once with the weapon in hand, "
                "or with bare fists. Any input of your own cancels it. Alone in the Dark 1 only.");
+    static const char* kAttackPaceNames[] = { "Normal", "Slower", "Much slower" };
+    int& attackPace = g_remasterConfig.controls.enemyAttackPace;
+    if (attackPace < 0 || attackPace > 2)
+        attackPace = 0;
+    ImGui::Combo("Enemy attack pace", &attackPace, kAttackPaceNames, IM_ARRAYSIZE(kAttackPaceNames));
+    helpMarker("Gives you more time between an enemy's melee attacks: two or three times the original gap. "
+               "Enemies keep their speed. Alone in the Dark 1 only.");
     ImGui::Spacing();
 
     ImGui::TextDisabled("Controller behavior");

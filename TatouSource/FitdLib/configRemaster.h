@@ -105,6 +105,7 @@ struct RemasterConfig
         int gamepadBindings[10]; // SDL_GamepadButton per action
         bool mouseGameplay;      // Left-button mouse gameplay in the world (default: true)
         bool autoCounterAttack;  // Accessibility: hit back once after an enemy's melee blow, AITD1 (default: false)
+        int enemyAttackPace;     // Accessibility: 0 Normal, 1 Slower, 2 Much slower enemy melee attacks, AITD1 (default: 0)
     } controls;
 
     // Mask dumping/loading settings
