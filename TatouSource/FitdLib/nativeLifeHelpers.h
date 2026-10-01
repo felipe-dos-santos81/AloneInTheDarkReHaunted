@@ -21,6 +21,7 @@
 #include "inventory.h"
 #include "tatou.h"
 #include "music.h"
+#include "assist/attackPace.h"
 #include "consoleLog.h"
 
 //////////////////////////////////////////////////////////////////////////////
@@ -739,7 +740,11 @@ inline void life_Speed(int speed)
 inline void life_StartChrono() { startChrono(&currentProcessedActorPtr->CHRONO); }
 
 // Sound helpers
-inline void life_Sample(int sampleNum) { playSound(sampleNum); }
+inline void life_Sample(int sampleNum)
+{
+    if (attackPaceAllowsSample(currentProcessedActorIdx)) // enemy attack pace (assist/attackPace.h)
+        playSound(sampleNum);
+}
 inline void life_RepSample(int sampleNum) { playSoundLooping(sampleNum); }
 inline void life_StopSample() { osystem_stopSample(); }
 inline void life_SampleThen(int sample, int nextSamp)

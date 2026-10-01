@@ -19,5 +19,10 @@ void attackPaceNoteHit(int actorIdx, int anim, int nextAnim);
 // within reach stands still (speed 0); the facing turn above still runs.
 void attackPaceHoldChase(tObject* actor, int followedIdx, int targetX, int targetZ);
 
+// LM_SAMPLE / life_Sample: false = drop this sample. Only in the frame an
+// enemy's attack was refused, so the sound its script plays right after HIT
+// does not loop through the wait.
+bool attackPaceAllowsSample(int actorIdx);
+
 // InitObjet: a (re)initialised actor slot starts with no record.
 void attackPaceForget(int actorIdx);

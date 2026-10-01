@@ -47,7 +47,17 @@ bool attackPaceAllowsHit(int actorIdx)
 {
     if (!enabled() || !isEnemy(actorIdx))
         return true;
-    return assist::mayStrike(pace(), s_records[actorIdx], timer);
+    if (assist::mayStrike(pace(), s_records[actorIdx], timer))
+        return true;
+    s_records[actorIdx] = assist::refusedAttack(s_records[actorIdx], timer);
+    return false;
+}
+
+bool attackPaceAllowsSample(int actorIdx)
+{
+    if (!enabled() || !isEnemy(actorIdx))
+        return true;
+    return !assist::mutesSample(pace(), s_records[actorIdx], timer);
 }
 
 void attackPaceNoteHit(int actorIdx, int anim, int nextAnim)

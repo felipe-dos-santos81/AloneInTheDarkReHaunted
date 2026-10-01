@@ -30,6 +30,8 @@ struct PaceRecord
     bool active = false;
     unsigned startTick = 0;  // game timer when hit() accepted the attack
     unsigned cycleTicks = 0; // keyframe ticks of the attack animation + the next animation
+    bool refused = false;    // an attack was refused at refusedTick
+    unsigned refusedTick = 0;
 };
 
 PaceRecord startedAttack(unsigned now, unsigned cycleTicks);
@@ -38,5 +40,11 @@ bool mayStrike(AttackPace pace, const PaceRecord& last, unsigned now);
 // Should a following enemy hold still this frame? Only during the added wait,
 // never during its own attack and recovery.
 bool holdsChase(AttackPace pace, const PaceRecord& last, unsigned now, int distanceToHero);
+// The record after mayStrike refused an attack at `now`.
+PaceRecord refusedAttack(PaceRecord last, unsigned now);
+// Should a sample the enemy's script plays now be dropped? Only in the frame of
+// a refused attack: scripts play an attack's sound right after HIT ("HIT ...;
+// SAMPLE 28"), which would otherwise loop through the whole wait.
+bool mutesSample(AttackPace pace, const PaceRecord& last, unsigned now);
 
 } // namespace assist

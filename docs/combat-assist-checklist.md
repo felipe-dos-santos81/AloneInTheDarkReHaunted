@@ -60,3 +60,4 @@ Controls → Combat. With `debug.mouseNavOverlay` off.
 | 37 | Save during the wait, load: the enemy attacks again within its normal wait, never frozen out | | |
 | 38 | Options window: the combo "Enemy attack pace" shows Normal by default; choosing Much slower, quitting and relaunching keeps it (aitd_remaster.cfg has controls.enemyAttackPace = 2) | | |
 | 39 | AITD2 / AITD3 with the option on Much slower: enemies behave as before | | |
+| 40 | Slower/Much slower: the creature's attack sound plays once per attack, never looping during the wait | | |

@@ -128,11 +128,13 @@ lock. SDL cursor and window calls belong on the main thread.
    a player would (Actions → Fight; left, or up for a gun, + Action held) and never applies
    damage or calls `hit()`/`FoundObjet` itself. Any input of the player's own
    cancels it. New behaviour in `counterRule.*` gets a doctest first.
-5. **Enemy attack pace** (`FitdLib/assist/`): it runs only through its four
+5. **Enemy attack pace** (`FitdLib/assist/`): it runs only through its five
    hooks — `attackPaceAllowsHit` and `attackPaceNoteHit` (`hit()`),
-   `attackPaceHoldChase` (`processTrack` case 2, after `speed = 4`) and
+   `attackPaceHoldChase` (`processTrack` case 2, after `speed = 4`),
+   `attackPaceAllowsSample` (`LM_SAMPLE` and `life_Sample`) and
    `attackPaceForget` (`InitObjet`). On Normal, or outside AITD1, the game
    behaves exactly as before. It only refuses or delays the start of an
-   enemy's melee attack and holds its chase; it never applies damage, never
-   calls `hit()` for anyone and never changes an animation. The hero is never
+   enemy's melee attack, holds its chase during the added wait, and drops the
+   sample its script plays in the frame of a refused attack; it never applies
+   damage, never calls `hit()` for anyone and never changes an animation. The hero is never
    paced. New behaviour in `paceRule.*` gets a doctest first.

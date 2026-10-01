@@ -19,6 +19,7 @@
 #include "bytecodePatches.h"
 #include "lanternLighting.h"
 #include "menuMouse.h"
+#include "assist/attackPace.h"
 
 // HD background state (from hdBackgroundRenderer)
 extern bool g_currentBackgroundIsHD;
@@ -2139,7 +2140,8 @@ void processLife(int lifeNum, bool callFoundLife)
                     currentLifePtr += 2;
                 }
 
-                playSound(sampleNumber);
+                if (attackPaceAllowsSample(currentProcessedActorIdx)) // enemy attack pace (assist/attackPace.h)
+                    playSound(sampleNumber);
 
                 // Trigger letterbox when player plays a sound while dead
                 if (currentProcessedActorIdx == currentCameraTargetActor && vars[0] <= 0)

@@ -54,4 +54,16 @@ bool holdsChase(AttackPace pace, const PaceRecord& last, unsigned now, int dista
     return now - last.startTick >= last.cycleTicks;
 }
 
+PaceRecord refusedAttack(PaceRecord last, unsigned now)
+{
+    last.refused = true;
+    last.refusedTick = now;
+    return last;
+}
+
+bool mutesSample(AttackPace pace, const PaceRecord& last, unsigned now)
+{
+    return pace != AttackPace::Normal && last.refused && last.refusedTick == now;
+}
+
 } // namespace assist

@@ -66,6 +66,19 @@ TEST_CASE("an attack with no measurable cycle never blocks")
     CHECK(assist::mayStrike(AttackPace::MuchSlower, assist::startedAttack(1000, 0), 1000));
 }
 
+TEST_CASE("mutesSample silences the sound a script plays right after a refused attack")
+{
+    // Life 74: "HIT 52 ... 49; SAMPLE 28" runs every frame of the wait.
+    const PaceRecord refused = assist::refusedAttack(kWindowCreatureAt1000, 1150);
+    CHECK(assist::mutesSample(AttackPace::MuchSlower, refused, 1150));
+    CHECK_FALSE(assist::mutesSample(AttackPace::MuchSlower, refused, 1151)); // a later frame's sample
+    CHECK_FALSE(assist::mutesSample(AttackPace::Normal, refused, 1150));
+    CHECK_FALSE(assist::mutesSample(AttackPace::MuchSlower, kWindowCreatureAt1000, 1000)); // an accepted attack keeps its sound
+    CHECK_FALSE(assist::mutesSample(AttackPace::MuchSlower, PaceRecord{}, 0));
+    // A refusal is forgotten once the next attack starts.
+    CHECK_FALSE(assist::mutesSample(AttackPace::MuchSlower, assist::startedAttack(1150, 100), 1150));
+}
+
 TEST_CASE("holdsChase leaves the enemy's own attack and recovery alone")
 {
     // During the natural cycle the enemy keeps its follow speed, which carries
