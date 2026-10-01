@@ -37,14 +37,6 @@ void initHeroAnim(int anim, int type, int info)
     currentProcessedActorIdx = savedIdx;
 }
 
-// Stop an actor dead: no step, no turn in progress.
-void haltActor(tObject& a)
-{
-    a.speed = 0;
-    a.direction = 0;
-    a.rotate.numSteps = 0;
-}
-
 // Stop the hero where it stands and put it back in its stand pose (FITD anim.cpp:256-267
 // commits the pending step when this transition applies).
 void stopHero()

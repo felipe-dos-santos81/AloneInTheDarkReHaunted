@@ -13,20 +13,6 @@ namespace mouseworld
 namespace
 {
 constexpr uint32_t kAttackBudgetMs = 2000; // m-aitd: 100 ticks at 50 Hz
-
-// Stop and instantly face a point without disturbing the track interpolation.
-void faceToward(mouse::XZ target)
-{
-    tObject& h = hero();
-    for (int step = 0; step < 256; ++step)
-    {
-        const int direction = CapObjet(h.roomX + h.stepX, h.roomZ + h.stepZ, h.beta, target.x, target.z);
-        if (direction == 0)
-            break;
-        h.beta = (h.beta - direction * 4) & 0x3FF;
-    }
-    haltActor(h);
-}
 }
 
 void clearAttack()
@@ -40,13 +26,8 @@ void armAttack(int actorIdx)
 {
     if (!isCombatTarget(actorIdx) || !canStrike(true))
         return;
-    const tObject& h = hero();
-    const tObject& t = ListObjets[actorIdx];
-    mouse::XZ target{ t.roomX, t.roomZ };
-    if (t.room != h.room)
-        target = mouse::reframe(target, originOf(t.room), originOf(h.room));
     cancelIntent();
-    faceToward(target);
+    faceActorToward(hero(), ListObjets[actorIdx]);
     g_world.attackTarget = actorIdx;
     g_world.attackStartMs = (uint32_t)SDL_GetTicks();
     g_world.attackFrames = 0;

@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "common.h"
+#include "actorFacing.h"
 #include "mouseGesture.h"
 #include "mouseHudLayout.h"
 #include "mouseNav.h"
@@ -148,8 +149,6 @@ extern World g_world;
 void setJoyD(int value);
 // Run InitAnim on the hero.
 void initHeroAnim(int anim, int type, int info);
-// Stop an actor dead: no step, no turn in progress.
-void haltActor(tObject& a);
 // Stop the hero where it stands, back in its stand pose when that is safe.
 void stopHero();
 void cancelIntent();
