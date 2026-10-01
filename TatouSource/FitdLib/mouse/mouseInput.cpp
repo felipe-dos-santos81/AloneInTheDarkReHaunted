@@ -10,8 +10,6 @@
 
 #include "bgfxGlue.h"
 #include "imgui.h"
-#include "configRemaster.h" // MTRACE (temporary)
-#include <cstdio>
 
 namespace
 {
@@ -142,15 +140,6 @@ void mouseInputOnEvent(const SDL_Event& event)
         e.type = mouse::EventType::Down;
         e.pos = mapPoint(event.button.x, event.button.y);
         e.clicks = event.button.clicks;
-        if (g_remasterConfig.debug.mouseNavOverlay) // MTRACE (temporary)
-        {
-            int w = 0;
-            int h = 0;
-            if (gWindowBGFX)
-                SDL_GetWindowSize(gWindowBGFX, &w, &h);
-            printf("MTRACE press raw=(%.1f,%.1f) window=%dx%d logical=%s(%d,%d)\n", event.button.x, event.button.y, w, h,
-                   e.pos ? "" : "none", e.pos ? e.pos->x : -1, e.pos ? e.pos->y : -1);
-        }
         break;
     case SDL_EVENT_MOUSE_BUTTON_UP:
         if (event.button.button != SDL_BUTTON_LEFT)
