@@ -80,13 +80,13 @@ struct Reach
     Grid grid; // the grid's geometry; walk = 1 for a reachable cell
     bool contains(XZ p) const { return grid.isWalkable(p.x, p.z); }
 };
-// Nothing when `start` is not on a walkable cell.
-std::optional<Reach> reachFrom(const Grid& grid, XZ start);
-// How far (cells) findPath looks for a walkable start beside a blocked one.
+// How far (cells) reachFrom and findPath look for a walkable start beside a
+// blocked one (the hero hugging a wall the grid inflates).
 constexpr int kStartSnapCells = 2;
+// Nothing when `start` is neither on nor within kStartSnapCells of a walkable cell.
+std::optional<Reach> reachFrom(const Grid& grid, XZ start);
 // A* (8-connected, no corner cutting) then string-pulled; last waypoint is goal.
-// A start on a blocked cell plans from the nearest walkable cell within
-// kStartSnapCells (the hero hugging a wall the grid inflates).
+// A blocked start plans from the nearest walkable cell within kStartSnapCells.
 std::optional<std::vector<XZ>> findPath(const Grid& grid, XZ start, XZ goal);
 
 constexpr int kArriveDistance = 400;   // DISTANCE_TO_POINT_TRESSHOLD (track.cpp)

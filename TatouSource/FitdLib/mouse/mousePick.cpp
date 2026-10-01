@@ -38,9 +38,17 @@ inline void rotatePair(int a, int b, int64_t cs, int64_t sn, int* outA, int* out
     *outA = (int)((((int64_t)a * sn) - ((int64_t)b * cs)) / 0x10000) * 2;
     *outB = (int)((((int64_t)a * cs) + ((int64_t)b * sn)) / 0x10000) * 2;
 }
-}
 
-std::optional<Vec2> projectPoint(const Camera& c, int wx, int wy, int wz)
+// A room-frame point in the renderer's camera space: x, y and the divide's
+// depth, or nothing when culled (height clamp, depth <= 50).
+struct CameraPoint
+{
+    double x = 0.0;
+    double y = 0.0;
+    double depth = 0.0;
+};
+
+std::optional<CameraPoint> toCameraSpace(const Camera& c, int wx, int wy, int wz)
 {
     // renderer.cpp: X += x - translateX, Y = y, Z += z - translateZ; height clamp; Y -= translateY
     int X = wx - c.posX;
@@ -72,12 +80,35 @@ std::optional<Vec2> projectPoint(const Camera& c, int wx, int wy, int wz)
     }
 
     // The renderer stores camera-space coordinates as s16, then divides in float.
-    const double sx = (double)(int16_t)x;
-    const double sy = (double)(int16_t)y;
     const double depth = (double)(int16_t)z + (double)c.focal1;
     if (depth <= 50.0)
         return std::nullopt;
-    return Vec2{ sx * c.focal2 / depth + 160.0, sy * c.focal3 / depth + 100.0 };
+    return CameraPoint{ (double)(int16_t)x, (double)(int16_t)y, depth };
+}
+}
+
+std::optional<Vec2> projectPoint(const Camera& c, int wx, int wy, int wz)
+{
+    auto p = toCameraSpace(c, wx, wy, wz);
+    if (!p)
+        return std::nullopt;
+    return Vec2{ p->x * c.focal2 / p->depth + 160.0, p->y * c.focal3 / p->depth + 100.0 };
+}
+
+bool nearerThanBox(const Camera& camera, const Box& box, int x, int y, int z)
+{
+    auto point = toCameraSpace(camera, x, y, z);
+    if (!point)
+        return false;
+    for (int cx : { box.x1, box.x2 })
+        for (int cy : { box.y1, box.y2 })
+            for (int cz : { box.z1, box.z2 })
+            {
+                auto corner = toCameraSpace(camera, cx, cy, cz);
+                if (corner && corner->depth <= point->depth)
+                    return false;
+            }
+    return true;
 }
 
 namespace
@@ -323,10 +354,10 @@ bool boxSilhouetteContains(const Camera& camera, const Box& box, Point pixel)
     std::vector<Vec2> hull;
     for (int pass = 0; pass < 2; ++pass)
     {
-        const size_t floor = hull.size();
+        const size_t chainStart = hull.size();
         for (const Vec2& c : corners)
         {
-            while (hull.size() >= floor + 2 && cross(hull[hull.size() - 2], hull.back(), c) <= 0.0)
+            while (hull.size() >= chainStart + 2 && cross(hull[hull.size() - 2], hull.back(), c) <= 0.0)
                 hull.pop_back();
             hull.push_back(c);
         }

@@ -197,3 +197,18 @@ TEST_CASE("boxSilhouetteContains has no outline when a corner is culled")
     const Box straddling{ -200, 200, -1500, 0, -2000, 3400 }; // reaches behind the near plane
     CHECK_FALSE(boxSilhouetteContains(c, straddling, pixelOf(c, 0, 3000)));
 }
+
+TEST_CASE("nearerThanBox: floor drawn in front of a box, raised floor included, is not the box")
+{
+    Camera c = levelCamera();
+    const Box exit{ -200, 200, -1500, 0, 3000, 3400 };
+    CHECK(nearerThanBox(c, exit, 0, 0, 2000));        // floor in front of it
+    CHECK_FALSE(nearerThanBox(c, exit, 0, 0, 3200));  // its own floor
+    CHECK_FALSE(nearerThanBox(c, exit, 0, 0, 5000));  // floor behind it
+    // A raised floor in front of the box shows inside its outline: the outline
+    // alone would call it the box; its depth says it is in front.
+    auto raised = projectPoint(c, 0, -700, 1500);
+    REQUIRE(raised);
+    REQUIRE(boxSilhouetteContains(c, exit, Point{ (int)raised->x, (int)raised->y }));
+    CHECK(nearerThanBox(c, exit, 0, -700, 1500));
+}

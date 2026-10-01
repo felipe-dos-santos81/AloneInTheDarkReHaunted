@@ -66,6 +66,12 @@ struct Box
     int z2 = 0;
 };
 
+// Whether the box holds (x, y, z), edges included, as the engine's isPointInZV.
+inline bool contains(const Box& b, int x, int y, int z)
+{
+    return b.x1 <= x && x <= b.x2 && b.y1 <= y && y <= b.y2 && b.z1 <= z && z <= b.z2;
+}
+
 // Window position (SDL window points, not pixels) -> logical 320x200.
 // The game view fills the whole window (bgfxGlue.cpp setViewRect), so this
 // is a plain stretch with no letterbox. Nothing when outside the window.
@@ -148,6 +154,7 @@ enum class CursorShape : uint8_t
     Crosshair,
     Move,
     NotAllowed,
+    Exit,       // a doorway with an arrow walking in (drawn, not a system cursor)
     Text,       // ImGui windows only (see mouseInputEndMainFrame)
     ResizeNS,
     ResizeEW,

@@ -78,3 +78,14 @@ TEST_CASE("events pushed after a publish belong to the next frame")
     REQUIRE(f.events.size() == 1);
     CHECK(f.events[0].type == EventType::FocusLost);
 }
+
+TEST_CASE("a Box contains a point like the engine's isPointInZV: every edge included")
+{
+    const mouse::Box zone{ 6500, 7500, -3750, 0, 2510, 3210 };
+    CHECK(mouse::contains(zone, 7000, 0, 3000));
+    CHECK(mouse::contains(zone, 6500, -3750, 2510)); // corners count
+    CHECK(mouse::contains(zone, 7500, 0, 3210));
+    CHECK_FALSE(mouse::contains(zone, 6499, 0, 3000));
+    CHECK_FALSE(mouse::contains(zone, 7000, 1, 3000));  // below the floor
+    CHECK_FALSE(mouse::contains(zone, 7000, 0, 3211));
+}

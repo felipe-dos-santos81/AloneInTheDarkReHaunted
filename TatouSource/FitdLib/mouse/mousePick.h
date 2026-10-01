@@ -110,6 +110,10 @@ std::optional<XZ> pickFloor(const std::vector<PolyFit>& fits, Point pixel);
 // eight projected corners, false when any corner is culled. A box standing on
 // the floor under a camera above it covers no floor nearer the camera.
 bool boxSilhouetteContains(const Camera& camera, const Box& box, Point pixel);
+// Whether the room-frame point lies nearer the camera than every corner of
+// the box, so it is drawn in front of all of it (a raised floor in front of an
+// exit shows inside the exit's outline but still means itself).
+bool nearerThanBox(const Camera& camera, const Box& box, int x, int y, int z);
 
 // A far destination along the bearing from `here` toward `pixel` (for pixels
 // with no reachable floor), or nothing when the hero's feet are off screen.

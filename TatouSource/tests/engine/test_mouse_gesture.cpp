@@ -291,3 +291,24 @@ TEST_CASE("a held pointer moved onto an exit follows it like a walk")
     CHECK(d.kind == ClickKind::Exit);
     CHECK(d.payload == kWalkB);
 }
+
+TEST_CASE("isWalkLike names the kinds a held pointer follows")
+{
+    for (ClickKind k : { ClickKind::Walk, ClickKind::Steer, ClickKind::Target, ClickKind::Exit })
+        CHECK(isWalkLike(k));
+    for (ClickKind k : { ClickKind::Blocked, ClickKind::Push, ClickKind::Attack, ClickKind::HudInventory,
+                         ClickKind::HudMap, ClickKind::HudMenu })
+        CHECK_FALSE(isWalkLike(k));
+}
+
+TEST_CASE("a held pointer re-issues when only the kind changes: a walk to the cell becomes an exit")
+{
+    FakeResolver r{ { ClickKind::Walk, kWalkA } };
+    PointerState s = heldAfterPress(r);
+    r.result = { ClickKind::Exit, kWalkA }; // same cell, now inside an exit's outline
+    Point moved{ kAt.x + 3, kAt.y };
+    onMove(s, moved);
+    Decision d = holdDecision(s, moved, 0, r.fn(), false, true);
+    CHECK(d.type == DecisionType::Issue);
+    CHECK(d.kind == ClickKind::Exit);
+}

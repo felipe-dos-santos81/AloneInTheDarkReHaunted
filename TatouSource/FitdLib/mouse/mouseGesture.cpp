@@ -117,8 +117,7 @@ Decision holdDecision(PointerState& s, std::optional<Point> pos, int camera,
     s.followCamera = camera;
 
     const ClickResult r = resolve(*pos);
-    if (r.kind == ClickKind::Walk || r.kind == ClickKind::Target || r.kind == ClickKind::Steer ||
-        r.kind == ClickKind::Exit)
+    if (isWalkLike(r.kind))
     {
         if (s.follow && s.follow->kind == r.kind && s.follow->payload == r.payload)
             return d;

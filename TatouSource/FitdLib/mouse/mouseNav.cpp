@@ -101,6 +101,36 @@ namespace
 {
 constexpr int kApproachRings = 12;
 
+// The lowest-scoring accepted walkable cell centre among the cells offered.
+class BestCell
+{
+public:
+    BestCell(const Grid& grid, const Accept& accept) : grid_(grid), accept_(accept) {}
+
+    template <typename Score>
+    void offer(int i, int j, Score score)
+    {
+        if (!grid_.at(i, j))
+            return;
+        const XZ c = grid_.center(i, j);
+        if (accept_ && !accept_(c))
+            return;
+        const double s = score(i, j);
+        if (!best_ || s < bestScore_)
+        {
+            best_ = c;
+            bestScore_ = s;
+        }
+    }
+    const std::optional<XZ>& best() const { return best_; }
+
+private:
+    const Grid& grid_;
+    const Accept& accept_;
+    std::optional<XZ> best_;
+    double bestScore_ = 0.0;
+};
+
 // The lowest-scoring accepted walkable cell centre on the first Chebyshev ring
 // around (oi, oj), from firstRadius out to maxCells, that has one.
 template <typename Score>
@@ -109,29 +139,13 @@ std::optional<XZ> ringSearch(const Grid& grid, int oi, int oj, int firstRadius, 
 {
     for (int radius = firstRadius; radius <= maxCells; ++radius)
     {
-        std::optional<XZ> best;
-        double bestScore = 0.0;
+        BestCell ring(grid, accept);
         for (int di = -radius; di <= radius; ++di)
             for (int dj = -radius; dj <= radius; ++dj)
-            {
-                if (std::max(std::abs(di), std::abs(dj)) != radius)
-                    continue;
-                const int i = oi + di;
-                const int j = oj + dj;
-                if (!grid.at(i, j))
-                    continue;
-                const XZ c = grid.center(i, j);
-                if (accept && !accept(c))
-                    continue;
-                const double s = score(i, j);
-                if (!best || s < bestScore)
-                {
-                    best = c;
-                    bestScore = s;
-                }
-            }
-        if (best)
-            return best;
+                if (std::max(std::abs(di), std::abs(dj)) == radius)
+                    ring.offer(oi + di, oj + dj, score);
+        if (ring.best())
+            return ring.best();
     }
     return std::nullopt;
 }
@@ -165,29 +179,37 @@ std::optional<XZ> approachCell(const Grid& grid, XZ target, XZ from, const Accep
 
 std::optional<XZ> zoneCell(const Grid& grid, const Box& zone, XZ from, const Accept& accept)
 {
-    std::optional<XZ> best;
-    long long bestScore = 0;
+    const Accept inside = [&](XZ c) {
+        return c.x >= zone.x1 && c.x <= zone.x2 && c.z >= zone.z1 && c.z <= zone.z2 && (!accept || accept(c));
+    };
+    BestCell best(grid, inside);
     for (int i = std::max(0, grid.column(zone.x1)); i < grid.nx && i <= grid.column(zone.x2); ++i)
         for (int j = std::max(0, grid.row(zone.z1)); j < grid.nz && j <= grid.row(zone.z2); ++j)
-        {
-            const XZ c = grid.center(i, j);
-            if (c.x < zone.x1 || c.x > zone.x2 || c.z < zone.z1 || c.z > zone.z2 || !grid.at(i, j))
-                continue;
-            if (accept && !accept(c))
-                continue;
-            const long long dx = c.x - from.x;
-            const long long dz = c.z - from.z;
-            if (!best || dx * dx + dz * dz < bestScore)
-            {
-                best = c;
-                bestScore = dx * dx + dz * dz;
-            }
-        }
-    return best;
+            best.offer(i, j, [&](int ci, int cj) {
+                const double dx = grid.center(ci, cj).x - from.x;
+                const double dz = grid.center(ci, cj).z - from.z;
+                return dx * dx + dz * dz;
+            });
+    return best.best();
+}
+
+namespace
+{
+// Where planning starts. A hero hugging a wall stands where the engine allows
+// but its cell centre is inside the inflated wall: start from the walkable
+// cell next to it.
+XZ startCell(const Grid& g, XZ start)
+{
+    if (!g.isWalkable(start.x, start.z))
+        if (auto beside = nearestWalkable(g, start, kStartSnapCells))
+            return *beside;
+    return start;
+}
 }
 
 std::optional<Reach> reachFrom(const Grid& grid, XZ start)
 {
+    start = startCell(grid, start);
     int si = 0;
     int sj = 0;
     if (!grid.cellOf(start.x, start.z, &si, &sj) || !grid.at(si, sj))
@@ -260,11 +282,7 @@ std::vector<XZ> stringPull(const Grid& g, const std::vector<std::pair<int, int>>
 
 std::optional<std::vector<XZ>> findPath(const Grid& g, XZ start, XZ goal)
 {
-    // A hero hugging a wall stands where the engine allows but its cell centre
-    // is inside the inflated wall: plan from the walkable cell next to it.
-    if (!g.isWalkable(start.x, start.z))
-        if (auto beside = nearestWalkable(g, start, kStartSnapCells))
-            start = *beside;
+    start = startCell(g, start);
     int si = 0, sj = 0, gi = 0, gj = 0;
     if (!g.cellOf(start.x, start.z, &si, &sj) || !g.cellOf(goal.x, goal.z, &gi, &gj))
         return std::nullopt;

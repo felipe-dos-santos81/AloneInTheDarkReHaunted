@@ -163,7 +163,20 @@ TEST_CASE("reachFrom marks the cells findPath can reach, never through a cut cor
     CHECK_FALSE(reach->contains(XZ{ 5000, 5000 })); // off the grid
     CHECK(grid->isWalkable(900, 500));
     CHECK_FALSE(findPath(*grid, XZ{ 100, 100 }, XZ{ 900, 500 }));
-    CHECK_FALSE(reachFrom(*grid, XZ{ 900, 200 })); // the start itself is blocked
+    CHECK_FALSE(reachFrom(*grid, XZ{ 900, 0 })); // blocked, no walkable cell within kStartSnapCells
+}
+
+TEST_CASE("reachFrom, like findPath, starts beside a hero hugging a wall")
+{
+    Box wall{ 400, 460, -800, 0, 0, 300 };
+    auto grid = buildGrid({ kRoom }, { wall }, kHero);
+    REQUIRE(grid);
+    const XZ hero{ 460 + kHero.half + 3, 100 };
+    REQUIRE_FALSE(grid->isWalkable(hero.x, hero.z));
+    auto reach = reachFrom(*grid, hero);
+    REQUIRE(reach);
+    CHECK(reach->contains(XZ{ 100, 100 })); // round the wall
+    CHECK(reach->contains(XZ{ 900, 500 }));
 }
 
 TEST_CASE("findPath routes around a wall and string-pulls to few waypoints")

@@ -33,8 +33,14 @@ inline bool isHud(ClickKind kind)
     return kind == ClickKind::HudInventory || kind == ClickKind::HudMap || kind == ClickKind::HudMenu;
 }
 
+// Kinds that walk the hero and that a held pointer follows as it moves.
+inline bool isWalkLike(ClickKind kind)
+{
+    return kind == ClickKind::Walk || kind == ClickKind::Steer || kind == ClickKind::Target || kind == ClickKind::Exit;
+}
+
 // Walk/Steer/Target/Push/Exit: destination x,z in `room`'s frame, and the clicked
-// world object (-1 for walk/steer). Attack: the target actor.
+// world object (-1 for walk/steer/exit). Attack: the target actor.
 struct Payload
 {
     int x = 0;

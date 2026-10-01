@@ -443,8 +443,7 @@ bool mouseWorldHudState(MouseHudState* out)
     if (g_world.intent && !g_world.intent->steering)
         out->destination = screenOf(g_world.intent->room, g_world.intent->dest);
     const mouse::ClickKind k = g_world.hover.kind;
-    if (!g_world.pointer.held && !out->destination && (k == mouse::ClickKind::Walk || k == mouse::ClickKind::Target ||
-                                                     k == mouse::ClickKind::Exit))
+    if (!g_world.pointer.held && !out->destination && mouse::isWalkLike(k) && k != mouse::ClickKind::Steer)
         out->preview = screenOf(g_world.hover.payload.room, mouse::XZ{ g_world.hover.payload.x, g_world.hover.payload.z });
     return true;
 }

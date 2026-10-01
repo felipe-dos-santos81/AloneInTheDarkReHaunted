@@ -6,6 +6,7 @@
 #include "mouseInput.h"
 
 #include <atomic>
+#include <cmath>
 
 #include "bgfxGlue.h"
 #include "imgui.h"
@@ -45,6 +46,62 @@ SDL_SystemCursor systemCursorFor(mouse::CursorShape shape)
     case mouse::CursorShape::ResizeNWSE: return SDL_SYSTEM_CURSOR_NWSE_RESIZE;
     default:                             return SDL_SYSTEM_CURSOR_DEFAULT;
     }
+}
+
+// The exit cursor: an open doorway with an arrow walking into it, in a
+// 32-unit design space drawn at `scale` (1 = 32 px). SDL has no such system
+// cursor. Every shape gets a one-unit black outline.
+SDL_Surface* drawExitCursor(int scale)
+{
+    const int size = 32 * scale;
+    SDL_Surface* surface = SDL_CreateSurface(size, size, SDL_PIXELFORMAT_RGBA32); // zeroed: transparent
+    if (!surface)
+        return nullptr;
+    auto inRect = [](float u, float v, float x1, float y1, float x2, float y2, float grow) {
+        return u >= x1 - grow && u <= x2 + grow && v >= y1 - grow && v <= y2 + grow;
+    };
+    auto inDoor = [&](float u, float v, float grow) { return inRect(u, v, 14, 4, 30, 30, grow); };
+    auto inDoorway = [&](float u, float v) { return inRect(u, v, 17, 7, 27, 30, 0); };
+    auto inArrow = [&](float u, float v, float grow) {
+        const bool shaft = inRect(u, v, 2, 16, 14, 20, grow);
+        const bool head = u >= 14 - grow && u <= 22 + grow && std::fabs(v - 18) <= (22 + grow - u) * 7.0f / 8.0f + grow;
+        return shaft || head;
+    };
+    for (int y = 0; y < size; ++y)
+    {
+        Uint32* row = (Uint32*)((Uint8*)surface->pixels + y * surface->pitch);
+        for (int x = 0; x < size; ++x)
+        {
+            const float u = (x + 0.5f) / scale;
+            const float v = (y + 0.5f) / scale;
+            if (inArrow(u, v, 0))
+                row[x] = SDL_MapSurfaceRGBA(surface, 255, 255, 255, 255);
+            else if (inArrow(u, v, 1))
+                row[x] = SDL_MapSurfaceRGBA(surface, 0, 0, 0, 255);
+            else if (inDoorway(u, v))
+                row[x] = SDL_MapSurfaceRGBA(surface, 30, 20, 12, 255);
+            else if (inDoor(u, v, 0))
+                row[x] = SDL_MapSurfaceRGBA(surface, 240, 240, 210, 255);
+            else if (inDoor(u, v, 1))
+                row[x] = SDL_MapSurfaceRGBA(surface, 0, 0, 0, 255);
+        }
+    }
+    return surface;
+}
+
+SDL_Cursor* createExitCursor()
+{
+    SDL_Surface* base = drawExitCursor(1);
+    if (!base)
+        return nullptr;
+    if (SDL_Surface* sharp = drawExitCursor(2)) // high-DPI screens
+    {
+        SDL_AddSurfaceAlternateImage(base, sharp); // takes its own reference
+        SDL_DestroySurface(sharp);
+    }
+    SDL_Cursor* cursor = SDL_CreateColorCursor(base, 22, 18); // the arrow's tip, inside the doorway
+    SDL_DestroySurface(base);
+    return cursor;
 }
 
 // The shape ImGui asked for in its last frame. ImGui's own backend may not set
@@ -110,7 +167,9 @@ void mouseInputEndMainFrame(bool blocked)
     if (shape != s_appliedShape && shape >= 0 && shape < (int)mouse::CursorShape::Count)
     {
         if (!s_cursors[shape])
-            s_cursors[shape] = SDL_CreateSystemCursor(systemCursorFor((mouse::CursorShape)shape));
+            s_cursors[shape] = shape == (int)mouse::CursorShape::Exit
+                                   ? createExitCursor()
+                                   : SDL_CreateSystemCursor(systemCursorFor((mouse::CursorShape)shape));
         if (s_cursors[shape])
             SDL_SetCursor(s_cursors[shape]);
         s_appliedShape = shape;

@@ -51,7 +51,7 @@ with a one-line note. Build: `make build-fitd`; run: `make run data=DIR`.
 | 42 | F1 dialog: the cursor is the normal arrow over it, and ImGui's own shapes (text caret, resize arrows) appear where it uses them | | |
 | 43 | Reopen the found screen, Controls, the save picker and the startup menus with the pointer resting on an entry: the selection stays put until the pointer moves | | |
 | 44 | Click floor spots in the corners of L-shaped rooms: the hero walks to the spot clicked, not just toward it | | |
-| 45 | Attic, far camera on the arched alcove: the cursor turns to a hand over the pillar right of the arch; holding there walks the hero into the alcove and behind the pillar, and the floor changes (the stairwell is hidden, the only way out) | | |
+| 45 | Attic, far camera on the arched alcove: the cursor turns to a doorway with an arrow (sharp on a Retina screen) over the pillar right of the arch; holding there walks the hero into the alcove and behind the pillar, and the floor changes (the stairwell is hidden, the only way out) | | |
 | 46 | Attic: with the hero pressed against the alcove's left wall, hold on the main-room floor: the hero walks out round the wall instead of grinding into it | | |
 
 Signed off by: ______  Date: ______  Build: `git rev-parse --short HEAD` = ______

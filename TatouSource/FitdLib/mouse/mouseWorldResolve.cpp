@@ -49,7 +49,7 @@ constexpr ClickKindInfo kClickKinds[] = {
     { "target", mouse::CursorShape::Pointer },
     { "push", mouse::CursorShape::Move },
     { "attack", mouse::CursorShape::Crosshair },
-    { "exit", mouse::CursorShape::Pointer },
+    { "exit", mouse::CursorShape::Exit },
     { "hud:inventory", mouse::CursorShape::Pointer },
     { "hud:map", mouse::CursorShape::Pointer },
     { "hud:menu", mouse::CursorShape::Pointer },
@@ -108,12 +108,45 @@ mouse::ClickResult targetFor(int actorIdx)
     return mouse::ClickResult{ mouse::ClickKind::Target, mouse::Payload{ dest.x, dest.z, t.room, t.indexInWorld } };
 }
 
+// The floor under a pixel, in the hero's room or a room the on-screen camera
+// also views, as the floor pick finds it (before snapping to the walk grid).
+struct FloorHit
+{
+    int room;
+    int floorY;   // the hero's floor height in `room`'s frame
+    mouse::XZ at; // in `room`'s frame
+};
+
+std::optional<FloorHit> floorUnder(mouse::Point p)
+{
+    const tObject& h = hero();
+    const mouse::RoomOrigin heroOrigin = originOf(h.room);
+    std::vector<int> rooms{ h.room };
+    const int cam = currentFloorCamera();
+    if (cam >= 0)
+        for (const cameraViewedRoomStruct& viewed : g_currentFloorCameraData[cam].viewedRoomTable)
+            if (viewed.viewedRoomIdx != h.room && roomValid(viewed.viewedRoomIdx))
+                rooms.push_back(viewed.viewedRoomIdx);
+
+    for (int room : rooms)
+    {
+        const int floorY = mouse::reframeY(h.roomY, heroOrigin, originOf(room));
+        const auto* fits = fitsFor(room, floorY);
+        if (!fits)
+            continue;
+        if (auto hit = mouse::pickFloor(*fits, p))
+            return FloorHit{ room, floorY, *hit };
+    }
+    return std::nullopt;
+}
+
 constexpr u32 kSceZoneFloorChange = 10; // GereDec's "stage" zone
 
-// A floor-change zone whose outline holds p: walk into it. The outline is a
-// hero-high box on the zone's floor, where the hero would be drawn standing in
-// it, so it answers even when a wall hides that floor (the attic stairwell
-// behind the pillar of camera 4, the only camera filming it).
+// A floor-change zone whose outline holds p: walk into it. The outline is the
+// zone standing on the hero's floor, at least hero-high, so it answers even
+// when a wall hides the zone's floor (the attic stairwell behind the pillar of
+// camera 4, the only camera filming it). Floor drawn in front of all of it
+// still means that floor.
 std::optional<mouse::ClickResult> exitAt(mouse::Point p)
 {
     const tObject& h = hero();
@@ -125,16 +158,36 @@ std::optional<mouse::ClickResult> exitAt(mouse::Point p)
     if (!grid || !cameraForRoom(h.room, &camera))
         return std::nullopt;
     const mouse::XZ from = heroPose().at;
-    for (const sceZoneStruct& zone : roomDataTable[h.room].sceZoneTable)
+    const int feetY = h.roomY + h.stepY; // the height GereDec tests the zone at
+    const std::vector<sceZoneStruct>& zones = roomDataTable[h.room].sceZoneTable;
+    auto zoneBox = [](const sceZoneStruct& z) {
+        return mouse::Box{ z.zv.ZVX1, z.zv.ZVX2, z.zv.ZVY1, z.zv.ZVY2, z.zv.ZVZ1, z.zv.ZVZ2 };
+    };
+    for (size_t i = 0; i < zones.size(); ++i)
     {
-        if (zone.type != kSceZoneFloorChange)
+        const sceZoneStruct& zone = zones[i];
+        if (zone.type != kSceZoneFloorChange || feetY < zone.zv.ZVY1 || feetY > zone.zv.ZVY2)
+            continue; // not a floor change, or never reached at the hero's height
+        const mouse::Box outline{ zone.zv.ZVX1, zone.zv.ZVX2, std::min(zone.zv.ZVY1, h.zv.ZVY1), feetY,
+                                  zone.zv.ZVZ1, zone.zv.ZVZ2 };
+        if (!mouse::boxSilhouetteContains(camera, outline, p))
             continue;
-        const mouse::Box outline{ zone.zv.ZVX1, zone.zv.ZVX2, std::max(zone.zv.ZVY1, h.zv.ZVY1),
-                                  std::min(zone.zv.ZVY2, h.zv.ZVY2), zone.zv.ZVZ1, zone.zv.ZVZ2 };
-        if (outline.y1 > outline.y2 || !mouse::boxSilhouetteContains(camera, outline, p))
-            continue;
+        if (auto floor = floorUnder(p))
+        {
+            const mouse::XZ at = mouse::reframe(floor->at, originOf(floor->room), originOf(h.room));
+            if (mouse::nearerThanBox(camera, outline, at.x, h.roomY, at.z))
+                continue; // floor drawn in front of the exit
+        }
         const mouse::Reach* reach = reachFor(*grid, from);
-        auto spot = mouse::zoneCell(*grid, outline, from, [&](mouse::XZ c) { return !reach || reach->contains(c); });
+        auto spot = mouse::zoneCell(*grid, outline, from, [&](mouse::XZ c) {
+            if (reach && !reach->contains(c))
+                return false;
+            // AITD1's GereDec stops at the first zone the hero stands in.
+            for (size_t k = 0; g_gameId == AITD1 && k < i; ++k)
+                if (mouse::contains(zoneBox(zones[k]), c.x, feetY, c.z))
+                    return false;
+            return true;
+        });
         if (spot)
             return mouse::ClickResult{ mouse::ClickKind::Exit, mouse::Payload{ spot->x, spot->z, h.room, -1 } };
     }
@@ -157,42 +210,25 @@ mouse::ClickResult steerToward(mouse::Point p)
 
 mouse::ClickResult pickFloorOrSteer(mouse::Point p)
 {
-    const tObject& h = hero();
-    const mouse::RoomOrigin heroOrigin = originOf(h.room);
-    std::vector<int> rooms{ h.room };
-    const int cam = currentFloorCamera();
-    if (cam >= 0)
-        for (const cameraViewedRoomStruct& viewed : g_currentFloorCameraData[cam].viewedRoomTable)
-            if (viewed.viewedRoomIdx != h.room && roomValid(viewed.viewedRoomIdx))
-                rooms.push_back(viewed.viewedRoomIdx);
-
-    for (int room : rooms)
+    auto floor = floorUnder(p);
+    if (!floor)
+        return steerToward(p);
+    mouse::XZ dest = floor->at;
+    const mouse::Grid* grid = gridFor(floor->room, agentIn(floor->room));
+    if (grid && grid->any())
     {
-        const int floorY = mouse::reframeY(h.roomY, heroOrigin, originOf(room));
-        const auto* fits = fitsFor(room, floorY);
-        if (!fits)
-            continue;
-        auto hit = mouse::pickFloor(*fits, p);
-        if (!hit)
-            continue;
-        mouse::XZ dest = *hit;
-        const mouse::Grid* grid = gridFor(room, agentIn(room));
-        if (grid && grid->any())
-        {
-            mouse::Camera camera;
-            if (!cameraForRoom(room, &camera))
-                return steerToward(p);
-            auto snapped = mouse::nearestWalkable(*grid, dest, 6, [&](mouse::XZ c) {
-                auto s = visibleAt(camera, c, floorY);
-                return s && std::fabs(s->x - p.x) <= mouse::kSnapBudgetPx && std::fabs(s->y - p.y) <= mouse::kSnapBudgetPx;
-            });
-            if (!snapped)
-                return steerToward(p);
-            dest = *snapped;
-        }
-        return mouse::ClickResult{ mouse::ClickKind::Walk, mouse::Payload{ dest.x, dest.z, room, -1 } };
+        mouse::Camera camera;
+        if (!cameraForRoom(floor->room, &camera))
+            return steerToward(p);
+        auto snapped = mouse::nearestWalkable(*grid, dest, 6, [&](mouse::XZ c) {
+            auto s = visibleAt(camera, c, floor->floorY);
+            return s && std::fabs(s->x - p.x) <= mouse::kSnapBudgetPx && std::fabs(s->y - p.y) <= mouse::kSnapBudgetPx;
+        });
+        if (!snapped)
+            return steerToward(p);
+        dest = *snapped;
     }
-    return steerToward(p);
+    return mouse::ClickResult{ mouse::ClickKind::Walk, mouse::Payload{ dest.x, dest.z, floor->room, -1 } };
 }
 }
 
