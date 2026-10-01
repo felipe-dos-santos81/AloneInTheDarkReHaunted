@@ -237,7 +237,7 @@ mouse::XZ linkMidpoint(int from, int to)
     return mouse::XZ{ x, z };
 }
 
-std::optional<mouse::Box> furnitureBox(int room, int zone, mouse::XZ near)
+std::optional<mouse::Box> furnitureBox(int room, int zone, mouse::XZ nearest)
 {
     if (!roomValid(room))
         return std::nullopt;
@@ -247,8 +247,8 @@ std::optional<mouse::Box> furnitureBox(int room, int zone, mouse::XZ near)
     {
         if (col.type != kHardColScenario || (int)col.parameter != zone)
             continue;
-        const long long dx = std::clamp(near.x, (int)col.zv.ZVX1, (int)col.zv.ZVX2) - near.x;
-        const long long dz = std::clamp(near.z, (int)col.zv.ZVZ1, (int)col.zv.ZVZ2) - near.z;
+        const long long dx = std::clamp(nearest.x, (int)col.zv.ZVX1, (int)col.zv.ZVX2) - nearest.x;
+        const long long dz = std::clamp(nearest.z, (int)col.zv.ZVZ1, (int)col.zv.ZVZ2) - nearest.z;
         if (!best || dx * dx + dz * dz < bestDistance)
         {
             best = mouse::Box{ col.zv.ZVX1, col.zv.ZVX2, col.zv.ZVY1, col.zv.ZVY2, col.zv.ZVZ1, col.zv.ZVZ2 };
