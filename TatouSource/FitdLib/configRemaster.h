@@ -137,7 +137,7 @@ struct RemasterConfig
         bool dumpLifeScripts;   // Dump all LISTLIFE scripts to file on startup (default: false)
         bool generateNativeLifeScripts; // Generate native C code for all life scripts (default: false)
         bool enableNativeLifeScripts;   // Use compiled native C replacements for safe life scripts (default: false)
-        bool mouseNavOverlay;   // Draw the mouse walk grid and last pick over the scene (default: false)
+        bool mouseNavOverlay;   // Draw the mouse walk grid and last pick over the scene, and print the MTRACE mouse trace (default: false)
     } debug;
 };
 

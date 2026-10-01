@@ -10,6 +10,8 @@
 #include "assist/counterAttack.h"
 
 #include <algorithm>
+#include <cmath>
+#include <cstdio>
 
 namespace mouseworld
 {
@@ -105,6 +107,9 @@ void startIntent(mouse::ClickKind kind, const mouse::Payload& p, bool run)
         g_world.push.originRoom = hero().room;
     g_world.intent = in;
     g_world.intentFloor = g_currentFloor;
+    if (g_remasterConfig.debug.mouseNavOverlay) // mouse trace
+        printf("MTRACE intent kind=%s dest=(%d,%d) room=%d object=%d run=%d hero=(%d,%d) room=%d\n", kindInfo(kind).name,
+               in.dest.x, in.dest.z, in.room, in.targetObject, (int)in.run, heroPose().at.x, heroPose().at.z, hero().room);
     g_world.actionSent = false;
 }
 
@@ -221,6 +226,9 @@ bool tickContact(uint32_t now)
     localClick = 1; // PlayWorld turns this into action = 0x2000
     g_world.actionSent = true;
     g_world.actionHold = ActionHold{ hero().ANIM, now };
+    if (g_remasterConfig.debug.mouseNavOverlay) // mouse trace
+        printf("MTRACE contact: Action sent on touch of world %d zone %d, hero anim %d\n", a ? a->indexInWorld : -1,
+               in.targetZone, hero().ANIM);
     return true;
 }
 
@@ -239,6 +247,9 @@ void tickActionHold(uint32_t now)
         localClick = 1;
         return;
     }
+    if (g_remasterConfig.debug.mouseNavOverlay) // mouse trace
+        printf("MTRACE contact: Action released, hero anim %d ended=%d after %u ms\n", h.ANIM, (int)h.flagEndAnim,
+               now - hold.sinceMs);
     g_world.actionHold.reset();
 }
 
@@ -287,6 +298,24 @@ void tickNavigation(uint32_t now)
     pose.touchingTarget = touchingTarget(in);
     const mouse::NavDecision d = mouse::decide(in, pose, env, now);
     g_world.decision = d;
+    if (g_remasterConfig.debug.mouseNavOverlay) // mouse trace
+    {
+        static uint32_t s_lastMs = 0;
+        static mouse::XZ s_lastAt{};
+        const mouse::XZ at = heroPose().at;
+        if (d.arrived || d.abandoned || now - s_lastMs >= 250)
+        {
+            const double wx = d.target.x - at.x, wz = d.target.z - at.z, wn = std::hypot(wx, wz);
+            const double mx = at.x - s_lastAt.x, mz = at.z - s_lastAt.z, mn = std::hypot(mx, mz);
+            printf("MTRACE nav hero=(%d,%d) beta=%d dest=(%d,%d) waypoints=%zu first=(%d,%d) want=(%.2f,%.2f) moved=(%.2f,%.2f)/%.0f "
+                   "joyd=0x%x adv=%d arrived=%d abandoned=%d\n",
+                   at.x, at.z, h.beta, in.dest.x, in.dest.z, in.waypoints.size(), d.target.x, d.target.z, wn ? wx / wn : 0.0,
+                   wn ? wz / wn : 0.0, mn ? mx / mn : 0.0, mn ? mz / mn : 0.0, mn, d.joyd, (int)d.advance, (int)d.arrived,
+                   (int)d.abandoned);
+            s_lastMs = now;
+            s_lastAt = at;
+        }
+    }
     setJoyD(d.joyd); // LIFE scripts reading the stick see a live one
     if (d.arrived || d.abandoned)
         handleArrival(d);
@@ -378,7 +407,12 @@ void mouseWorldFrame(int allowSystemMenu)
 
     const uint32_t now = (uint32_t)SDL_GetTicks();
     const int camera = NumCamera;
-    const mouse::Resolver resolve = [](mouse::Point p) { return resolveAt(p); };
+    const mouse::Resolver resolve = [](mouse::Point p) {
+        g_traceResolve = g_remasterConfig.debug.mouseNavOverlay; // clicks only, never hover
+        const mouse::ClickResult r = resolveAt(p);
+        g_traceResolve = false;
+        return r;
+    };
 
     // The floor changed under a walk.
     if (g_world.intentFloor != g_currentFloor)

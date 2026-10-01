@@ -27,8 +27,9 @@ bool mouseScreenClickFilter(bool clickedThisFrame, bool downNow);
 // Floor data changed (LoadEtage): drop cached grids and plane fits.
 void mouseWorldFloorChanged();
 
-// Debug: draw the hero room's walk grid and the floor pick under the pointer
-// (only when debug.mouseNavOverlay is true in aitd_remaster.cfg).
+// Debug: draw the hero room's walk grid, the floor pick under the pointer and
+// the live walk's destination and steering (only when debug.mouseNavOverlay is
+// true in aitd_remaster.cfg, which also prints the MTRACE mouse trace).
 void mouseWorldDrawDebugOverlay();
 
 // Once per PlayWorld frame, right after the input latch (localKey/localJoyD/

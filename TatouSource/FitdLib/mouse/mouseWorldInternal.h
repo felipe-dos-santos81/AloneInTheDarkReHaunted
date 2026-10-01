@@ -6,6 +6,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstdio>
 #include <optional>
 #include <tuple>
 #include <vector>
@@ -80,6 +81,17 @@ int hudKeyFor(mouse::ClickKind kind);
 std::optional<mouse::Payload> holdActionApproach(int targetIdx);
 // What a click at p would do. Hovering never changes game state.
 mouse::ClickResult resolveAt(mouse::Point p);
+// Mouse trace: with debug.mouseNavOverlay on (off by default) the mouse prints
+// "MTRACE ..." lines to stdout: presses, each step of a click's resolveAt,
+// intents, steering every 250 ms and touch contact. resolveAt prints only while
+// g_traceResolve is set, around clicks: hovering never prints.
+extern bool g_traceResolve;
+#define MTRACE(...)                                \
+    do                                             \
+    {                                              \
+        if (g_traceResolve)                        \
+            printf("MTRACE " __VA_ARGS__);         \
+    } while (0)
 
 // ---- the live mouse state (mouseWorld.cpp) ----------------------------------
 
