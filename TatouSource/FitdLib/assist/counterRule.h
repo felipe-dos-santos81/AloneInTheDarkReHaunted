@@ -44,6 +44,7 @@ struct CounterCommand
 
 constexpr uint32_t kPendingBudgetMs = 3000; // longest wait for a free hero
 constexpr uint32_t kStrikeBudgetMs = 2500;  // longest strike (an empty gun never fires)
+constexpr int kNoHurtFrames = 3;           // free frames after a blow that brought no hurt animation
 
 class CounterRule
 {
@@ -64,6 +65,8 @@ private:
     bool fistsTried_ = false; // this counter already switched to fists
     bool strikeSeen_ = false; // the strike armed (false -> true) since Striking began
     bool strikePrev_ = false; // strikeArmed on the previous frame (the entering frame is the baseline)
+    bool hurtSeen_ = false;   // the hero was locked (hurt animation) since the blow
+    int freeFrames_ = 0;      // free Pending frames since the blow, while no hurt animation was seen
 };
 
 } // namespace assist

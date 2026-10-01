@@ -136,6 +136,7 @@ TEST_CASE("the strike is held until the hero's strike arms and then resolves")
 TEST_CASE("a strike flag already set when striking begins is not the counter's strike")
 {
     CounterRule rule = pending();
+    rule.step(lockedHero(500)); // the hurt animation
     CounterFrame f = freeHero(1000);
     f.strikeArmed = true; // stale: set before the counter injected anything
     CounterCommand c = rule.step(f);
@@ -155,6 +156,37 @@ TEST_CASE("a strike flag already set when striking begins is not the counter's s
     CHECK(rule.phase() == CounterPhase::Idle);
 }
 
+TEST_CASE("the counter waits for the hurt animation the hero's script starts a frame after the blow")
+{
+    // FITD: the blow sets HIT_BY; the hero's LIFE switches to its hit LIFE, which
+    // plays the uninterruptible hurt animation only on the next frame.
+    CounterRule rule;
+    rule.noteHit(7, 0);
+    CHECK(none(rule.step(freeHero(40)))); // not locked yet: a strike now would be replaced
+    CHECK(none(rule.step(lockedHero(80))));
+    const CounterCommand c = rule.step(freeHero(1000));
+    CHECK(c.face);
+    CHECK(c.holdStrike);
+}
+
+TEST_CASE("a blow with no hurt animation is countered on the third free frame")
+{
+    CounterRule rule;
+    rule.noteHit(7, 0);
+    CHECK(none(rule.step(freeHero(40))));
+    CHECK(none(rule.step(freeHero(80))));
+    CHECK(rule.step(freeHero(120)).holdStrike);
+}
+
+TEST_CASE("a new blow waits for its own hurt animation")
+{
+    CounterRule rule = striking();
+    rule.noteHit(9, 1100);
+    CHECK(none(rule.step(freeHero(1116)))); // the earlier hurt animation does not count
+    CHECK(none(rule.step(lockedHero(1140))));
+    CHECK(rule.step(freeHero(2100)).holdStrike);
+}
+
 TEST_CASE("one pending counter strikes only once")
 {
     CounterRule rule = striking();
@@ -171,6 +203,7 @@ TEST_CASE("an unarmed hero switches to fists once, then strikes")
 {
     CounterRule rule;
     rule.noteHit(7, 0);
+    rule.step(lockedHero(500)); // the hurt animation
     CounterFrame f = freeHero(1000);
     f.armed = false;
     CounterCommand c = rule.step(f);
@@ -189,6 +222,7 @@ TEST_CASE("switching to fists may lock the hero briefly; the counter waits")
 {
     CounterRule rule;
     rule.noteHit(7, 0);
+    rule.step(lockedHero(500)); // the hurt animation
     CounterFrame f = freeHero(1000);
     f.armed = false;
     REQUIRE(rule.step(f).equipFists);
@@ -200,6 +234,7 @@ TEST_CASE("a hero still unarmed after equipping fists gives up")
 {
     CounterRule rule;
     rule.noteHit(7, 0);
+    rule.step(lockedHero(500)); // the hurt animation
     CounterFrame f = freeHero(1000);
     f.armed = false;
     REQUIRE(rule.step(f).equipFists);

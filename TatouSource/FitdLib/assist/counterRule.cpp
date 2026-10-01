@@ -21,6 +21,8 @@ void CounterRule::noteHit(int attackerIdx, uint32_t nowMs)
     sinceMs_ = nowMs;
     strikeSeen_ = false;
     strikePrev_ = false;
+    hurtSeen_ = false; // this blow's own hurt animation is still to come
+    freeFrames_ = 0;
 }
 
 CounterCommand CounterRule::step(const CounterFrame& f)
@@ -39,7 +41,15 @@ CounterCommand CounterRule::step(const CounterFrame& f)
     CounterCommand cmd;
     if (phase_ == CounterPhase::Pending)
     {
+        // The hero's LIFE plays the hurt animation a frame after the blow; a
+        // strike started before it would be replaced by it. Wait to see the
+        // hero locked, or a few free frames when the blow brings no lock.
         if (f.heroLocked)
+        {
+            hurtSeen_ = true;
+            return cmd;
+        }
+        if (!hurtSeen_ && ++freeFrames_ < kNoHurtFrames)
             return cmd;
         if (!f.armed)
         {
@@ -84,6 +94,8 @@ void CounterRule::reset()
     fistsTried_ = false;
     strikeSeen_ = false;
     strikePrev_ = false;
+    hurtSeen_ = false;
+    freeFrames_ = 0;
 }
 
 } // namespace assist
