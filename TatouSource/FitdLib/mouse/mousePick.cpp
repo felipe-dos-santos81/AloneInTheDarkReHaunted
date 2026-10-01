@@ -39,8 +39,10 @@ inline void rotatePair(int a, int b, int64_t cs, int64_t sn, int* outA, int* out
     *outB = (int)((((int64_t)a * cs) + ((int64_t)b * sn)) / 0x10000) * 2;
 }
 
-// A room-frame point in the renderer's camera space: x, y and the divide's
-// depth, or nothing when culled (height clamp, depth <= 50).
+// The renderer's near plane: it divides only depths above this.
+constexpr double kNearDepth = 50.0;
+
+// A room-frame point in the renderer's camera space: x, y and the divide's depth.
 struct CameraPoint
 {
     double x = 0.0;
@@ -48,7 +50,8 @@ struct CameraPoint
     double depth = 0.0;
 };
 
-std::optional<CameraPoint> toCameraSpace(const Camera& c, int wx, int wy, int wz)
+// Camera space before the near-plane cull, or nothing under the height clamp.
+std::optional<CameraPoint> toCameraSpaceUnculled(const Camera& c, int wx, int wy, int wz)
 {
     // renderer.cpp: X += x - translateX, Y = y, Z += z - translateZ; height clamp; Y -= translateY
     int X = wx - c.posX;
@@ -80,10 +83,72 @@ std::optional<CameraPoint> toCameraSpace(const Camera& c, int wx, int wy, int wz
     }
 
     // The renderer stores camera-space coordinates as s16, then divides in float.
-    const double depth = (double)(int16_t)z + (double)c.focal1;
-    if (depth <= 50.0)
+    return CameraPoint{ (double)(int16_t)x, (double)(int16_t)y, (double)(int16_t)z + (double)c.focal1 };
+}
+
+// Camera space, or nothing when culled (height clamp, depth <= 50).
+std::optional<CameraPoint> toCameraSpace(const Camera& c, int wx, int wy, int wz)
+{
+    auto p = toCameraSpaceUnculled(c, wx, wy, wz);
+    if (!p || p->depth <= kNearDepth)
         return std::nullopt;
-    return CameraPoint{ (double)(int16_t)x, (double)(int16_t)y, depth };
+    return p;
+}
+
+Vec2 divide(const Camera& c, const CameraPoint& p)
+{
+    return Vec2{ p.x * c.focal2 / p.depth + 160.0, p.y * c.focal3 / p.depth + 100.0 };
+}
+
+double cross(const Vec2& o, const Vec2& a, const Vec2& b)
+{
+    return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+}
+
+// Monotone-chain convex hull, counter-clockwise; fewer than three points when
+// the input is collinear.
+std::vector<Vec2> convexHull(std::vector<Vec2> points)
+{
+    std::sort(points.begin(), points.end(),
+              [](const Vec2& a, const Vec2& b) { return a.x < b.x || (a.x == b.x && a.y < b.y); });
+    points.erase(std::unique(points.begin(), points.end(),
+                             [](const Vec2& a, const Vec2& b) { return a.x == b.x && a.y == b.y; }),
+                 points.end());
+    if (points.size() < 3)
+        return points;
+    std::vector<Vec2> hull;
+    for (int pass = 0; pass < 2; ++pass)
+    {
+        const size_t chainStart = hull.size();
+        for (const Vec2& c : points)
+        {
+            while (hull.size() >= chainStart + 2 && cross(hull[hull.size() - 2], hull.back(), c) <= 0.0)
+                hull.pop_back();
+            hull.push_back(c);
+        }
+        hull.pop_back(); // the next chain starts with it
+        std::reverse(points.begin(), points.end());
+    }
+    return hull;
+}
+
+bool hullContains(const std::vector<Vec2>& hull, const Vec2& p)
+{
+    if (hull.size() < 3)
+        return false;
+    for (size_t i = 0; i < hull.size(); ++i)
+        if (cross(hull[i], hull[(i + 1) % hull.size()], p) < 0.0)
+            return false;
+    return true;
+}
+
+double segmentDistance(const Vec2& a, const Vec2& b, const Vec2& p)
+{
+    const double dx = b.x - a.x;
+    const double dy = b.y - a.y;
+    const double length2 = dx * dx + dy * dy;
+    const double t = length2 > 0.0 ? std::clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / length2, 0.0, 1.0) : 0.0;
+    return std::hypot(a.x + t * dx - p.x, a.y + t * dy - p.y);
 }
 }
 
@@ -92,7 +157,7 @@ std::optional<Vec2> projectPoint(const Camera& c, int wx, int wy, int wz)
     auto p = toCameraSpace(c, wx, wy, wz);
     if (!p)
         return std::nullopt;
-    return Vec2{ p->x * c.focal2 / p->depth + 160.0, p->y * c.focal3 / p->depth + 100.0 };
+    return divide(c, *p);
 }
 
 bool nearerThanBox(const Camera& camera, const Box& box, int x, int y, int z)
@@ -344,34 +409,85 @@ bool boxSilhouetteContains(const Camera& camera, const Box& box, Point pixel)
                     return false;
                 corners.push_back(*s);
             }
+    return hullContains(convexHull(std::move(corners)), Vec2{ (double)pixel.x, (double)pixel.y });
+}
 
-    // Monotone-chain convex hull, counter-clockwise.
-    std::sort(corners.begin(), corners.end(),
-              [](const Vec2& a, const Vec2& b) { return a.x < b.x || (a.x == b.x && a.y < b.y); });
-    auto cross = [](const Vec2& o, const Vec2& a, const Vec2& b) {
-        return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+Box posedBox(const Box& body, int alpha, int beta, int gamma, int x, int y, int z, const int16_t* cosTable)
+{
+    if (!alpha && !beta && !gamma)
+        return Box{ body.x1 + x, body.x2 + x, body.y1 + y, body.y2 + y, body.z1 + z, body.z2 + z };
+    auto turn = [cosTable](int angle, double* a, double* b) {
+        const double cs = cosTable[angle & 0x3FF];
+        const double sn = cosTable[(angle + 0x100) & 0x3FF];
+        const double oldA = *a;
+        *a = (sn * oldA - cs * *b) / 65536.0 * 2.0;
+        *b = (cs * oldA + sn * *b) / 65536.0 * 2.0;
     };
-    std::vector<Vec2> hull;
-    for (int pass = 0; pass < 2; ++pass)
+    double lo[3] = { 1e9, 1e9, 1e9 };
+    double hi[3] = { -1e9, -1e9, -1e9 };
+    for (int k = 0; k < 8; ++k)
     {
-        const size_t chainStart = hull.size();
-        for (const Vec2& c : corners)
+        double v[3] = { (double)((k & 1) ? body.x2 : body.x1), (double)((k & 2) ? body.y2 : body.y1),
+                        (double)((k & 4) ? body.z2 : body.z1) };
+        turn(beta, &v[0], &v[2]);  // Y rotation
+        turn(gamma, &v[0], &v[1]); // Z rotation
+        turn(alpha, &v[1], &v[2]); // X rotation
+        for (int axis = 0; axis < 3; ++axis)
         {
-            while (hull.size() >= chainStart + 2 && cross(hull[hull.size() - 2], hull.back(), c) <= 0.0)
-                hull.pop_back();
-            hull.push_back(c);
+            lo[axis] = std::min(lo[axis], v[axis]);
+            hi[axis] = std::max(hi[axis], v[axis]);
         }
-        hull.pop_back(); // the next chain starts with it
-        std::reverse(corners.begin(), corners.end());
     }
-    if (hull.size() < 3)
-        return false;
+    return Box{ (int)std::floor(lo[0]) + x, (int)std::ceil(hi[0]) + x, (int)std::floor(lo[1]) + y,
+                (int)std::ceil(hi[1]) + y, (int)std::floor(lo[2]) + z, (int)std::ceil(hi[2]) + z };
+}
 
+std::vector<Vec2> clippedBoxOutline(const Camera& camera, const Box& box)
+{
+    std::optional<CameraPoint> corners[8];
+    for (int k = 0; k < 8; ++k)
+    {
+        corners[k] = toCameraSpaceUnculled(camera, (k & 1) ? box.x2 : box.x1, (k & 2) ? box.y2 : box.y1,
+                                           (k & 4) ? box.z2 : box.z1);
+        if (!corners[k])
+            return {}; // under the height clamp: never drawn
+    }
+    std::vector<Vec2> points;
+    for (int k = 0; k < 8; ++k)
+    {
+        const CameraPoint& a = *corners[k];
+        if (a.depth > kNearDepth)
+            points.push_back(divide(camera, a));
+        for (int axis : { 1, 2, 4 }) // each edge once, from its lower corner
+        {
+            if (k & axis)
+                continue;
+            const CameraPoint& b = *corners[k | axis];
+            if ((a.depth > kNearDepth) == (b.depth > kNearDepth))
+                continue;
+            // Camera space is affine in the room frame: cut the edge just in
+            // front of the plane (the divide is undefined on it).
+            const double cut = kNearDepth + 1.0;
+            const double t = (cut - a.depth) / (b.depth - a.depth);
+            points.push_back(divide(camera, CameraPoint{ a.x + t * (b.x - a.x), a.y + t * (b.y - a.y), cut }));
+        }
+    }
+    return convexHull(std::move(points));
+}
+
+bool outlineContains(const std::vector<Vec2>& outline, Point pixel, double slack)
+{
     const Vec2 p{ (double)pixel.x, (double)pixel.y };
-    for (size_t i = 0; i < hull.size(); ++i)
-        if (cross(hull[i], hull[(i + 1) % hull.size()], p) < 0.0)
-            return false;
-    return true;
+    if (hullContains(outline, p))
+        return true;
+    if (outline.empty() || slack <= 0.0)
+        return false;
+    // A point, a segment (an edge-on box) or a closed hull.
+    const size_t edges = outline.size() < 3 ? outline.size() - 1 : outline.size();
+    double nearest = std::hypot(outline[0].x - p.x, outline[0].y - p.y);
+    for (size_t i = 0; i < edges; ++i)
+        nearest = std::min(nearest, segmentDistance(outline[i], outline[(i + 1) % outline.size()], p));
+    return nearest <= slack;
 }
 
 std::optional<XZ> steerPoint(const Camera& camera, const std::vector<PolyFit>& fits,

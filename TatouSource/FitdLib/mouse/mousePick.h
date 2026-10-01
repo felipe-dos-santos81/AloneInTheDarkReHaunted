@@ -110,6 +110,18 @@ std::optional<XZ> pickFloor(const std::vector<PolyFit>& fits, Point pixel);
 // eight projected corners, false when any corner is culled. A box standing on
 // the floor under a camera above it covers no floor nearer the camera.
 bool boxSilhouetteContains(const Camera& camera, const Box& box, Point pixel);
+// The axis-aligned box around a static body's box `body` turned as the
+// renderer turns its vertices (RotateNuage: beta, then gamma, then alpha) and
+// moved to (x, y, z), widened to whole units: it holds every vertex drawn.
+Box posedBox(const Box& body, int alpha, int beta, int gamma, int x, int y, int z, const int16_t* cosTable);
+// The box's outline on screen with what lies behind the near plane cut away:
+// the convex hull of its corners in front and of its edges' crossings of the
+// plane. Empty when the whole box is behind it. Holds every point of the box
+// the renderer can draw, however close to the camera.
+std::vector<Vec2> clippedBoxOutline(const Camera& camera, const Box& box);
+// Whether `pixel` lies inside `outline` (a convex hull), or within `slack`
+// logical px of it.
+bool outlineContains(const std::vector<Vec2>& outline, Point pixel, double slack = 0.0);
 // Whether the room-frame point lies nearer the camera than every corner of
 // the box, so it is drawn in front of all of it (a raised floor in front of an
 // exit shows inside the exit's outline but still means itself).

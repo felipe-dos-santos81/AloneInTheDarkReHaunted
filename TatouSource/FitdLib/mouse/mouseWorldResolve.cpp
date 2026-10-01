@@ -57,7 +57,31 @@ constexpr ClickKindInfo kClickKinds[] = {
 
 static_assert(std::size(kClickKinds) == (size_t)mouse::ClickKind::HudMenu + 1, "one entry per ClickKind");
 
-// Topmost drawn actor whose screen box (exact, or forgiving) holds p.
+// How far outside an actor's outline the forgiving pick still reaches: half
+// the forgiving box's minimum size.
+constexpr double kOutlineSlackPx = mouse::kHitMinimum / 2.0;
+
+// Whether p can show the actor. A static body draws only inside the outline of
+// its box as posed, which for a body seen edge-on near the camera (a door
+// standing open beside it) is a sliver of its screen box. Animated bodies,
+// posed bone by bone, and sprites keep the screen box alone.
+bool onActorOutline(const tObject& a, mouse::Point p, double slack)
+{
+    if (a.objectType & (AF_SPECIAL | AF_OBJ_2D))
+        return true;
+    const sBody* body = HQR_Get(HQ_Bodys, a.bodyNum);
+    mouse::Camera camera;
+    if (!body || (body->m_flags & INFO_ANIM) || !cameraForRoom(currentRoom, &camera))
+        return true;
+    // Where AffObjet draws it: world coordinates are the on-screen room's frame.
+    const mouse::Box rest{ body->m_zv.ZVX1, body->m_zv.ZVX2, body->m_zv.ZVY1,
+                           body->m_zv.ZVY2, body->m_zv.ZVZ1, body->m_zv.ZVZ2 };
+    const mouse::Box posed = mouse::posedBox(rest, a.alpha, a.beta, a.gamma, a.worldX + a.stepX, a.worldY + a.stepY,
+                                             a.worldZ + a.stepZ, cosTable);
+    return mouse::outlineContains(mouse::clippedBoxOutline(camera, posed), p, slack);
+}
+
+// Topmost drawn actor whose screen box (exact, or forgiving) holds p on its outline.
 int pickActorAt(mouse::Point p, bool forgiving)
 {
     for (int k = NbAffObjets - 1; k >= 0; --k) // Index is far-to-near painter order
@@ -71,7 +95,7 @@ int pickActorAt(mouse::Point p, bool forgiving)
         mouse::Rect box{ a.screenXMin, a.screenYMin, a.screenXMax, a.screenYMax };
         if (forgiving)
             box = mouse::forgivingBox(box);
-        if (mouse::contains(box, p))
+        if (mouse::contains(box, p) && onActorOutline(a, p, forgiving ? kOutlineSlackPx : 0.0))
             return idx;
     }
     return -1;

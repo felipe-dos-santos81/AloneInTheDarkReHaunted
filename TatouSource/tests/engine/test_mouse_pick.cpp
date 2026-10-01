@@ -11,6 +11,15 @@
 
 using namespace mouse;
 
+namespace mouse
+{
+// In mouse:: so doctest's comparisons find it.
+bool operator==(const Box& a, const Box& b)
+{
+    return a.x1 == b.x1 && a.x2 == b.x2 && a.y1 == b.y1 && a.y2 == b.y2 && a.z1 == b.z1 && a.z2 == b.z2;
+}
+}
+
 namespace
 {
 // Level camera 100 room units (1000 scaled) above floor y=0, looking along +z.
@@ -196,6 +205,70 @@ TEST_CASE("boxSilhouetteContains has no outline when a corner is culled")
     Camera c = levelCamera();
     const Box straddling{ -200, 200, -1500, 0, -2000, 3400 }; // reaches behind the near plane
     CHECK_FALSE(boxSilhouetteContains(c, straddling, pixelOf(c, 0, 3000)));
+}
+
+TEST_CASE("clippedBoxOutline is the silhouette when the whole box is in front")
+{
+    Camera c = levelCamera();
+    const Box exit{ -200, 200, -1500, 0, 3000, 3400 };
+    const std::vector<Vec2> outline = clippedBoxOutline(c, exit);
+    auto middle = projectPoint(c, 0, -700, 3200);
+    REQUIRE(middle);
+    CHECK(outlineContains(outline, Point{ (int)middle->x, (int)middle->y }));
+    CHECK(outlineContains(outline, pixelOf(c, 0, 3100)));
+    CHECK_FALSE(outlineContains(outline, pixelOf(c, 1500, 3200)));
+    CHECK_FALSE(outlineContains(outline, pixelOf(c, 0, 2000)));
+}
+
+TEST_CASE("clippedBoxOutline keeps the part of a box in front of the near plane")
+{
+    Camera c = levelCamera();
+    // A door standing open beside the camera, reaching behind it: a thin slab
+    // off to the left, from behind the camera to 4000 ahead. Its vertices in
+    // front span the screen's left strip (0,0)-(106,199) once clamped, but it
+    // covers only a band of it, narrowing toward x = 106.
+    const Box slab{ -1000, -900, -2000, 0, -2000, 4000 };
+    const std::vector<Vec2> outline = clippedBoxOutline(c, slab);
+    CHECK(outlineContains(outline, Point{ 30, 100 }));
+    CHECK(outlineContains(outline, Point{ 104, 100 }));
+    CHECK_FALSE(outlineContains(outline, Point{ 104, 10 }));  // above its far end
+    CHECK_FALSE(outlineContains(outline, Point{ 104, 190 })); // below it
+    CHECK_FALSE(outlineContains(outline, Point{ 160, 100 })); // right of it
+}
+
+TEST_CASE("clippedBoxOutline is empty for a box wholly behind the camera")
+{
+    Camera c = levelCamera();
+    CHECK(clippedBoxOutline(c, Box{ -200, 200, -1500, 0, -3000, -2000 }).empty());
+    CHECK_FALSE(outlineContains({}, Point{ 160, 100 }, 6.0));
+}
+
+TEST_CASE("outlineContains forgives a pixel within its slack of the outline")
+{
+    const std::vector<Vec2> square{ Vec2{ 100, 100 }, Vec2{ 120, 100 }, Vec2{ 120, 120 }, Vec2{ 100, 120 } };
+    CHECK(outlineContains(square, Point{ 110, 110 }));
+    CHECK_FALSE(outlineContains(square, Point{ 124, 110 }));
+    CHECK(outlineContains(square, Point{ 124, 110 }, 6.0));
+    CHECK_FALSE(outlineContains(square, Point{ 130, 110 }, 6.0));
+    // An edge-on box collapses to a segment: only the slack can reach it.
+    const std::vector<Vec2> segment{ Vec2{ 100, 100 }, Vec2{ 100, 150 } };
+    CHECK_FALSE(outlineContains(segment, Point{ 100, 120 }));
+    CHECK(outlineContains(segment, Point{ 103, 120 }, 6.0));
+}
+
+TEST_CASE("posedBox moves an unturned body's box to where it stands")
+{
+    const Box body{ -990, 0, -2475, 0, 0, 99 };
+    CHECK(posedBox(body, 0, 0, 0, -2690, 0, -2080, testCosTable()) == Box{ -3680, -2690, -2475, 0, -2080, -1981 });
+}
+
+TEST_CASE("posedBox turns the body's corners as the renderer turns its vertices")
+{
+    // beta = 0x100: X' = -Z*32767/32768, Z' = X*32767/32768 (RotateNuage's Y
+    // rotation), widened to whole units: a door swung a quarter turn.
+    const Box body{ -990, 0, -2475, 0, 0, 99 };
+    CHECK(posedBox(body, 0, 0x100, 0, -2690, 0, -2080, testCosTable()) ==
+          Box{ -2690 - 99, -2690, -2475, 0, -2080 - 990, -2080 });
 }
 
 TEST_CASE("nearerThanBox: floor drawn in front of a box, raised floor included, is not the box")
