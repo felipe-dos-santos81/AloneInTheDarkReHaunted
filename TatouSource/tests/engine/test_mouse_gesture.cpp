@@ -334,3 +334,13 @@ TEST_CASE("Action stays held, like the key, only while the animation it started 
     CHECK_FALSE(holdAction(walk, open, true, 500));             // ended: let go
     CHECK_FALSE(holdAction(walk, open, false, kActionHoldMs));  // never ends: let go anyway
 }
+
+TEST_CASE("payloads to different furniture differ, so a held pointer re-aims between them")
+{
+    Payload piano{ 1000, 2000, 3, -1 };
+    piano.zone = 3;
+    Payload shelf = piano;
+    shelf.zone = 1;
+    CHECK_FALSE(piano == shelf);
+    CHECK(Payload{}.zone == -1); // walks and objects name no furniture
+}

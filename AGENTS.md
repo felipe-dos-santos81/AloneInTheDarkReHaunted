@@ -81,7 +81,8 @@ lock. SDL cursor and window calls belong on the main thread.
      engine's own collision opens `FoundObjet`; a found script gets Action on
      the touch. Scripted scenery is held-pushed, unless an inventory action
      other than push is armed (`sceneryUse`): then it too is touched and gets
-     Action. Action stays held, like the key, only while the hero plays the
+     Action, and so is furniture painted into the background (a type-9 hard
+     col; touched when the hero's `HARD_COL` reads its parameter). Action stays held, like the key, only while the hero plays the
      animation it started (`holdAction`), even if the button is released; one
      that starts nothing is one frame. The mouse never calls `FoundObjet`
      itself.

@@ -387,3 +387,16 @@ TEST_CASE("a walk to an object arrives on touching it, however far its centre")
     push.requiresHold = true; // a held push plans its own face and leaning
     CHECK_FALSE(decide(push, hero, env, 20).arrived);
 }
+
+TEST_CASE("a walk to scripted furniture (a type-9 hard col) arrives on touching it")
+{
+    auto grid = buildGrid({ kRoom }, {}, kHero);
+    REQUIRE(grid);
+    NavEnv env = envWith(&*grid);
+    NavIntent in = walkTo(XZ{ 900, 500 }, 2);
+    in.targetZone = 3; // the hard col's parameter, as the hero's HARD_COL reads it
+    HeroPose hero{ 2, XZ{ 100, 100 }, 0 };
+    CHECK_FALSE(decide(in, hero, env, 0).arrived);
+    hero.touchingTarget = true;
+    CHECK(decide(in, hero, env, 10).arrived);
+}

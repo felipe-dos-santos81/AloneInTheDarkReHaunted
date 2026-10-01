@@ -237,6 +237,27 @@ mouse::XZ linkMidpoint(int from, int to)
     return mouse::XZ{ x, z };
 }
 
+std::optional<mouse::Box> furnitureBox(int room, int zone, mouse::XZ near)
+{
+    if (!roomValid(room))
+        return std::nullopt;
+    std::optional<mouse::Box> best;
+    long long bestDistance = 0;
+    for (const hardColStruct& col : roomDataTable[room].hardColTable)
+    {
+        if (col.type != kHardColScenario || (int)col.parameter != zone)
+            continue;
+        const long long dx = std::clamp(near.x, (int)col.zv.ZVX1, (int)col.zv.ZVX2) - near.x;
+        const long long dz = std::clamp(near.z, (int)col.zv.ZVZ1, (int)col.zv.ZVZ2) - near.z;
+        if (!best || dx * dx + dz * dz < bestDistance)
+        {
+            best = mouse::Box{ col.zv.ZVX1, col.zv.ZVX2, col.zv.ZVY1, col.zv.ZVY2, col.zv.ZVZ1, col.zv.ZVZ2 };
+            bestDistance = dx * dx + dz * dz;
+        }
+    }
+    return best;
+}
+
 bool heroAvailable()
 {
     return currentCameraTargetActor >= 0 && currentCameraTargetActor < NUM_MAX_OBJECT &&

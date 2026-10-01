@@ -43,6 +43,11 @@ std::optional<mouse::Vec2> visibleAt(const mouse::Camera& camera, mouse::XZ p, i
 std::optional<mouse::Vec2> screenOf(int room, mouse::XZ p);
 // The doorway midpoint linking `from` to `to`, in from's frame.
 mouse::XZ linkMidpoint(int from, int to);
+// AITD1's "scenar" hard col: furniture painted into the background whose
+// parameter the colliding actor's HARD_COL reads (anim.cpp).
+constexpr int kHardColScenario = 9;
+// The type-9 hard col of `room` with parameter `zone` nearest `near`, or nothing.
+std::optional<mouse::Box> furnitureBox(int room, int zone, mouse::XZ near);
 // Floor data changed: drop the grids, reachability and plane fits.
 void clearGeometryCaches();
 

@@ -104,6 +104,7 @@ void startIntent(mouse::ClickKind kind, const mouse::Payload& p, bool run)
     in.dest = mouse::XZ{ p.x, p.z };
     in.room = p.room;
     in.targetObject = p.object;
+    in.targetZone = p.zone;
     in.requiresHold = kind == mouse::ClickKind::Push;
     in.run = run && !in.requiresHold;          // leaning on furniture is never a run
     in.steering = kind == mouse::ClickKind::Steer;
@@ -179,6 +180,18 @@ const tObject* targetActor(int worldIdx)
 // play, and a found script can see the touch. False when the object is gone.
 bool beginContact(mouse::NavIntent& in)
 {
+    if (in.targetZone >= 0)
+    {
+        // Furniture painted into the background: lean into its hard col, whose
+        // parameter the hero's HARD_COL then reads.
+        const mouse::XZ at = heroPose().at;
+        auto box = furnitureBox(hero().room, in.targetZone, at);
+        if (!box)
+            return false;
+        in.engaged = true;
+        retarget(in, mouse::XZ{ std::clamp(at.x, box->x1, box->x2), std::clamp(at.z, box->z1, box->z2) }, hero().room);
+        return true;
+    }
     const tObject* a = targetActor(in.targetObject);
     if (!a)
         return false;
@@ -187,18 +200,29 @@ bool beginContact(mouse::NavIntent& in)
     return true;
 }
 
+// Whether the hero touches the intent's object (its COL_BY) or furniture (the
+// hero's HARD_COL), as last frame's collisions left them.
+bool touchingTarget(const mouse::NavIntent& in)
+{
+    if (in.targetZone >= 0)
+        return hero().HARD_COL == in.targetZone;
+    const tObject* a = in.targetObject >= 0 ? targetActor(in.targetObject) : nullptr;
+    return a && a->COL_BY == currentCameraTargetActor;
+}
+
 // One frame of leaning into a clicked object. False when the intent ended.
 bool tickContact(uint32_t now)
 {
-    const tObject* a = targetActor(g_world.intent->targetObject);
-    if (!a || g_world.actionSent)
+    const mouse::NavIntent& in = *g_world.intent;
+    const tObject* a = in.targetZone >= 0 ? nullptr : targetActor(in.targetObject);
+    if ((in.targetZone < 0 && !a) || g_world.actionSent)
     {
         cancelIntent(); // gone, or its Action went out last frame
         return false;
     }
-    if (a->COL_BY != currentCameraTargetActor)
-        return true; // not touching yet (COL_BY holds last frame's collisions)
-    if (a->objectType & AF_FOUNDABLE)
+    if (!touchingTarget(in))
+        return true; // not touching yet
+    if (a && (a->objectType & AF_FOUNDABLE))
     {
         cancelIntent(); // the engine opened FoundObjet on the touch, or refused it
         return false;
@@ -210,7 +234,8 @@ bool tickContact(uint32_t now)
     g_world.actionSent = true;
     g_world.actionHold = ActionHold{ hero().ANIM, now };
     if (g_remasterConfig.debug.mouseNavOverlay) // MTRACE (temporary)
-        printf("MTRACE contact: Action sent on touch of world %d, hero anim %d\n", a->indexInWorld, hero().ANIM);
+        printf("MTRACE contact: Action sent on touch of world %d zone %d, hero anim %d\n", a ? a->indexInWorld : -1,
+               in.targetZone, hero().ANIM);
     return true;
 }
 
@@ -250,7 +275,7 @@ void handleArrival(const mouse::NavDecision& d)
             cancelIntent(); // pushed as far as it goes, or stuck
         return;
     }
-    if (d.arrived && in.targetObject >= 0 && !in.engaged && beginContact(in))
+    if (d.arrived && (in.targetObject >= 0 || in.targetZone >= 0) && !in.engaged && beginContact(in))
         return;
     cancelIntent(); // a floor walk arrived, or the object could not be touched
 }
@@ -277,8 +302,7 @@ void tickNavigation(uint32_t now)
     env.reframe = [](mouse::XZ p, int from, int to) { return mouse::reframe(p, originOf(from), originOf(to)); };
     env.capObjet = [](int x1, int z1, int beta, int x2, int z2) { return CapObjet(x1, z1, beta, x2, z2); };
     mouse::HeroPose pose = heroPose();
-    if (const tObject* target = in.targetObject >= 0 ? targetActor(in.targetObject) : nullptr)
-        pose.touchingTarget = target->COL_BY == currentCameraTargetActor; // last frame's collisions
+    pose.touchingTarget = touchingTarget(in);
     const mouse::NavDecision d = mouse::decide(in, pose, env, now);
     g_world.decision = d;
     if (g_remasterConfig.debug.mouseNavOverlay) // MTRACE (temporary)

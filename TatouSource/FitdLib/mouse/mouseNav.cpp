@@ -432,9 +432,9 @@ NavDecision decide(NavIntent& in, const HeroPose& hero, const NavEnv& env, uint3
 
     NavDecision d;
     d.target = in.waypoints.front();
-    // Touching the clicked object is arriving: a pushed object is unknown to
-    // the walk grid, so the walk aims at its centre and never gets near it.
-    if (!in.engaged && !in.requiresHold && in.targetObject >= 0 && hero.touchingTarget)
+    // Touching the clicked object or furniture is arriving: a pushed object is
+    // unknown to the walk grid, so the walk aims at its centre and never gets near it.
+    if (!in.engaged && !in.requiresHold && (in.targetObject >= 0 || in.targetZone >= 0) && hero.touchingTarget)
     {
         d.arrived = true;
         return d;

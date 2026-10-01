@@ -72,7 +72,8 @@ inline bool isWalkLike(ClickKind kind)
 }
 
 // Walk/Steer/Target/Push/Exit: destination x,z in `room`'s frame, and the clicked
-// world object (-1 for walk/steer/exit). Attack: the target actor.
+// world object (-1 for walk/steer/exit) or, for a Target on furniture painted
+// into the background, its type-9 hard col's parameter. Attack: the target actor.
 struct Payload
 {
     int x = 0;
@@ -80,11 +81,13 @@ struct Payload
     int room = -1;
     int object = -1; // world object index
     int actor = -1;  // actor index (Attack only)
+    int zone = -1;   // type-9 hard col parameter (Target on furniture only)
 };
 
 inline bool operator==(const Payload& a, const Payload& b)
 {
-    return a.x == b.x && a.z == b.z && a.room == b.room && a.object == b.object && a.actor == b.actor;
+    return a.x == b.x && a.z == b.z && a.room == b.room && a.object == b.object && a.actor == b.actor &&
+           a.zone == b.zone;
 }
 inline bool operator!=(const Payload& a, const Payload& b) { return !(a == b); }
 

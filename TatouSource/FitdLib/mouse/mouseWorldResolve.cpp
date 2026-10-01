@@ -216,6 +216,49 @@ int armedAction()
     return g_gameId == AITD1 && vars ? vars[kAitd1ArmedActionVar] : mouse::kArmedNothing;
 }
 
+// Furniture painted into the background (a type-9 hard col) whose outline holds
+// p, while an action other than push is armed: walk beside it, touch it and send
+// the armed action, as the keyboard's walk into it and press Action. Its scripts
+// (the attic's lives 7 and 8) watch the hero's HARD_COL, not an actor. Floor
+// drawn in front of all of it still means that floor.
+std::optional<mouse::ClickResult> furnitureAt(mouse::Point p)
+{
+    if (mouse::sceneryUse(armedAction()) != mouse::SceneryUse::TouchAction)
+        return std::nullopt;
+    const tObject& h = hero();
+    const mouse::Grid* grid = gridFor(h.room, agentOf(h));
+    mouse::Camera camera;
+    if (!grid || !cameraForRoom(h.room, &camera))
+        return std::nullopt;
+    const mouse::XZ from = heroPose().at;
+    for (const hardColStruct& col : roomDataTable[h.room].hardColTable)
+    {
+        if (col.type != kHardColScenario)
+            continue;
+        const mouse::Box box{ col.zv.ZVX1, col.zv.ZVX2, col.zv.ZVY1, col.zv.ZVY2, col.zv.ZVZ1, col.zv.ZVZ2 };
+        if (!mouse::boxSilhouetteContains(camera, box, p))
+            continue;
+        if (auto floor = floorUnder(p))
+        {
+            const mouse::XZ at = mouse::reframe(floor->at, originOf(floor->room), originOf(h.room));
+            if (mouse::nearerThanBox(camera, box, at.x, h.roomY, at.z))
+                continue; // floor drawn in front of the furniture
+        }
+        // Stand beside the face nearest the hero, where it can reach.
+        const mouse::XZ face{ std::clamp(from.x, box.x1, box.x2), std::clamp(from.z, box.z1, box.z2) };
+        const mouse::Reach* reach = reachFor(*grid, from);
+        auto spot = mouse::approachCell(*grid, face, from, [&](mouse::XZ c) { return !reach || reach->contains(c); });
+        MTRACE("  furniture zone %d (%d..%d, %d..%d) spot=%s(%d,%d)\n", (int)col.parameter, box.x1, box.x2, box.z1,
+               box.z2, spot ? "" : "none", spot ? spot->x : 0, spot ? spot->z : 0);
+        if (!spot)
+            continue;
+        mouse::Payload payload{ spot->x, spot->z, h.room, -1 };
+        payload.zone = (int)col.parameter;
+        return mouse::ClickResult{ mouse::ClickKind::Target, payload };
+    }
+    return std::nullopt;
+}
+
 // A pixel with no reachable floor still names a direction to walk in.
 mouse::ClickResult steerToward(mouse::Point p)
 {
@@ -421,6 +464,8 @@ mouse::ClickResult resolveAt(mouse::Point p)
         MTRACE("  -> on the hero: blocked\n");
         return {}; // on the hero: blocked, never the floor behind the hero
     }
+    if (auto furniture = furnitureAt(p))
+        return *furniture;
     if (auto exit = exitAt(p))
         return *exit;
     return pickFloorOrSteer(p);

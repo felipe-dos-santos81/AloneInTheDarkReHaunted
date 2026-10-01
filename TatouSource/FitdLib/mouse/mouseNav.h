@@ -106,6 +106,7 @@ struct NavIntent
     XZ dest;
     int room = -1;
     int targetObject = -1; // world object, -1 for a floor walk
+    int targetZone = -1;   // furniture: a type-9 hard col's parameter (the hero's HARD_COL on touch)
     bool requiresHold = false; // held push
     bool run = false;
     bool steering = false;
@@ -138,7 +139,7 @@ struct HeroPose
     int room = -1;
     XZ at;  // roomX + stepX, roomZ + stepZ
     int beta = 0;
-    bool touchingTarget = false; // the intent's object has the hero in its COL_BY
+    bool touchingTarget = false; // the hero touches the intent's object (its COL_BY) or furniture (HARD_COL)
 };
 
 struct NavEnv
