@@ -144,6 +144,8 @@ void readKeyboard(void)
 
     // Hand this frame's mouse events to the game thread and apply cursor requests.
     mouseInputEndMainFrame(remasterOptionsIsOpen() || ImGui::GetIO().WantCaptureMouse);
+    // ImGui text fields' SDL text input, kept off the game thread (bgfxGlue.cpp).
+    imguiApplyTextInput();
 
 #ifdef FITD_DEBUGGER
     debuggerVar_fastForward = false;

@@ -435,6 +435,39 @@ void createBgfxInitParams()
 #endif // BX_PLATFORM_
 }
 
+// ImGui's text-input (IME) request, recorded by ImGui::EndFrame() on the game
+// thread and applied by imguiApplyTextInput() on the main thread. The two
+// threads alternate in lockstep (startOfRender/endOfRender), so no lock.
+static bool s_textInputPending = false;
+static bool s_textInputWanted = false;
+static SDL_Rect s_textInputArea = { 0, 0, 1, 0 };
+static bool s_textInputActive = false; // main thread only
+
+static void imguiRequestTextInput(ImGuiContext*, ImGuiViewport*, ImGuiPlatformImeData* data)
+{
+    s_textInputWanted = data->WantVisible;
+    s_textInputArea = SDL_Rect{ (int)data->InputPos.x, (int)data->InputPos.y, 1, (int)data->InputLineHeight };
+    s_textInputPending = true;
+}
+
+void imguiApplyTextInput()
+{
+    if (!s_textInputPending || !gWindowBGFX)
+        return;
+    s_textInputPending = false;
+    if (s_textInputWanted)
+    {
+        SDL_SetTextInputArea(gWindowBGFX, &s_textInputArea, 0);
+        if (!s_textInputActive)
+            s_textInputActive = SDL_StartTextInput(gWindowBGFX);
+    }
+    else if (s_textInputActive)
+    {
+        SDL_StopTextInput(gWindowBGFX);
+        s_textInputActive = false;
+    }
+}
+
 int initBgfxGlue(int argc, char* argv[])
 {
     // Check for renderer command-line argument
@@ -560,6 +593,12 @@ int initBgfxGlue(int argc, char* argv[])
     // SDL cursor call (imgui_impl_sdl3.cpp ~634-635); mouseInputEndMainFrame applies
     // ImGui's requested shape on the main thread instead while ImGui wants the mouse.
     io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+
+    // Likewise its ImGui_ImplSDL3_PlatformSetImeData() calls SDL_StartTextInput()/
+    // SDL_StopTextInput() from ImGui::EndFrame() on the game thread; SDL allows them
+    // on the main thread only, and on macOS AppKit aborts when the text-input view
+    // is removed off it. Record the request; readKeyboard() applies it.
+    ImGui::GetPlatformIO().Platform_SetImeDataFn = imguiRequestTextInput;
 
     // Initialize TTF font system
     // Note: This adds fonts after imguiCreate() has already built the font atlas.

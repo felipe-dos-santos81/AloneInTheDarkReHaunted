@@ -33,3 +33,7 @@ extern bool g_pendingFullscreenToggle;
 extern bool g_pendingRaiseWindow;
 void toggleFullscreen();
 
+// Main thread only (readKeyboard): start, move or stop SDL text input as the
+// last ImGui frame asked.
+void imguiApplyTextInput();
+
