@@ -208,6 +208,14 @@ std::optional<mouse::ClickResult> exitAt(mouse::Point p)
     return std::nullopt;
 }
 
+constexpr int kAitd1ArmedActionVar = 90; // life 561 arms the Action key's action here
+
+// The inventory action armed for the Action key (AITD1 only).
+int armedAction()
+{
+    return g_gameId == AITD1 && vars ? vars[kAitd1ArmedActionVar] : mouse::kArmedNothing;
+}
+
 // A pixel with no reachable floor still names a direction to walk in.
 mouse::ClickResult steerToward(mouse::Point p)
 {
@@ -390,6 +398,11 @@ mouse::ClickResult resolveAt(mouse::Point p)
     }
     if (actor >= 0 && !isInteractable(actor))
     {
+        if (isHoldActionTarget(actor) && mouse::sceneryUse(armedAction()) == mouse::SceneryUse::TouchAction)
+        {
+            MTRACE("  scripted scenery %d with action %d armed: touch it and send Action\n", actor, armedAction());
+            return targetFor(actor); // the contact sends one frame of Action on the touch
+        }
         if (isHoldActionTarget(actor))
             if (auto payload = holdActionApproach(actor))
             {

@@ -312,3 +312,12 @@ TEST_CASE("a held pointer re-issues when only the kind changes: a walk to the ce
     CHECK(d.type == DecisionType::Issue);
     CHECK(d.kind == ClickKind::Exit);
 }
+
+TEST_CASE("scripted scenery is pushed unless an inventory action other than push is armed")
+{
+    CHECK(sceneryUse(kArmedPush) == SceneryUse::Push);
+    CHECK(sceneryUse(kArmedNothing) == SceneryUse::Push); // keyboard Action does nothing then
+    CHECK(sceneryUse(64) == SceneryUse::TouchAction);     // AITD1 open/close: the attic trunk
+    CHECK(sceneryUse(128) == SceneryUse::TouchAction);
+    CHECK(sceneryUse(32) == SceneryUse::TouchAction);
+}

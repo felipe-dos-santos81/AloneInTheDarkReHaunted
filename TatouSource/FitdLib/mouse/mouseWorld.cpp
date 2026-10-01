@@ -202,8 +202,9 @@ bool tickContact()
         cancelIntent(); // the engine opened FoundObjet on the touch, or refused it
         return false;
     }
-    // A found script: one frame of Action while still leaning in, so the
-    // object's life sees the touch and the Action together.
+    // A found script, or scripted scenery with an inventory action armed: one
+    // frame of Action while still leaning in, so the object's life sees the
+    // touch and the Action together.
     localClick = 1; // PlayWorld turns this into action = 0x2000
     g_world.actionSent = true;
     return true;

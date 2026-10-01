@@ -33,6 +33,25 @@ inline bool isHud(ClickKind kind)
     return kind == ClickKind::HudInventory || kind == ClickKind::HudMap || kind == ClickKind::HudMenu;
 }
 
+// The inventory action the player has armed for the Action key (AITD1 keeps it
+// in vars[90]: 256 push, 64 open/close, ...; 0 before any is chosen).
+constexpr int kArmedNothing = 0;
+constexpr int kArmedPush = 256;
+
+// What a click on scripted scenery (not foundable, with a life script) does:
+// a held push, or, while another action is armed, touching it and sending that
+// action once, as the keyboard's walk into it and press Action.
+enum class SceneryUse : uint8_t
+{
+    Push,
+    TouchAction,
+};
+
+inline SceneryUse sceneryUse(int armedAction)
+{
+    return armedAction == kArmedNothing || armedAction == kArmedPush ? SceneryUse::Push : SceneryUse::TouchAction;
+}
+
 // Kinds that walk the hero and that a held pointer follows as it moves.
 inline bool isWalkLike(ClickKind kind)
 {
