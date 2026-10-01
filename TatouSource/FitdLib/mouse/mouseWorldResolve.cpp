@@ -6,6 +6,7 @@
 
 #include "common.h"
 #include "menuMouse.h"
+#include "aitd1Inventory.h"
 #include "mouseWorldInternal.h"
 
 #include <algorithm>
@@ -234,12 +235,25 @@ std::optional<mouse::ClickResult> exitAt(mouse::Point p)
     return std::nullopt;
 }
 
-constexpr int kAitd1ArmedActionVar = 90; // life 561 arms the Action key's action here
+// What the hero holds: bare hands (the Actions object, or nothing), a weapon,
+// or another object Action uses.
+mouse::Hand heldHand()
+{
+    if (currentInventory < 0 || currentInventory >= NUM_MAX_INVENTORY)
+        return mouse::Hand::BareHands;
+    const int inHand = inHandTable[currentInventory];
+    if (inHand < 0 || inHand == kAitd1ActionsObject)
+        return mouse::Hand::BareHands;
+    const tWorldObject* w = worldObject(inHand);
+    return w && isAitd1WeaponFoundLife(w->foundLife) ? mouse::Hand::Weapon : mouse::Hand::Object;
+}
 
 // The inventory action armed for the Action key (AITD1 only).
 int armedAction()
 {
-    return g_gameId == AITD1 && vars ? vars[kAitd1ArmedActionVar] : mouse::kArmedNothing;
+    if (g_gameId != AITD1 || !vars)
+        return mouse::kArmedNothing;
+    return mouse::armedActionFor(heldHand(), vars[kAitd1ArmedActionVar]);
 }
 
 // Furniture painted into the background (a type-9 hard col) whose outline holds
@@ -489,8 +503,8 @@ mouse::ClickResult resolveAt(mouse::Point p)
             return {};
         return mouse::ClickResult{ kHudIconActions[(size_t)*icon].kind, {} };
     }
-    MTRACE("resolve logical=(%d,%d) camera=%d hero room=%d at=(%d,%d) beta=%d\n", p.x, p.y, NumCamera, hero().room,
-           heroPose().at.x, heroPose().at.z, hero().beta);
+    MTRACE("resolve logical=(%d,%d) camera=%d hero room=%d at=(%d,%d) beta=%d armed=%d\n", p.x, p.y, NumCamera, hero().room,
+           heroPose().at.x, heroPose().at.z, hero().beta, armedAction());
     if (hero().trackMode != 1)
         return {}; // a script walks the hero: nothing to walk to or strike (the HUD still works)
     int actor = pickActorAt(p, false);

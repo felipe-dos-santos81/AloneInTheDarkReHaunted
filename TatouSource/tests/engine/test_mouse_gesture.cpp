@@ -322,6 +322,29 @@ TEST_CASE("scripted scenery is pushed unless an inventory action other than push
     CHECK(sceneryUse(32) == SceneryUse::TouchAction);
 }
 
+TEST_CASE("bare hands arm what the Actions object recorded")
+{
+    CHECK(armedActionFor(Hand::BareHands, kArmedPush) == kArmedPush);
+    CHECK(armedActionFor(Hand::BareHands, kArmedNothing) == kArmedNothing);
+    CHECK(armedActionFor(Hand::BareHands, 64) == 64); // open/close
+}
+
+TEST_CASE("an object in hand other than a weapon is used on the scenery it touches")
+{
+    // The bedroom dresser key (object 53): its Use puts it in hand and leaves
+    // vars[90] as the last Actions choice; the dresser's life 66 opens on
+    // Action with the key in hand.
+    CHECK(sceneryUse(armedActionFor(Hand::Object, kArmedPush)) == SceneryUse::TouchAction);
+    CHECK(sceneryUse(armedActionFor(Hand::Object, kArmedNothing)) == SceneryUse::TouchAction);
+}
+
+TEST_CASE("a weapon in hand pushes scenery, whatever the Actions object recorded")
+{
+    // Action with a weapon strikes, which a click on scenery never wants.
+    CHECK(sceneryUse(armedActionFor(Hand::Weapon, 64)) == SceneryUse::Push);
+    CHECK(sceneryUse(armedActionFor(Hand::Weapon, kArmedNothing)) == SceneryUse::Push);
+}
+
 TEST_CASE("Action stays held, like the key, only while the animation it started runs")
 {
     const int walk = 254;

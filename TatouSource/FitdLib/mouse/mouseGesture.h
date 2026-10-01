@@ -52,6 +52,35 @@ inline SceneryUse sceneryUse(int armedAction)
     return armedAction == kArmedNothing || armedAction == kArmedPush ? SceneryUse::Push : SceneryUse::TouchAction;
 }
 
+// What the hero holds, for what Action does.
+enum class Hand : uint8_t
+{
+    BareHands, // the Actions object (or nothing): Action does what vars[90] recorded
+    Weapon,    // Action strikes
+    Object,    // anything else: Action uses it on what the hero touches
+};
+
+// An object in hand is used, not pushed (its found-life "Use" bit).
+constexpr int kArmedUseInHand = 1;
+
+// The action armed for the Action key. Using an object from the inventory (the
+// bedroom dresser key) puts it in hand and leaves vars[90] as the last Actions
+// choice, so only bare hands read it. A weapon strikes, which a click on
+// scenery never wants: it pushes, as with nothing armed.
+inline int armedActionFor(Hand hand, int actionsChoice)
+{
+    switch (hand)
+    {
+    case Hand::BareHands:
+        return actionsChoice;
+    case Hand::Weapon:
+        return kArmedNothing;
+    case Hand::Object:
+        break;
+    }
+    return kArmedUseInHand;
+}
+
 // The longest a touch keeps Action held for the animation it started.
 constexpr uint32_t kActionHoldMs = 5000;
 

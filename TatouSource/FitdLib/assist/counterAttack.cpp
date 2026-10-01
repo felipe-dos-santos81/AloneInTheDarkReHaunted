@@ -8,6 +8,7 @@
 
 #include "common.h"
 #include "actorFacing.h"
+#include "aitd1Inventory.h"
 #include "counterAttack.h"
 #include "counterRule.h"
 
@@ -19,9 +20,9 @@ assist::CounterRule s_rule;
 bool s_wroteInput = false; // localJoyD/localClick written by the counter this frame
 int s_attackerWorldIdx = -1; // the attacker's world object, to tell it from a reused ListObjets slot
 
-constexpr int kActionsObject = 2;       // AITD1 "Actions" (text 200): bare hands, found-life 561
+constexpr int kActionsObject = kAitd1ActionsObject;
 constexpr int kFightActionBit = 1 << 4; // inventory text 27 "Fight" (= 23 + 4)
-constexpr int kFightModeVar = 90;       // vars[90]: the action chosen for Actions
+constexpr int kFightModeVar = kAitd1ArmedActionVar;
 // The stick held with Action picks the strike. Left is the quickest melee blow
 // for fists and every weapon (strike frame after 20-25 anim units, against
 // 30-40 for the others: LISTANIM/LISTANI2 anims 37/39/40/41, 262/263/265);
@@ -29,10 +30,6 @@ constexpr int kFightModeVar = 90;       // vars[90]: the action chosen for Actio
 constexpr int kJoyLeft = 4;
 constexpr int kJoyUp = 1;
 constexpr int kGunFoundLives[] = { 12, 365 }; // rifle, revolver
-
-// AITD1 found-lives that strike on Action (LISTLIFE.PAK): rifle 12, saber 49,
-// sword 130, daggers 187-189, knives 354/355, revolver 365.
-constexpr int kWeaponFoundLives[] = { 12, 49, 130, 187, 188, 189, 354, 355, 365 };
 
 bool enabled()
 {
@@ -61,12 +58,7 @@ bool armed()
     if (inHand == kActionsObject)
         return vars[kFightModeVar] == kFightActionBit;
     const tWorldObject* w = worldObjectAt(inHand);
-    if (!w)
-        return false;
-    for (int life : kWeaponFoundLives)
-        if (w->foundLife == life)
-            return true;
-    return false;
+    return w && isAitd1WeaponFoundLife(w->foundLife);
 }
 
 bool gunInHand()
