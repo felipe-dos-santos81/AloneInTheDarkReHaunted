@@ -22,6 +22,7 @@ set(MODELS_CORE_SOURCES
     "${MODELS_DIR}/renderCamera.cpp"
     "${MODELS_DIR}/hdmMesh.cpp"
     "${MODELS_DIR}/skinnedBody.cpp"
+    "${MODELS_DIR}/mipChain.cpp"
 )
 
 # Engine-free assist sources compiled into the tests.
