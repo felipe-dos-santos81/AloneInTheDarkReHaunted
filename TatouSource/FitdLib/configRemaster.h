@@ -140,6 +140,8 @@ struct RemasterConfig
         bool generateNativeLifeScripts; // Generate native C code for all life scripts (default: false)
         bool enableNativeLifeScripts;   // Use compiled native C replacements for safe life scripts (default: false)
         bool mouseNavOverlay;   // Draw the mouse walk grid and last pick over the scene, and print the MTRACE mouse trace (default: false)
+        int loadSaveOnStart;    // -1 (default): off; n: skip the title menu once and load SAVE<n>.ITD (repeatable captures)
+        bool hdModelsCompare;   // HD models: once a replacement has drawn, write the compare-mode frames (hdCompare.h) (default: false)
     } debug;
 };
 

@@ -12,6 +12,7 @@
 #include <bgfx/platform.h>
 #include <bx/platform.h>
 #include <backends/imgui_impl_sdl3.h>
+#include "hdCompare.h"
 #include <vector>
 #include <chrono>
 #include "imguiBGFX.h"
@@ -379,6 +380,7 @@ void EndFrame()
     osystem_updateSceneSnapshot();
 
     bgfx::frame();
+    hdCompareEndFrame();
 
     // Don't clear the text queue here - text should persist until a new batch is queued
     // The game doesn't re-draw text every frame, only when menus change

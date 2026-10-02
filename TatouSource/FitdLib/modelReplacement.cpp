@@ -15,6 +15,7 @@
 
 #include "configRemaster.h"
 #include "consoleLog.h"
+#include "hdCompare.h"
 #include "models/bodyPose.h"
 #include "models/hdmMesh.h"
 #include "models/mipChain.h"
@@ -274,6 +275,10 @@ bool drawModelReplacement(ModelReplacement* r, sBody* pBody, int x, int y, int z
     osystem_flushPendingPrimitives(); // keep submission order: the view is sequential
     const models::ProjParams p = models::projParams(cam, g_shakeOffsetX, g_shakeOffsetY);
     s_boxValid = models::screenBox(bones, r->skin, p, s_box);
+    if (s_boxValid)
+        hdCompareNoteDraw(r->key.c_str(), s_box);
+    if (hdCompareHidden())
+        return true; // compare mode's hidden frame: neither the replacement nor the classic body
 
     float matrices[models::kMaxPoseGroups][16];
     for (size_t g = 0; g < groups; ++g)
@@ -281,7 +286,8 @@ bool drawModelReplacement(ModelReplacement* r, sBody* pBody, int x, int y, int z
     bgfx::setTransform(matrices, (uint16_t)groups);
     const float proj[4] = { p.px, p.py, p.pz, p.pw };
     bgfx::setUniform(uniform("u_camProj", bgfx::UniformType::Vec4), proj);
-    const float tint[4] = { g_fadeLevel, g_roomIsDark ? kDarkRoomBrightness : 1.0f, 0.0f, 0.0f };
+    const float tint[4] = { g_fadeLevel, g_roomIsDark ? kDarkRoomBrightness : 1.0f, 0.0f,
+                            hdCompareUnlit() ? 1.0f : 0.0f };
     bgfx::setUniform(uniform("u_tint", bgfx::UniformType::Vec4), tint);
     bgfx::setTexture(0, uniform("s_albedo", bgfx::UniformType::Sampler), r->texture, r->textureFlags);
     bgfx::setVertexBuffer(0, r->vb);

@@ -5582,7 +5582,7 @@ int FitdMain(int argc, char* argv[])
     // Present configuration before any game resources, title sequences or
     // menus are initialized. The main SDL thread continues pumping events and
     // bgfx frames, but game boot is gated until the dialog is dismissed.
-    if (g_remasterConfig.ui.showOptionsAtStartup)
+    if (g_remasterConfig.ui.showOptionsAtStartup && g_remasterConfig.debug.loadSaveOnStart < 0) // a developer capture skips it
     {// Hide the console window at startup; it will be shown after the main window is created
 #ifdef _WIN32
         HWND hConsole = GetConsoleWindow();

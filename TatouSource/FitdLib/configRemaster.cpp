@@ -134,6 +134,8 @@ void initDefaultRemasterConfig()
     g_remasterConfig.debug.enableGraphicsValidation = false; // Avoid DXGI 0x87A exceptions in normal Debug play
     g_remasterConfig.debug.logLifeScripts = false;  // Don't log life scripts by default (very verbose)
     g_remasterConfig.debug.mouseNavOverlay = false;
+    g_remasterConfig.debug.loadSaveOnStart = -1;
+    g_remasterConfig.debug.hdModelsCompare = false;
     g_remasterConfig.debug.dumpLifeScripts = false;   // Don't dump life scripts by default
     g_remasterConfig.debug.generateNativeLifeScripts = false; // Don't generate native C code by default
     g_remasterConfig.debug.enableNativeLifeScripts = false;    // Don't use native life scripts by default
@@ -379,6 +381,10 @@ void loadRemasterConfig()
                 g_remasterConfig.debug.enableGraphicsValidation = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
             else if (strcmp(key, "debug.mouseNavOverlay") == 0)
                 g_remasterConfig.debug.mouseNavOverlay = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
+            else if (strcmp(key, "debug.loadSaveOnStart") == 0)
+                g_remasterConfig.debug.loadSaveOnStart = atoi(value);
+            else if (strcmp(key, "debug.hdModelsCompare") == 0)
+                g_remasterConfig.debug.hdModelsCompare = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
             else if (strcmp(key, "debug.logLifeScripts") == 0)
                 g_remasterConfig.debug.logLifeScripts = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
             else if (strcmp(key, "debug.dumpLifeScripts") == 0)
@@ -560,6 +566,8 @@ void saveRemasterConfig()
     fprintf(file, "\n# Debug / Diagnostics Settings\n");
     fprintf(file, "debug.graphicsValidation = %s\n", g_remasterConfig.debug.enableGraphicsValidation ? "true" : "false");
     fprintf(file, "debug.mouseNavOverlay = %s\n", g_remasterConfig.debug.mouseNavOverlay ? "true" : "false");
+    fprintf(file, "debug.loadSaveOnStart = %d\n", g_remasterConfig.debug.loadSaveOnStart);
+    fprintf(file, "debug.hdModelsCompare = %s\n", g_remasterConfig.debug.hdModelsCompare ? "true" : "false");
     fprintf(file, "debug.logLifeScripts = %s\n", g_remasterConfig.debug.logLifeScripts ? "true" : "false");
     fprintf(file, "debug.dumpLifeScripts = %s\n", g_remasterConfig.debug.dumpLifeScripts ? "true" : "false");
     fprintf(file, "debug.generateNativeLifeScripts = %s\n", g_remasterConfig.debug.generateNativeLifeScripts ? "true" : "false");

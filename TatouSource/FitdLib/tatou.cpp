@@ -10,6 +10,7 @@
 // seg 4
 
 #include "common.h"
+#include "hdCompare.h"
 
 #ifdef PCLIKE
 #include "SDL.h"
@@ -115,7 +116,8 @@ void process_events( void )
 	else
 #endif
 	{
-        timeGlobal += timeIncrease;
+        if (!hdCompareHoldsTime()) // compare mode: every shot shows the same pose
+            timeGlobal += timeIncrease;
 	}
 	timer=timeGlobal;
 }

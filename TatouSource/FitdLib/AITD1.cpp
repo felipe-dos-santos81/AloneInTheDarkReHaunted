@@ -642,7 +642,7 @@ void startAITD1()
     g_remasterConfig.postProcessing.enableFilmGrain = false;
     g_remasterConfig.postProcessing.enableSSAO = false;
 
-    if (!make3dTatou())
+    if (g_remasterConfig.debug.loadSaveOnStart < 0 && !make3dTatou()) // a developer capture skips the intro
     {
         // After tatou animation, ensure we're ready for HD backgrounds in intro screens
         // The tatou may have changed rendering state, so ensure proper initialization
@@ -662,7 +662,8 @@ void startAITD1()
     }
 
     // Show language selection before main menu (skipped if only one language available)
-    LanguageSelectionMenu();
+    if (g_remasterConfig.debug.loadSaveOnStart < 0)
+        LanguageSelectionMenu();
 
     while (1)
     {
@@ -674,7 +675,16 @@ void startAITD1()
         }
 
 #ifndef AITD_UE4
-        int startupMenuResult = MainMenu();
+        int startupMenuResult;
+        if (g_remasterConfig.debug.loadSaveOnStart >= 0)
+        {
+            // Developer captures: load the configured save once, without the menu.
+            const int save = g_remasterConfig.debug.loadSaveOnStart;
+            g_remasterConfig.debug.loadSaveOnStart = -1;
+            startupMenuResult = loadSave(save) ? 3 : MainMenu();
+        }
+        else
+            startupMenuResult = MainMenu();
 #else
         int startupMenuResult = 0;
 #endif
@@ -755,6 +765,15 @@ void startAITD1()
                 FadeOutPhys(8, 0);
             }
 
+            break;
+        }
+        case 3: // debug.loadSaveOnStart: already loaded, as "continue" after its save menu
+        {
+            updateShaking();
+            FlagInitView = 2;
+            InitView();
+            PlayWorld(1, 1);
+            FadeOutPhys(8, 0);
             break;
         }
         case 2: // exit
