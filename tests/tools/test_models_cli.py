@@ -149,6 +149,20 @@ def test_import_from_an_older_export_still_needs_the_game_data(tmp_path):
     assert code == 2 and lines[-1].startswith("error: no ITD_RESS.PAK")
 
 
+def test_import_with_data_does_not_fall_back_to_the_export(tmp_path):
+    export_for_import(tmp_path)  # the export carries palette.bin and every body.bin
+    models.main(["identity", "--models", str(tmp_path / "models"), "--out", str(tmp_path / "ai"),
+                 "--bodies", "LISTBODY_000"], root=tmp_path, log=lambda _m: None)
+    lines = []
+    # --data wins over the export's own bodies: with no game data there the run fails
+    # instead of importing the very delivery it imports when --data is left out.
+    code = models.main(["import", "--data", str(tmp_path / "none"), "--models", str(tmp_path / "models"),
+                        "--src", str(tmp_path / "ai"), "--dest", str(tmp_path / "dest")],
+                       root=tmp_path, log=lines.append)
+    assert code == 2 and lines[-1].startswith("error: no ITD_RESS.PAK")
+    assert not (tmp_path / "dest").exists()
+
+
 def test_import_dry_run_writes_the_report_asked_for(tmp_path):
     data = export_for_import(tmp_path)
     models.main(["identity", "--models", str(tmp_path / "models"), "--out", str(tmp_path / "ai"),
