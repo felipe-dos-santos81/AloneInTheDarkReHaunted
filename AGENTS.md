@@ -17,9 +17,12 @@ Guidance for anyone (human or agent) changing this repository.
 - `TatouSource/FitdLib/models/` — HD character model math, engine-free
   (standard headers only) and unit-tested in `TatouSource/tests/engine/`:
   `affine3.h`, `bodyPose.*` (a body's pose as one matrix per bone group; its
-  Python twin is `tools/aitd_models/pose.py`) and `renderCamera.*` (the
-  engine's camera and 320x200 projection in float). The game compiles them
-  but does not call them yet.
+  Python twin is `tools/aitd_models/pose.py`), `renderCamera.*` (the
+  engine's camera and 320x200 projection in float) and `hdmMesh.*` (reads
+  the `body_<KEY>.hdm` file `make import-models` writes; its Python twin is
+  `tools/aitd_models/hdm.py`, and both read
+  `TatouSource/tests/engine/fixtures/tiny.hdm`). The game compiles them but
+  does not call them yet.
 - `TatouSource/FitdLib/assist/` — accessibility assists. The automatic
   counter-attack: `counterRule.*` is engine-free (standard headers only) and
   unit-tested in `TatouSource/tests/engine/`; `counterAttack.*` is its engine
@@ -31,8 +34,9 @@ Guidance for anyone (human or agent) changing this repository.
   unit-tested in `TatouSource/tests/engine/`: `collisionEscape.h` (how an
   actor already inside a blocker may move, used by `GereCollision`).
 - `tools/` + `tests/tools/` — the Python texture pipeline and the HD model
-  export (`tools/aitd_models/`, `make export-models`; contract in
-  `docs/model-contract.md`); `make test-tools` runs both suites.
+  export and import (`tools/aitd_models/`, `make export-models`,
+  `make import-models`; contract in `docs/model-contract.md`, sign-off in
+  `docs/hd-models-checklist.md`); `make test-tools` runs both suites.
 - `docs/` — contracts and checklists (`docs/mouse-gameplay-checklist.md`).
 - `graphify-out/` (any depth) — generated knowledge graph (`/graphify`);
   git-ignored, never commit it.
