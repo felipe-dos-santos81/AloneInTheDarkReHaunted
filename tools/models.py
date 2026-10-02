@@ -13,7 +13,9 @@ Defaults are relative to the repository root: data/aitd1, data/models,
 data/models-ai, Assets/models_hd and data/models-hd-debug; `identity` writes
 data/models-identity. Keys look like LISTBODY_011; an alias exports its
 canonical body. `identity` turns exported original.glb files into contract
-deliveries (the import's end-to-end oracle). Exit codes: 0 done, 1 some
+deliveries (the import's end-to-end oracle). `import` without --data reads
+the bodies and the palette the export carries (body.bin, palette.bin), and
+the game data only for an export written before it did. Exit codes: 0 done, 1 some
 bodies were skipped or failed, 2 usage or data error.
 """
 from __future__ import annotations
@@ -26,7 +28,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
-from aitd_models.export import REFERENCE_SIZE, export_models  # noqa: E402
+from aitd_models.export import PALETTE_NAME, REFERENCE_SIZE, export_models  # noqa: E402
 from aitd_models.gltf import GltfError  # noqa: E402
 from aitd_models.identity import identity_glb  # noqa: E402
 from aitd_models.importer import DELIVERY_NAME, ImportPaths, run_import  # noqa: E402
@@ -63,7 +65,9 @@ def build_parser() -> argparse.ArgumentParser:
     ide.add_argument("--bodies", required=True, help="comma-separated canonical keys, e.g. LISTBODY_011")
 
     imp = sub.add_parser("import", help="align, bind and pack deliveries into body_<KEY>.hdm")
-    imp.add_argument("--data", type=pathlib.Path, help=f"INDARK folder or any folder above it (default {DEFAULTS['data']})")
+    imp.add_argument("--data", type=pathlib.Path,
+                     help=f"INDARK folder or any folder above it (default: the export's own {PALETTE_NAME} "
+                          f"and body.bin files, else {DEFAULTS['data']})")
     imp.add_argument("--models", type=pathlib.Path, help=f"export folder holding {MANIFEST_NAME} (default {DEFAULTS['models']})")
     imp.add_argument("--src", type=pathlib.Path, help=f"delivery tree (default {DEFAULTS['models_ai']})")
     imp.add_argument("--dest", type=pathlib.Path, help=f"engine folder (default {DEFAULTS['dest']})")
@@ -150,7 +154,10 @@ def cmd_import(args, root: pathlib.Path, log) -> int:
                 log(f"{key} is an alias of {canonical_of[key]}; importing {canonical_of[key]}")
         only = {canonical_of[key] for key in only}
     try:
-        data_dir = find_data_dir(args.data if args.data is not None else root / DEFAULTS["data"])
+        if args.data is None and (models / PALETTE_NAME).is_file():
+            data_dir = None
+        else:
+            data_dir = find_data_dir(args.data if args.data is not None else root / DEFAULTS["data"])
         paths = ImportPaths(data_dir, models, src, args.dest if args.dest is not None else root / DEFAULTS["dest"],
                             args.debug if args.debug is not None else root / DEFAULTS["debug"])
         result = run_import(paths, records, only, args.dry_run, log)

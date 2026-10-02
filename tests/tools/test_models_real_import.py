@@ -75,3 +75,14 @@ def test_identity_round_trip(imported, key):
         rigid = np.einsum("vij,vj->vi", skin[mesh.groups], hom)[:, :3]
         moved.append(np.linalg.norm(blended - rigid, axis=1))
     assert np.percentile(np.array(moved), 99) < 1e-2 * height
+
+
+def test_the_export_alone_imports_the_same_files(imported):
+    _data_dir, dest, _result = imported
+    tmp = dest.parent
+    _doc, records = read_manifest(tmp / "models" / "manifest.json")
+    result = run_import(ImportPaths(None, tmp / "models", tmp / "ai", tmp / "dest-export", None), records,
+                        log=lambda _m: None)
+    assert sorted(result.imported) == sorted(KEYS)
+    for key in KEYS:
+        assert (tmp / "dest-export" / f"body_{key}.hdm").read_bytes() == (dest / f"body_{key}.hdm").read_bytes()

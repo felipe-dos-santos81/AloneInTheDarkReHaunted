@@ -126,3 +126,24 @@ def test_identity_reports_one_unreadable_body_and_writes_the_rest(tmp_path):
     assert code == 1
     assert (tmp_path / "ai/bodies/LISTBOD2_001/model.glb").is_file()
     assert any(line.startswith("error: LISTBODY_000: ") for line in lines)
+
+
+def test_import_without_data_reads_the_export(tmp_path):
+    export_for_import(tmp_path)  # no data/aitd1 under root: only the export can serve
+    models.main(["identity", "--models", str(tmp_path / "models"), "--out", str(tmp_path / "ai"),
+                 "--bodies", "LISTBODY_000"], root=tmp_path, log=lambda _m: None)
+    lines = []
+    code = models.main(["import", "--models", str(tmp_path / "models"), "--src", str(tmp_path / "ai"),
+                        "--dest", str(tmp_path / "dest"), "--dry-run"], root=tmp_path, log=lines.append)
+    assert code == 0 and lines[-1] == "dry run: would import 1 bodies (3 files), 0 failed"
+
+
+def test_import_from_an_older_export_still_needs_the_game_data(tmp_path):
+    export_for_import(tmp_path)
+    (tmp_path / "models/palette.bin").unlink()
+    models.main(["identity", "--models", str(tmp_path / "models"), "--out", str(tmp_path / "ai"),
+                 "--bodies", "LISTBODY_000"], root=tmp_path, log=lambda _m: None)
+    lines = []
+    code = models.main(["import", "--models", str(tmp_path / "models"), "--src", str(tmp_path / "ai"),
+                        "--dry-run"], root=tmp_path, log=lines.append)
+    assert code == 2 and lines[-1].startswith("error: no ITD_RESS.PAK")

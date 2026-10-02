@@ -165,3 +165,27 @@ def test_every_key_gets_a_report(setup):
 def test_a_dry_run_writes_no_report(setup):
     run(setup, dry_run=True)
     assert not setup[5].exists()
+
+
+def test_the_export_alone_imports_the_same_file(setup):
+    data, models, records, src, dest, debug = setup
+    run(setup)
+    from_data = (dest / "body_LISTBODY_000.hdm").read_bytes()
+    result, _ = run((None, models, records, src, tmp := dest.parent / "dest2", debug))
+    assert result.imported == ["LISTBODY_000"]
+    assert (tmp / "body_LISTBODY_000.hdm").read_bytes() == from_data
+
+
+def test_a_body_bin_that_differs_from_the_manifest_fails_that_body(setup):
+    data, models, records, src, dest, debug = setup
+    body = models / "bodies/LISTBODY_000/body.bin"
+    body.write_bytes(body.read_bytes() + b"\0")
+    result, _ = run((None, models, records, src, dest, debug))
+    assert result.failed["LISTBODY_000"] == "body.bin does not match the manifest (run make export-models again)"
+
+
+def test_an_export_without_body_bin_fails_that_body(setup):
+    data, models, records, src, dest, debug = setup
+    (models / "bodies/LISTBODY_000/body.bin").unlink()
+    result, _ = run((None, models, records, src, dest, debug))
+    assert result.failed["LISTBODY_000"] == "no body.bin in the export (run make export-models again)"

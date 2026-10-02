@@ -2,8 +2,10 @@
 """Import generator deliveries: data/models-ai/bodies/<KEY>/model.glb ->
 Assets/models_hd/body_<KEY>.hdm (and one copy per alias).
 
-Per delivery: read it (delivery.py), check the game data still matches the
-export (skeleton hash), align it to the original rest mesh (align.py), check
+Per delivery: read the original body -- from the game data, or from the
+export's body.bin and palette.bin when no game data is given -- and check it
+still matches the export (SHA-256, skeleton hash); read the delivery
+(delivery.py), align it to the original rest mesh (align.py), check
 the fit (silhouette.py, validate.py), derive skin weights (bind.py) and pack
 the engine file (hdm.py). A debug .glb of the aligned mesh, coloured by bone
 group, goes to --debug for inspection in Blender, with a report per key
@@ -12,6 +14,7 @@ imported and failed bodies alike. No .hdm is written for a delivery that
 fails, and nothing at all with dry_run."""
 from __future__ import annotations
 
+import hashlib
 import json
 import pathlib
 from dataclasses import dataclass, field
@@ -27,6 +30,7 @@ from .align import align
 from .bind import bind
 from .body import parse_body
 from .delivery import Delivery, DeliveryError, read_delivery
+from .export import BODY_NAME, PALETTE_NAME
 from .gltf import ARRAY_BUFFER, UNSIGNED_INT, GlbBuilder
 from .hdm import TEXTURE_MIME, VERTEX, HdmError, HdmMesh, write_hdm
 from .manifest import BodyRecord
@@ -51,7 +55,7 @@ class ImportResult:
 
 @dataclass
 class ImportPaths:
-    data: pathlib.Path            # INDARK folder (bodies, palette)
+    data: pathlib.Path | None     # INDARK folder (bodies, palette); None reads the export's body.bin and palette.bin
     models: pathlib.Path          # export folder: manifest.json, bodies/<KEY>/reference/
     src: pathlib.Path             # delivery tree: bodies/<KEY>/model.glb
     dest: pathlib.Path            # engine folder for body_<KEY>.hdm
@@ -65,6 +69,30 @@ class BuildOutcome:
     failure: str | None = None    # set when nothing may be written
     hdm: bytes = b""
     debug: bytes = b""
+
+
+class ExportDataError(ValueError):
+    pass
+
+
+def read_palette(paths: ImportPaths) -> np.ndarray:
+    if paths.data is None:
+        return decode_palette((paths.models / PALETTE_NAME).read_bytes())
+    return decode_palette(Pak(paths.data / f"{PALETTE_PAK}.PAK").read(PALETTE_ENTRY))
+
+
+def read_raw_body(paths: ImportPaths, record: BodyRecord, paks: dict[str, Pak]) -> bytes:
+    """The body entry from the game data, or the export's body.bin, which
+    must still be the body the manifest describes."""
+    if paths.data is not None:
+        return paks.setdefault(record.hqr, Pak(paths.data / f"{record.hqr}.PAK")).read(record.body)
+    file = paths.models / record.dir / BODY_NAME
+    if not file.is_file():
+        raise ExportDataError(f"no {BODY_NAME} in the export (run make export-models again)")
+    raw = file.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != record.body_sha256:
+        raise ExportDataError(f"{BODY_NAME} does not match the manifest (run make export-models again)")
+    return raw
 
 
 def target_name(key: str) -> str:
@@ -132,7 +160,7 @@ def run_import(paths: ImportPaths, records: list[BodyRecord], only: set[str] | N
     """Import every delivery under `paths.src`/bodies (or only the keys in `only`)."""
     by_key = {r.key: r for r in records}
     result = ImportResult()
-    palette = decode_palette(Pak(paths.data / f"{PALETTE_PAK}.PAK").read(PALETTE_ENTRY))
+    palette = read_palette(paths)
     paks: dict[str, Pak] = {}
     bodies = paths.src / "bodies"
     folders = sorted(p for p in bodies.iterdir() if p.is_dir()) if bodies.is_dir() else []
@@ -155,8 +183,11 @@ def run_import(paths: ImportPaths, records: list[BodyRecord], only: set[str] | N
         if not (folder / DELIVERY_NAME).is_file():
             result.failed[key] = f"no {DELIVERY_NAME}"
             continue
-        pak = paks.setdefault(record.hqr, Pak(paths.data / f"{record.hqr}.PAK"))
-        body = parse_body(pak.read(record.body))
+        try:
+            body = parse_body(read_raw_body(paths, record, paks))
+        except ExportDataError as exc:
+            result.failed[key] = str(exc)
+            continue
         if validate(body) or skeleton_hash(body) != record.skeleton_hash:
             result.failed[key] = "game data does not match the export (run make export-models again)"
             continue
