@@ -67,7 +67,7 @@ def build_parser() -> argparse.ArgumentParser:
     imp.add_argument("--models", type=pathlib.Path, help=f"export folder holding {MANIFEST_NAME} (default {DEFAULTS['models']})")
     imp.add_argument("--src", type=pathlib.Path, help=f"delivery tree (default {DEFAULTS['models_ai']})")
     imp.add_argument("--dest", type=pathlib.Path, help=f"engine folder (default {DEFAULTS['dest']})")
-    imp.add_argument("--debug", type=pathlib.Path, help=f"debug .glb folder (default {DEFAULTS['debug']})")
+    imp.add_argument("--debug", type=pathlib.Path, help=f"debug .glb and report folder (default {DEFAULTS['debug']})")
     imp.add_argument("--bodies", help="comma-separated keys to import (default: every delivery)")
     imp.add_argument("--dry-run", action="store_true", help="check everything, write nothing")
     return parser

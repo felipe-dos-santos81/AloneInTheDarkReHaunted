@@ -147,3 +147,21 @@ def test_a_failing_body_writes_none_of_its_aliases(setup):
             r.skeleton_hash = "0" * 16
     run((data, models, records, src, dest, debug))
     assert not dest.exists()
+
+
+def test_every_key_gets_a_report(setup):
+    import json
+    deliver(setup[3], "LISTBOD2_001", b"junk")
+    run(setup)
+    debug = setup[5]
+    ok = json.loads((debug / "body_LISTBODY_000.json").read_text())
+    assert ok["status"] == "imported" and ok["reason"] is None
+    assert {"chamfer_mean_pct", "chamfer_p95_pct", "iou", "inside_zv", "align", "ambiguous_pct"} <= set(ok["metrics"])
+    assert sorted(ok["files"]) == ["body_LISTBOD2_000.hdm", "body_LISTBODY_000.hdm", "body_LISTBODY_002.hdm"]
+    bad = json.loads((debug / "body_LISTBOD2_001.json").read_text())
+    assert bad["status"] == "failed" and "too small for a GLB" in bad["reason"] and bad["files"] == []
+
+
+def test_a_dry_run_writes_no_report(setup):
+    run(setup, dry_run=True)
+    assert not setup[5].exists()

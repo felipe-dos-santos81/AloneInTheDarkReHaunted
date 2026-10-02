@@ -6,10 +6,13 @@ Per delivery: read it (delivery.py), check the game data still matches the
 export (skeleton hash), align it to the original rest mesh (align.py), check
 the fit (silhouette.py, validate.py), derive skin weights (bind.py) and pack
 the engine file (hdm.py). A debug .glb of the aligned mesh, coloured by bone
-group, goes to --debug for inspection in Blender. Nothing is written for a
-delivery that fails, and nothing at all with dry_run."""
+group, goes to --debug for inspection in Blender, with a report per key
+(body_<KEY>.json: status, reason, warnings, every metric, files written) for
+imported and failed bodies alike. No .hdm is written for a delivery that
+fails, and nothing at all with dry_run."""
 from __future__ import annotations
 
+import json
 import pathlib
 from dataclasses import dataclass, field
 
@@ -52,7 +55,7 @@ class ImportPaths:
     models: pathlib.Path          # export folder: manifest.json, bodies/<KEY>/reference/
     src: pathlib.Path             # delivery tree: bodies/<KEY>/model.glb
     dest: pathlib.Path            # engine folder for body_<KEY>.hdm
-    debug: pathlib.Path | None    # debug .glb files; None writes none
+    debug: pathlib.Path | None    # debug .glb files and body_<KEY>.json reports; None writes neither
 
 
 @dataclass
@@ -115,6 +118,15 @@ def build_hdm(record: BodyRecord, body, palette, delivery: Delivery, reference_d
     return outcome
 
 
+def write_report(folder: pathlib.Path, key: str, result: ImportResult, record: BodyRecord | None) -> None:
+    """body_<KEY>.json: what the import decided about one key, and why."""
+    imported = key in result.imported
+    report = {"key": key, "status": "imported" if imported else "failed", "reason": result.failed.get(key),
+              "warnings": result.warnings.get(key, []), "metrics": result.metrics.get(key, {}),
+              "files": [target_name(k) for k in [key, *record.aliases]] if imported else []}
+    atomic_write_bytes(folder / f"body_{key}.json", (json.dumps(report, indent=1) + "\n").encode())
+
+
 def run_import(paths: ImportPaths, records: list[BodyRecord], only: set[str] | None = None,
                dry_run: bool = False, log=print) -> ImportResult:
     """Import every delivery under `paths.src`/bodies (or only the keys in `only`)."""
@@ -175,6 +187,9 @@ def run_import(paths: ImportPaths, records: list[BodyRecord], only: set[str] | N
         log(f"{'checked' if dry_run else 'imported'} {key} (+{len(record.aliases)} aliases): "
             f"{len(delivery.positions)} vertices, {len(delivery.triangles)} triangles, "
             f"chamfer p95 {metrics['chamfer_p95_pct']} %, IoU min {min(metrics['iou'].values())}")
+    if not dry_run and paths.debug is not None:
+        for key in sorted({*result.imported, *result.failed}):
+            write_report(paths.debug, key, result, by_key.get(key))
     for key, reason in sorted(result.failed.items()):
         log(f"error: {key}: {reason}")
     for key, warnings in sorted(result.warnings.items()):
