@@ -74,7 +74,8 @@ def build_parser() -> argparse.ArgumentParser:
     imp.add_argument("--debug", type=pathlib.Path, help=f"debug .glb and report folder (default {DEFAULTS['debug']})")
     imp.add_argument("--bodies", help="comma-separated keys to import (default: every delivery)")
     imp.add_argument("--report", type=pathlib.Path,
-                     help="write the body_<KEY>.json reports here instead, even with --dry-run")
+                     help="write the body_<KEY>.json reports here instead of beside the debug .glb, "
+                          "even with --dry-run (--debug still gets the .glb)")
     imp.add_argument("--dry-run", action="store_true", help="check everything, write nothing but --report")
     return parser
 
