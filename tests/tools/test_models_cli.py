@@ -50,3 +50,68 @@ def test_runs_as_a_script(tmp_path):
     proc = subprocess.run([sys.executable, str(ROOT / "tools" / "models.py"), "--help"],
                           capture_output=True, text=True)
     assert proc.returncode == 0 and "export" in proc.stdout
+def export_for_import(tmp_path):
+    data = write_model_data_dir(tmp_path / "INDARK")
+    assert models.main(["export", "--data", str(data), "--out", str(tmp_path / "models"), "--size", "32",
+                        "--ssaa", "1"], root=tmp_path, log=lambda _m: None) == 1
+    return data
+
+
+def test_identity_then_import(tmp_path):
+    data = export_for_import(tmp_path)
+    lines = []
+    assert models.main(["identity", "--models", str(tmp_path / "models"), "--out", str(tmp_path / "ai"),
+                        "--bodies", "LISTBODY_000"], root=tmp_path, log=lines.append) == 0
+    assert (tmp_path / "ai/bodies/LISTBODY_000/model.glb").is_file()
+    code = models.main(["import", "--data", str(data), "--models", str(tmp_path / "models"),
+                        "--src", str(tmp_path / "ai"), "--dest", str(tmp_path / "dest"),
+                        "--debug", str(tmp_path / "debug")], root=tmp_path, log=lines.append)
+    assert code == 0
+    assert lines[-1] == "imported 1 bodies (3 files), 0 failed"
+    assert (tmp_path / "dest/body_LISTBODY_000.hdm").is_file()
+
+
+def test_import_dry_run_and_failures(tmp_path):
+    data = export_for_import(tmp_path)
+    (tmp_path / "ai/bodies/LISTBOD2_000").mkdir(parents=True)
+    lines = []
+    code = models.main(["import", "--data", str(data), "--models", str(tmp_path / "models"),
+                        "--src", str(tmp_path / "ai"), "--dest", str(tmp_path / "dest"), "--dry-run"],
+                       root=tmp_path, log=lines.append)
+    assert code == 1
+    assert lines[-1] == "dry run: would import 0 bodies (0 files), 1 failed"
+    assert not (tmp_path / "dest").exists()
+
+
+def test_import_with_nothing_delivered_is_fine(tmp_path):
+    lines = []
+    assert models.main(["import"], root=tmp_path, log=lines.append) == 0
+    assert lines[-1].startswith("nothing to import: ")
+
+
+def test_import_without_an_export_is_a_usage_error(tmp_path):
+    (tmp_path / "ai").mkdir()
+    lines = []
+    assert models.main(["import", "--src", str(tmp_path / "ai")], root=tmp_path, log=lines.append) == 2
+    assert "run make export-models first" in lines[-1]
+
+
+def test_identity_refuses_an_alias(tmp_path):
+    export_for_import(tmp_path)
+    lines = []
+    assert models.main(["identity", "--models", str(tmp_path / "models"), "--bodies", "LISTBOD2_000"],
+                       root=tmp_path, log=lines.append) == 2
+    assert lines[-1] == "error: not exported canonical bodies: LISTBOD2_000"
+
+
+def test_import_resolves_an_alias_to_its_canonical_key(tmp_path):
+    data = export_for_import(tmp_path)
+    models.main(["identity", "--models", str(tmp_path / "models"), "--out", str(tmp_path / "ai"),
+                 "--bodies", "LISTBODY_000"], root=tmp_path, log=lambda _m: None)
+    lines = []
+    code = models.main(["import", "--data", str(data), "--models", str(tmp_path / "models"),
+                        "--src", str(tmp_path / "ai"), "--dest", str(tmp_path / "dest"), "--dry-run",
+                        "--bodies", "LISTBOD2_000"], root=tmp_path, log=lines.append)
+    assert code == 0
+    assert lines[0] == "LISTBOD2_000 is an alias of LISTBODY_000; importing LISTBODY_000"
+    assert lines[-1] == "dry run: would import 1 bodies (3 files), 0 failed"

@@ -49,7 +49,7 @@ The top level holds:
 |---|---|
 | `key`, `hqr`, `body` | `LISTBODY_011`, `LISTBODY`, `11` |
 | `canonical` | The key whose folder holds this body's export (itself when canonical) |
-| `target` | The engine file the import will write: `body_<KEY>.glb` |
+| `target` | The engine file the import will write: `body_<KEY>.hdm` |
 | `kind` | `character` (6 or more groups), `prop` (fewer), or `skip` (nothing drawable: no folder) |
 | `body_sha256` | SHA-256 of the raw body entry; equal hashes are aliases |
 | `skeleton_hash` | FNV-1a 64 of the rest vertices and group hierarchy; the engine checks it before using a model |
@@ -127,6 +127,49 @@ Deliver only for canonical keys, the folders under `bodies/`. Import copies
 each delivery to the body's aliases. Skeleton siblings are separate bodies
 and need their own delivery.
 
-Import (planned: `make check-models` / `make import-models`) aligns the mesh
-to the original. It then derives skin weights from the original's bone
-groups and writes `Assets/models_hd/body_<KEY>.glb`.
+`make check-models` (a dry run) and `make import-models` align the mesh to
+the original, check the fit, derive skin weights from the original's bone
+groups and write `Assets/models_hd/body_<KEY>.hdm` (see "Import output").
+
+### What import checks
+
+| Check | Fails | Warns |
+|---|---|---|
+| Triangles | more than 50,000 | more than 30,000 |
+| Texture side | more than 4096 px | more than 2048 px |
+| Base-colour images | not exactly one, or not PNG/JPEG | |
+| `extensionsRequired` | any | |
+| Primitives | anything but triangles | |
+| Fit (chamfer p95, as % of height) | more than 4 % | |
+| Silhouette IoU, worst reference view | less than 0.85 | |
+| Collision box | | the mesh reaches outside ZV + 10 % |
+| Binding | | more than 1 % of vertices as close to an unrelated part |
+
+The fit is a similarity transform (uniform scale, rotation, offset): import
+undoes any scale, offset or yaw, but not a mirrored or posed mesh.
+
+`make identity-models bodies=KEY` writes each original as its own delivery
+(the original mesh, its palette colours in a 16x16 texture), which must
+import back onto itself; it is the pipeline's end-to-end check.
+
+## Import output: body_<KEY>.hdm
+
+The engine reads one file per body, written once per canonical delivery and
+copied to every alias. Little-endian, no padding:
+
+| Offset | Field |
+|---|---|
+| 0 | `char[4]` magic `AHDM` |
+| 4 | `u16` version, 1 |
+| 6 | `u16` group count (1..32; must equal the body's) |
+| 8 | `u64` skeleton hash (the manifest's `skeleton_hash`; the engine compares it with the loaded body's) |
+| 16 | `u32` vertex count, `u32` index count (a multiple of 3, at most 150,000) |
+| 24 | `u32` texture bytes, `u8` texture kind (1 PNG, 2 JPEG), 3 zero bytes |
+| 32 | vertices, 40 bytes each: `f32x3` position, `f32x3` normal, `f32x2` uv, `u8x4` joints, `u8x4` weights |
+| … | `u32` indices, then the texture bytes as delivered |
+| end − 4 | `u32` CRC-32 (zlib) of every byte before it |
+
+Positions and normals are in engine space and the rest pose (y down, facing
+−z, engine units). Joints are bone groups; the four weights sum to exactly
+255, and an unused slot has weight 0 and joint 0. UVs keep glTF's
+convention (origin at the image's top left).

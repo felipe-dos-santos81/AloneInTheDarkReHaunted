@@ -135,7 +135,7 @@ def export_models(data_dir, out_dir, log=print, only: set[str] | None = None,
             "character" if len(body.groups) >= CHARACTER_MIN_GROUPS else "prop")
         record = BodyRecord(
             key=key, hqr=hqr, body=index, canonical=by_sha[sha][0],
-            target=f"body_{key}.glb", kind=kind, body_sha256=sha, skeleton_hash=shash,
+            target=f"body_{key}.hdm", kind=kind, body_sha256=sha, skeleton_hash=shash,
             zv=list(body.zv), height=height, triangles=mesh.triangle_count,
             prim_counts=dict(sorted(counts.items())),
             groups=[{"parent": g.parent, "pivot_rest": [float(c) for c in rest.joints[gi][:3, 3]], "count": g.count}

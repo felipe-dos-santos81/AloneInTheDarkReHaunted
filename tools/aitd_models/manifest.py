@@ -26,7 +26,7 @@ class BodyRecord:
     hqr: str                   # "LISTBODY"
     body: int                  # entry index in the HQR
     canonical: str             # key whose folder holds the export (itself when canonical)
-    target: str                # engine file name: "body_LISTBODY_011.glb"
+    target: str                # engine file name: "body_LISTBODY_011.hdm"
     kind: str                  # "character" (>= 6 groups), "prop", or "skip" (nothing drawable)
     body_sha256: str
     skeleton_hash: str

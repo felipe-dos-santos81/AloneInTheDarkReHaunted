@@ -60,7 +60,7 @@ def test_manifest_round_trips(tmp_path):
     assert records == result.records
     assert doc["contract"] == 1 and doc["bind_pose"] == "rest"
     record = records[0]
-    assert record.target == "body_LISTBODY_000.glb" and record.dir == "bodies/LISTBODY_000"
+    assert record.target == "body_LISTBODY_000.hdm" and record.dir == "bodies/LISTBODY_000"
     assert record.preview_anims == ["LISTANIM_000"]
     assert record.groups[1] == {"parent": 0, "pivot_rest": [0.0, -100.0, 0.0], "count": 2}
     assert record.height == 400.0 and record.triangles == 331

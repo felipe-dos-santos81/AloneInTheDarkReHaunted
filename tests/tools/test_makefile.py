@@ -58,8 +58,29 @@ def test_export_models_defaults_and_filter():
     assert '--bodies "LISTBODY_011,LISTBOD2_011"' in make_n("export-models", "bodies=LISTBODY_011,LISTBOD2_011")
 
 
+def test_import_models_target():
+    out = make_n("import-models", "gamedata=/g", "models=/m", "models_ai=/a", "models_hd=/d", "bodies=LISTBODY_011")
+    assert 'tools/models.py import --data "/g" --models "/m" --src "/a" --dest "/d" --bodies "LISTBODY_011"' in out
+    assert "--dry-run" not in out
+
+
+def test_import_models_defaults():
+    out = make_n("import-models")
+    assert '--data "data/aitd1" --models "data/models" --src "data/models-ai" --dest "Assets/models_hd"' in out
+    assert "--bodies" not in out
+
+
+def test_check_models_is_import_dry_run():
+    assert make_n("check-models").rstrip().endswith("--dry-run")
+
+
+def test_identity_models_target():
+    out = make_n("identity-models", "models_ai=data/models-identity", "bodies=LISTBODY_011")
+    assert 'tools/models.py identity --models "data/models" --out "data/models-identity" --bodies "LISTBODY_011"' in out
+
+
 def test_help_lists_the_texture_targets():
     out = make_run("help")
     for target in ("export-textures", "check-textures", "import-textures", "hd-install", "tools-deps", "test-tools",
-                   "export-models"):
+                   "export-models", "identity-models", "check-models", "import-models"):
         assert target in out

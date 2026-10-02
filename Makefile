@@ -43,8 +43,12 @@ dest        ?= Assets/backgrounds_hd
 anims       ?= $(dest)
 dark        ?= mirror
 models      ?= data/models
+models_ai   ?= data/models-ai
+models_hd   ?= Assets/models_hd
 bodies      ?=
 
+MODEL_IMPORT   = $(PYTHON) tools/models.py import --data "$(gamedata)" --models "$(models)" \
+                 --src "$(models_ai)" --dest "$(models_hd)"$(if $(bodies), --bodies "$(bodies)")
 TEXTURE_IMPORT = $(PYTHON) tools/textures.py import --src "$(textures_ai)" --dest "$(dest)" \
                  --originals "$(textures)" --dark "$(dark)"
 
@@ -63,7 +67,7 @@ require = @test -x "$(1)" || { echo "error: $(2) not found - $(3)"; exit 1; }
 .PHONY: help deps tools-deps configure build build-fitd build-tools run \
         test test-engine test-tools \
         export-textures check-textures import-textures hd-install hda-pack hda-unpack \
-        export-models \
+        export-models identity-models check-models import-models \
         clean distclean rebuild
 
 help: ## List the targets
@@ -142,6 +146,15 @@ hda-unpack: build-tools ## Extract an .hda archive [archive=FILE out=DIR]
 
 export-models: ## Export animated bodies for the model generator [gamedata=DIR models=DIR bodies=KEY,...]
 	$(PYTHON) tools/models.py export --data "$(gamedata)" --out "$(models)"$(if $(bodies), --bodies "$(bodies)")
+
+identity-models: ## Write identity deliveries (each original as its own model) [models=DIR models_ai=DIR bodies=KEY,...]
+	$(PYTHON) tools/models.py identity --models "$(models)" --out "$(models_ai)" --bodies "$(bodies)"
+
+check-models: ## Check delivered models, write nothing [models_ai=DIR models_hd=DIR bodies=KEY,...]
+	$(MODEL_IMPORT) --dry-run
+
+import-models: ## Import delivered models into Assets/models_hd [models_ai=DIR models_hd=DIR bodies=KEY,...]
+	$(MODEL_IMPORT)
 
 ##@ Clean
 
