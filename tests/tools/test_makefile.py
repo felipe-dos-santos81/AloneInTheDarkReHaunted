@@ -74,6 +74,11 @@ def test_check_models_is_import_dry_run():
     assert make_n("check-models").rstrip().endswith("--dry-run")
 
 
+def test_check_models_writes_reports_when_asked():
+    assert '--report "/r"' in make_n("check-models", "report=/r")
+    assert "--report" not in make_n("check-models")
+
+
 def test_identity_models_target():
     out = make_n("identity-models", "models_identity=/i", "bodies=LISTBODY_011")
     assert 'tools/models.py identity --models "data/models" --out "/i" --bodies "LISTBODY_011"' in out

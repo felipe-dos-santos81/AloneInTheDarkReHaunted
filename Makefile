@@ -47,9 +47,10 @@ models_ai   ?= data/models-ai
 models_identity ?= data/models-identity
 models_hd   ?= Assets/models_hd
 bodies      ?=
+report      ?=
 
 MODEL_IMPORT   = $(PYTHON) tools/models.py import --data "$(gamedata)" --models "$(models)" \
-                 --src "$(models_ai)" --dest "$(models_hd)"$(if $(bodies), --bodies "$(bodies)")
+                 --src "$(models_ai)" --dest "$(models_hd)"$(if $(bodies), --bodies "$(bodies)")$(if $(report), --report "$(report)")
 TEXTURE_IMPORT = $(PYTHON) tools/textures.py import --src "$(textures_ai)" --dest "$(dest)" \
                  --originals "$(textures)" --dark "$(dark)"
 
@@ -151,7 +152,7 @@ export-models: ## Export animated bodies for the model generator [gamedata=DIR m
 identity-models: ## Write identity deliveries (each original as its own model) [models=DIR models_identity=DIR bodies=KEY,...]
 	$(PYTHON) tools/models.py identity --models "$(models)" --out "$(models_identity)" --bodies "$(bodies)"
 
-check-models: ## Check delivered models, write nothing [models_ai=DIR models_hd=DIR bodies=KEY,...]
+check-models: ## Check delivered models, write nothing but reports [models_ai=DIR models_hd=DIR bodies=KEY,... report=DIR]
 	$(MODEL_IMPORT) --dry-run
 
 import-models: ## Import delivered models into Assets/models_hd [models_ai=DIR models_hd=DIR bodies=KEY,...]

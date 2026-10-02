@@ -189,3 +189,22 @@ def test_an_export_without_body_bin_fails_that_body(setup):
     (models / "bodies/LISTBODY_000/body.bin").unlink()
     result, _ = run((None, models, records, src, dest, debug))
     assert result.failed["LISTBODY_000"] == "no body.bin in the export (run make export-models again)"
+
+
+def test_a_dry_run_writes_reports_where_asked_and_nothing_else(setup):
+    import json
+    data, models, records, src, dest, debug = setup
+    deliver(src, "LISTBOD2_001", b"junk")
+    report = debug.parent / "report"
+    run_import(ImportPaths(data, models, src, dest, debug, report), records, dry_run=True, log=lambda _m: None)
+    assert sorted(p.name for p in report.iterdir()) == ["body_LISTBOD2_001.json", "body_LISTBODY_000.json"]
+    assert json.loads((report / "body_LISTBODY_000.json").read_text())["status"] == "imported"
+    assert not dest.exists() and not debug.exists()
+
+
+def test_a_real_import_writes_reports_to_the_report_folder_when_given(setup):
+    data, models, records, src, dest, debug = setup
+    report = debug.parent / "report"
+    run_import(ImportPaths(data, models, src, dest, debug, report), records, log=lambda _m: None)
+    assert [p.name for p in report.iterdir()] == ["body_LISTBODY_000.json"]
+    assert [p.name for p in debug.iterdir()] == ["body_LISTBODY_000.glb"]

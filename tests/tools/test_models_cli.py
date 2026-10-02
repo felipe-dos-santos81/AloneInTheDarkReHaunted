@@ -147,3 +147,13 @@ def test_import_from_an_older_export_still_needs_the_game_data(tmp_path):
     code = models.main(["import", "--models", str(tmp_path / "models"), "--src", str(tmp_path / "ai"),
                         "--dry-run"], root=tmp_path, log=lines.append)
     assert code == 2 and lines[-1].startswith("error: no ITD_RESS.PAK")
+
+
+def test_import_dry_run_writes_the_report_asked_for(tmp_path):
+    data = export_for_import(tmp_path)
+    models.main(["identity", "--models", str(tmp_path / "models"), "--out", str(tmp_path / "ai"),
+                 "--bodies", "LISTBODY_000"], root=tmp_path, log=lambda _m: None)
+    code = models.main(["import", "--data", str(data), "--models", str(tmp_path / "models"),
+                        "--src", str(tmp_path / "ai"), "--dry-run", "--report", str(tmp_path / "r")],
+                       root=tmp_path, log=lambda _m: None)
+    assert code == 0 and (tmp_path / "r/body_LISTBODY_000.json").is_file()

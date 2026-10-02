@@ -10,8 +10,9 @@ the fit (silhouette.py, validate.py), derive skin weights (bind.py) and pack
 the engine file (hdm.py). A debug .glb of the aligned mesh, coloured by bone
 group, goes to --debug for inspection in Blender, with a report per key
 (body_<KEY>.json: status, reason, warnings, every metric, files written) for
-imported and failed bodies alike. No .hdm is written for a delivery that
-fails, and nothing at all with dry_run."""
+imported and failed bodies alike, in --report when given, else beside the
+debug .glb. No .hdm is written for a delivery that fails, and with dry_run
+nothing but the reports asked for in --report."""
 from __future__ import annotations
 
 import hashlib
@@ -59,7 +60,8 @@ class ImportPaths:
     models: pathlib.Path          # export folder: manifest.json, bodies/<KEY>/reference/
     src: pathlib.Path             # delivery tree: bodies/<KEY>/model.glb
     dest: pathlib.Path            # engine folder for body_<KEY>.hdm
-    debug: pathlib.Path | None    # debug .glb files and body_<KEY>.json reports; None writes neither
+    debug: pathlib.Path | None    # debug .glb files, and body_<KEY>.json reports unless `report` is set; None writes neither
+    report: pathlib.Path | None = None  # body_<KEY>.json reports, written even by a dry run
 
 
 @dataclass
@@ -218,9 +220,10 @@ def run_import(paths: ImportPaths, records: list[BodyRecord], only: set[str] | N
         log(f"{'checked' if dry_run else 'imported'} {key} (+{len(record.aliases)} aliases): "
             f"{len(delivery.positions)} vertices, {len(delivery.triangles)} triangles, "
             f"chamfer p95 {metrics['chamfer_p95_pct']} %, IoU min {min(metrics['iou'].values())}")
-    if not dry_run and paths.debug is not None:
+    reports = paths.report if paths.report is not None else (None if dry_run else paths.debug)
+    if reports is not None:
         for key in sorted({*result.imported, *result.failed}):
-            write_report(paths.debug, key, result, by_key.get(key))
+            write_report(reports, key, result, by_key.get(key))
     for key, reason in sorted(result.failed.items()):
         log(f"error: {key}: {reason}")
     for key, warnings in sorted(result.warnings.items()):

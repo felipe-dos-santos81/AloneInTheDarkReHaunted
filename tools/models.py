@@ -7,7 +7,7 @@ and import what it delivers.
                              [--size PX] [--ssaa N]
     tools/models.py identity [--models DIR] [--out DIR] --bodies KEY[,KEY...]
     tools/models.py import   [--data DIR] [--models DIR] [--src DIR] [--dest DIR]
-                             [--debug DIR] [--bodies KEY[,KEY...]] [--dry-run]
+                             [--debug DIR] [--report DIR] [--bodies KEY[,KEY...]] [--dry-run]
 
 Defaults are relative to the repository root: data/aitd1, data/models,
 data/models-ai, Assets/models_hd and data/models-hd-debug; `identity` writes
@@ -73,7 +73,9 @@ def build_parser() -> argparse.ArgumentParser:
     imp.add_argument("--dest", type=pathlib.Path, help=f"engine folder (default {DEFAULTS['dest']})")
     imp.add_argument("--debug", type=pathlib.Path, help=f"debug .glb and report folder (default {DEFAULTS['debug']})")
     imp.add_argument("--bodies", help="comma-separated keys to import (default: every delivery)")
-    imp.add_argument("--dry-run", action="store_true", help="check everything, write nothing")
+    imp.add_argument("--report", type=pathlib.Path,
+                     help="write the body_<KEY>.json reports here instead, even with --dry-run")
+    imp.add_argument("--dry-run", action="store_true", help="check everything, write nothing but --report")
     return parser
 
 
@@ -159,7 +161,7 @@ def cmd_import(args, root: pathlib.Path, log) -> int:
         else:
             data_dir = find_data_dir(args.data if args.data is not None else root / DEFAULTS["data"])
         paths = ImportPaths(data_dir, models, src, args.dest if args.dest is not None else root / DEFAULTS["dest"],
-                            args.debug if args.debug is not None else root / DEFAULTS["debug"])
+                            args.debug if args.debug is not None else root / DEFAULTS["debug"], args.report)
         result = run_import(paths, records, only, args.dry_run, log)
     except (DataNotFound, PakError, OSError) as exc:
         log(f"error: {exc}")
