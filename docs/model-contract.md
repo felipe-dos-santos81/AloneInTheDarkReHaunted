@@ -161,6 +161,11 @@ make identity-models bodies=LISTBODY_011
 make import-models models_ai=data/models-identity models_hd=data/models-hd-identity
 ```
 
+Next to each debug `.glb` (`data/models-hd-debug/` by default), import writes
+`body_<KEY>.json` for every body it looked at, imported or failed: its
+status, the reason it failed, warnings, every fit metric and the files
+written. A dry run (`make check-models`) writes nothing.
+
 ## Import output: body_<KEY>.hdm
 
 The engine reads one file per body, written once per canonical delivery and
@@ -172,8 +177,8 @@ copied to every alias. Little-endian, no padding:
 | 4 | `u16` version, 1 |
 | 6 | `u16` group count (1..32; must equal the body's) |
 | 8 | `u64` skeleton hash (the manifest's `skeleton_hash`; the engine compares it with the loaded body's) |
-| 16 | `u32` vertex count, `u32` index count (a multiple of 3, at most 150,000) |
-| 24 | `u32` texture bytes, `u8` texture kind (1 PNG, 2 JPEG), 3 zero bytes |
+| 16 | `u32` vertex count (3..150,000), `u32` index count (a multiple of 3, 3..150,000) |
+| 24 | `u32` texture bytes (1 byte..64 MiB), `u8` texture kind (1 PNG, 2 JPEG), 3 bytes that must be zero |
 | 32 | vertices, 40 bytes each: `f32x3` position, `f32x3` normal, `f32x2` uv, `u8x4` joints, `u8x4` weights |
 | … | `u32` indices, then the texture bytes as delivered |
 | end − 4 | `u32` CRC-32 (zlib) of every byte before it |
