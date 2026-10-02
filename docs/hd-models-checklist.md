@@ -54,6 +54,32 @@ the HUD's average frame time (ms) over the next 30 s. In another terminal,
 | S3 option on, identity meshes | | | | |
 | S5 option on, generated Carnby | | | | |
 
+## Compare mode (the S3 identity oracle)
+
+The game itself checks that HD models draw where the classic bodies do, with
+no screen capture needed:
+
+1. Import every body as its own model and put the files where the game
+   looks (`models_hd/` next to the saves; on macOS that is
+   `TatouSource/build/macos-arm64/Fitd/Tatou.app/Contents/Resources/`):
+   `make identity-models bodies=<every canonical key>` then
+   `make import-models models_ai=data/models-identity models_hd=data/models-hd-identity`
+   and copy `data/models-hd-identity/*.hdm` into `models_hd/`.
+2. In `aitd_remaster.cfg` (same folder) set `graphics.hdModels = true`,
+   `debug.hdModelsCompare = true` and `debug.loadSaveOnStart = <n>` (the
+   save to open: the intro, language menu and startup options are skipped).
+3. Run the game for 30 s, then quit. It writes `hdcompare_lit.png`,
+   `hdcompare_unlit.png`, `hdcompare_hidden.png`, `hdcompare_classic.png`
+   and `hdcompare.txt` next to the saves, the game clock held still while
+   it captures.
+4. `python3 tools/hd_compare.py <that folder>`: every replaced body must
+   print `ok` (silhouette IoU at least 0.85 by default); `brightness` is
+   the lit HD body over the classic one, for rows 9-10.
+
+Set `debug.loadSaveOnStart = -1` and `debug.hdModelsCompare = false` again
+afterwards. Measured on the prototype (identity models, saves 0, 2 and 6):
+IoU 0.91-0.97, brightness 0.97-1.10.
+
 ## Rows
 
 Stages S3–S6 fill these in. "Classic" means the option off; "HD" on.

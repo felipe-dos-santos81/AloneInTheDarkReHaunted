@@ -18,11 +18,16 @@ Guidance for anyone (human or agent) changing this repository.
   (standard headers only) and unit-tested in `TatouSource/tests/engine/`:
   `affine3.h`, `bodyPose.*` (a body's pose as one matrix per bone group; its
   Python twin is `tools/aitd_models/pose.py`), `renderCamera.*` (the
-  engine's camera and 320x200 projection in float) and `hdmMesh.*` (reads
+  engine's camera and 320x200 projection in float), `hdmMesh.*` (reads
   the `body_<KEY>.hdm` file `make import-models` writes; its Python twin is
   `tools/aitd_models/hdm.py`, and both read
-  `TatouSource/tests/engine/fixtures/tiny.hdm`). The game compiles them but
-  does not call them yet.
+  `TatouSource/tests/engine/fixtures/tiny.hdm`), `skinnedBody.*` (bone
+  matrices and screen box of a replacement), `replacementGate.h` (when a
+  body draws as its replacement), `mipChain.*` and `modelLight.*`. Their
+  engine adapter is `modelReplacement.*` (loads `models_hd/*.hdm`, draws in
+  `AffObjet` instead of the classic primitives, behind `graphics.hdModels`);
+  `hdCompare.*` is its developer check (`debug.hdModelsCompare`, scored by
+  `tools/hd_compare.py`; `docs/hd-models-checklist.md`).
 - `TatouSource/FitdLib/assist/` — accessibility assists. The automatic
   counter-attack: `counterRule.*` is engine-free (standard headers only) and
   unit-tested in `TatouSource/tests/engine/`; `counterAttack.*` is its engine
