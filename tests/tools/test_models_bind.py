@@ -99,3 +99,17 @@ def test_a_degenerate_original_triangle_gives_no_nan():
     b = bind(pos, np.array([[0, 1, 2]]), tri, np.array([[1, 1, 1], [0, 0, 0]]), [-1, 0])
     assert np.isfinite(b.weights).all()
     assert (b.packed.astype(int).sum(axis=1) == 255).all()
+
+
+def test_a_subdivided_mesh_takes_the_original_groups():
+    """Spec S2: the argmax group equals the original's for >= 98 % of the
+    vertices that lie on a single-group part of the original."""
+    _body, _rest, mesh = chain_rest_mesh()
+    pos, tris = subdivide(*subdivide(*mesh.surface))
+    b = chain_bind(pos, tris)
+    tri = mesh.positions.reshape(-1, 3, 3)
+    dist, _ = closest_on_triangles(pos, tri[:, 0], tri[:, 1], tri[:, 2])
+    corner_groups = mesh.groups.reshape(-1, 3)[dist.argmin(axis=1)]
+    single = (corner_groups == corner_groups[:, :1]).all(axis=1)
+    assert single.sum() > 100
+    assert (b.labels[single] == corner_groups[single, 0]).mean() >= 0.98
