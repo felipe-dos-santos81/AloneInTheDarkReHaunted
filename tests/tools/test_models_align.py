@@ -84,3 +84,13 @@ def test_a_mesh_that_only_resembles_the_original_keeps_its_size_and_feet():
     back = s.apply(moved)
     assert abs(s.scale * 0.37 - 1) < 0.02
     assert abs(back[:, 1].max() - art[:, 1].max()) < 0.01 * height
+
+
+def test_the_height_scale_and_feet_are_exact():
+    """Scale and feet come from the meshes' vertices, not from random surface
+    samples, so a thin top of the head or a small sole still counts in full."""
+    pos, tris = target()
+    moved = Similarity(0.37, yaw(10), np.array([3.0, 4.0, 5.0])).apply(pos)
+    s = align(Surface(moved, tris), target())
+    assert abs(s.scale * 0.37 - 1) < 1e-9
+    assert abs(s.apply(moved)[:, 1].max() - pos[:, 1].max()) < 1e-6

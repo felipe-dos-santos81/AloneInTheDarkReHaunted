@@ -5,6 +5,7 @@ similarity transform (uniform scale, rotation, translation), in engine space.
 1. Coarse: scale by the ratio of vertical extents, put the feet (max y, the
    engine is y down) and the XZ centre of the surface on the original's, then
    try every yaw in 15-degree steps and keep the lowest chamfer distance.
+   Extents and feet are measured on the meshes' vertices, exactly.
 2. Refine: trimmed ICP (the best 90 % of nearest-point pairs) with Umeyama's
    closed-form rotation and offset (`rigid_fit`), until the step is negligible, then put
    the feet back on the original's. The scale stays the coarse one: the
@@ -12,7 +13,7 @@ similarity transform (uniform scale, rotation, translation), in engine space.
    mesh that only resembles the original (trimming drops the pairs that lie
    outside it: 0.93 on Carnby with a 2 %-of-height deviation).
 
-Distances are between area-weighted surface samples; nearest neighbours are
+Other distances are between area-weighted surface samples; nearest neighbours are
 brute force in chunks (numpy only)."""
 from __future__ import annotations
 
@@ -97,15 +98,14 @@ def yaw(deg: float) -> np.ndarray:
     return np.array([[c, 0.0, -s], [0.0, 1.0, 0.0], [s, 0.0, c]])
 
 
-def coarse(src: np.ndarray, dst: np.ndarray) -> Similarity:
-    """Scale by vertical extent, match feet and XZ centre, best of 24 yaws."""
-    scale = float(np.ptp(dst[:, 1]) / np.ptp(src[:, 1]))
+def coarse(src: np.ndarray, dst: np.ndarray, scale: float, feet: float) -> Similarity:
+    """`scale` and the vertical offset `feet` are given; match the XZ centre of
+    the samples and keep the best of 24 yaws (a yaw leaves heights alone)."""
     best = None
     for deg in range(0, 360, YAW_STEP_DEG):
         r = yaw(deg)
         moved = scale * src @ r.T
-        t = np.array([dst[:, 0].mean() - moved[:, 0].mean(), dst[:, 1].max() - moved[:, 1].max(),
-                      dst[:, 2].mean() - moved[:, 2].mean()])
+        t = np.array([dst[:, 0].mean() - moved[:, 0].mean(), feet, dst[:, 2].mean() - moved[:, 2].mean()])
         score = chamfer(moved + t, dst).mean()
         if best is None or score < best[0]:
             best = (score, Similarity(scale, r, t))
@@ -114,7 +114,7 @@ def coarse(src: np.ndarray, dst: np.ndarray) -> Similarity:
 
 def icp(src: np.ndarray, dst: np.ndarray, start: Similarity) -> Similarity:
     """Trimmed rigid ICP from `start` (its scale is kept): each step fits the
-    best ICP_KEEP of the pairs; then the feet (max y) go back onto `dst`'s."""
+    best ICP_KEEP of the pairs."""
     current = start
     keep = max(3, int(ICP_KEEP * len(src)))
     for _ in range(ICP_ITERATIONS):
@@ -125,12 +125,17 @@ def icp(src: np.ndarray, dst: np.ndarray, start: Similarity) -> Similarity:
         current = current.then(step)
         if np.abs(step.rotation - np.eye(3)).max() < 1e-7 and np.abs(step.translation).max() < 1e-4:
             break
-    feet = dst[:, 1].max() - current.apply(src)[:, 1].max()
-    return Similarity(current.scale, current.rotation, current.translation + (0.0, feet, 0.0))
+    return current
 
 
 def align(source: Surface, target: Surface) -> Similarity:
     """The similarity that puts the delivered mesh on the target (engine space)."""
+    vertices = source.positions[np.unique(source.triangles)]
+    target_vertices = target.positions[np.unique(target.triangles)]
+    scale = float(np.ptp(target_vertices[:, 1]) / np.ptp(vertices[:, 1]))
+    feet = target_vertices[:, 1].max()
     src = sample_surface(source, COARSE_SAMPLES, seed=1)
     dst = sample_surface(target, TARGET_SAMPLES, seed=2)
-    return icp(src, dst, coarse(src, dst[::10]))
+    fit = icp(src, dst, coarse(src, dst[::10], scale, feet - scale * vertices[:, 1].max()))
+    lift = feet - fit.apply(vertices)[:, 1].max()  # ICP may tilt the mesh: feet back on the original's
+    return Similarity(fit.scale, fit.rotation, fit.translation + (0.0, lift, 0.0))
