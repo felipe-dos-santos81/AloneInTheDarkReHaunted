@@ -14,8 +14,10 @@ folder (`data/models-ai/`). Contract version: **1**.
 ```
 data/models/
   manifest.json
+  palette.bin                       the game palette as stored (768 bytes)
   bodies/<KEY>/                     one folder per drawable canonical body (75 for AITD1)
     original.glb                    the original body: skeleton, rigid skin, preview animations
+    body.bin                        the raw body entry (its SHA-256 is the manifest's body_sha256)
     reference/front.png             1024x1024 RGBA, transparent background
     reference/three_quarter.png
     reference/side.png
@@ -131,6 +133,14 @@ and need their own delivery.
 the original, check the fit, derive skin weights from the original's bone
 groups and write `Assets/models_hd/body_<KEY>.hdm` (see "Import output").
 
+The make targets read the bodies and the palette from the game data.
+`tools/models.py import` without `--data` reads `palette.bin` and each
+`body.bin` from the export instead, so a generator host can run the same
+checks with no game data. Every `body.bin` is checked against the manifest's
+`body_sha256`, so one that is missing or differs fails that body alone, while
+a missing `palette.bin` sends the import back to the game data. An export
+written before these files existed still needs the game data.
+
 ### What import checks
 
 | Check | Fails | Warns |
@@ -144,6 +154,15 @@ groups and write `Assets/models_hd/body_<KEY>.hdm` (see "Import output").
 | Silhouette IoU, worst reference view | less than 0.85 | |
 | Collision box | | the mesh reaches outside ZV + 10 % |
 | Binding | | more than 1 % of vertices as close to an unrelated part |
+| Posed stretch: the bound mesh at every key of `original.glb`'s preview animations | more than 0.1 % of the surface area has an edge over 10x its rest length | |
+
+The posed stretch catches limbs the generator fused together: a bridge
+between two legs, or an arm and the torso, tears when they move apart. The
+originals stretch where a polygon spans two groups, but none of the 42 AITD1
+characters goes beyond 9.2x, nor their identity imports beyond 9.1x; Carnby
+with his legs fused into one hull tears 0.88 % of his area beyond 10x. A body
+without preview animations skips the check (`"stretch": "no animation"` in its
+report).
 
 The fit is a similarity transform: import undoes any scale, offset or yaw,
 but not a mirrored or posed mesh. The scale comes from the height alone
@@ -163,8 +182,19 @@ make import-models models_ai=data/models-identity models_hd=data/models-hd-ident
 
 Next to each debug `.glb` (`data/models-hd-debug/` by default), import writes
 `body_<KEY>.json` for every body it looked at, imported or failed: its
-status, the reason it failed, warnings, every fit metric and the files
-written. A dry run (`make check-models`) writes nothing.
+status, the reason it failed, warnings, every fit metric (with
+`stretch_torn_pct` and `stretch_max`) and the `.hdm` files it wrote, or would
+have written. A dry run (`make check-models`) writes nothing, unless
+`report=DIR` (`--report DIR`) asks for the reports there; given to a real
+import, `--report` takes the reports away from the debug folder, and the
+debug `.glb` still goes to `--debug`.
+
+A report says what the check decided, not what reached the disk: a dry run
+fills it exactly as a real import does, with `status: "imported"` and the
+`.hdm` paths in `files` for every body that passed. A gate must read the
+process exit code (0 nothing failed, 1 at least one body failed, 2 a usage or
+data error) to know a delivery is clean, and look in the output folder for the
+`.hdm` files themselves; neither `status` nor `files` says a file was written.
 
 ## Import output: body_<KEY>.hdm
 
