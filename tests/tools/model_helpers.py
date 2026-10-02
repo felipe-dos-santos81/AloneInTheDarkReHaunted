@@ -226,3 +226,22 @@ def chain_rest_mesh():
     body = parse_body(body_bytes())
     rest, mesh = rest_mesh(body, synthetic_palette_rgb())
     return body, rest, mesh
+
+
+def subdivide(positions, triangles):
+    """1-to-4 split with shared edge midpoints, after welding equal positions."""
+    positions, ids = np.unique(np.round(np.asarray(positions, float), 6), axis=0, return_inverse=True)
+    triangles = ids.reshape(-1)[np.asarray(triangles)]
+    verts, cache, out = list(positions), {}, []
+
+    def mid(a, b):
+        key = (min(a, b), max(a, b))
+        if key not in cache:
+            verts.append((verts[a] + verts[b]) / 2)
+            cache[key] = len(verts) - 1
+        return cache[key]
+
+    for a, b, c in triangles:
+        ab, bc, ca = mid(a, b), mid(b, c), mid(c, a)
+        out += [(a, ab, ca), (b, bc, ab), (c, ca, bc), (ab, bc, ca)]
+    return np.array(verts), np.array(out)
