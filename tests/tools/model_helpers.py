@@ -190,3 +190,30 @@ def tiny_hdm():
     v["joints"] = [(0, 0, 0, 0), (0, 1, 0, 0), (1, 0, 0, 0), (1, 0, 0, 0)]
     v["weights"] = [(255, 0, 0, 0), (128, 127, 0, 0), (255, 0, 0, 0), (255, 0, 0, 0)]
     return HdmMesh(2, 0x0123456789ABCDEF, v, np.array([0, 1, 2, 2, 1, 3], np.uint32), TINY_PNG, TEXTURE_PNG)
+
+
+def delivery_glb(positions, triangles, uv, texture=TINY_PNG, *, normals=None, node=None, doc=None,
+                 images=1, mode=None):
+    """A generator delivery: one textured mesh node (glTF axes). `node` adds
+    TRS fields to the mesh node, `doc` merges top-level fields (for example
+    extensionsRequired), `images` > 1 gives each extra primitive its own image."""
+    from aitd_models.gltf import ARRAY_BUFFER, UNSIGNED_INT, GlbBuilder
+    g = GlbBuilder()
+    prims = []
+    for k in range(images):
+        tex = g.add("textures", {"source": g.image(texture, "image/png")})
+        mat = g.add("materials", {"pbrMetallicRoughness": {"baseColorTexture": {"index": tex}}})
+        attrs = {"POSITION": g.accessor(np.asarray(positions, float), "VEC3", target=ARRAY_BUFFER, bounds=True),
+                 "TEXCOORD_0": g.accessor(np.asarray(uv, float), "VEC2", target=ARRAY_BUFFER)}
+        if normals is not None:
+            attrs["NORMAL"] = g.accessor(np.asarray(normals, float), "VEC3", target=ARRAY_BUFFER)
+        prim = {"attributes": attrs, "material": mat,
+                "indices": g.accessor(np.asarray(triangles).reshape(-1), "SCALAR", UNSIGNED_INT)}
+        if mode is not None:
+            prim["mode"] = mode
+        prims.append(prim)
+    mesh = g.add("meshes", {"primitives": prims})
+    g.add("scenes", {"nodes": [g.add("nodes", {"mesh": mesh, **(node or {})})]})
+    g.doc["scene"] = 0
+    g.doc.update(doc or {})
+    return g.to_bytes()
