@@ -6,7 +6,7 @@ from aitd_models.export import export_models
 from aitd_models.gltf import read_glb
 from aitd_models.hdm import read_hdm
 from aitd_models.identity import identity_glb
-from aitd_models.importer import run_import
+from aitd_models.importer import ImportPaths, run_import
 from aitd_models.manifest import read_manifest
 from model_helpers import TINY_PNG, chain_rest_mesh, delivery_glb, write_model_data_dir
 
@@ -30,7 +30,7 @@ def deliver(src, key, data):
 def run(setup, **kw):
     data, models, records, src, dest, debug = setup
     lines = []
-    result = run_import(data, models, records, src, dest, debug, log=lines.append, **kw)
+    result = run_import(ImportPaths(data, models, src, dest, debug), records, log=lines.append, **kw)
     return result, lines
 
 

@@ -12,7 +12,7 @@ import pathlib
 import numpy as np
 from PIL import Image
 
-from .mesh import Mesh
+from .mesh import Mesh, Surface
 from .raster import Framing, View, render
 
 SIZE = 256
@@ -22,15 +22,15 @@ def _mask(rgba: np.ndarray) -> np.ndarray:
     return rgba[..., 3] >= 128
 
 
-def silhouette_iou(positions: np.ndarray, triangles: np.ndarray, reference_dir) -> dict[str, float]:
-    """IoU per view name; `positions` is engine space, already aligned."""
+def silhouette_iou(surface: Surface, reference_dir) -> dict[str, float]:
+    """IoU per view name; `surface` is engine space, already aligned."""
     reference_dir = pathlib.Path(reference_dir)
     doc = json.loads((reference_dir / "views.json").read_text())
     f = doc["framing"]
     size = min(SIZE, f["size"])
     framing = Framing(tuple(f["centre"]), f["units_per_pixel"] * f["size"] / size, size)
-    soup = positions[triangles].reshape(-1, 3)
-    n = len(triangles)
+    soup = surface.positions[surface.triangles].reshape(-1, 3)
+    n = len(surface.triangles)
     mesh = Mesh(soup, np.zeros((3 * n, 3), np.float32), np.zeros(3 * n, int), np.arange(n))
     out = {}
     for v in doc["views"]:

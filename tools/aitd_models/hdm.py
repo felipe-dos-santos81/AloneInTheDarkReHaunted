@@ -29,6 +29,7 @@ MAX_TRIANGLES = 50_000
 MAX_VERTICES = 3 * MAX_TRIANGLES
 MAX_TEXTURE_BYTES = 64 << 20
 TEXTURE_PNG, TEXTURE_JPEG = 1, 2
+TEXTURE_MIME = {TEXTURE_PNG: "image/png", TEXTURE_JPEG: "image/jpeg"}
 VERTEX = np.dtype([("position", "<f4", 3), ("normal", "<f4", 3), ("uv", "<f4", 2),
                    ("joints", "u1", 4), ("weights", "u1", 4)])
 assert HEADER.size == 32 and VERTEX.itemsize == 40

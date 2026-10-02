@@ -144,7 +144,7 @@ def export_models(data_dir, out_dir, log=print, only: set[str] | None = None,
             aliases=[k for k in by_sha[sha] if k != key],
             skeleton_siblings=[k for k in by_skeleton[shash] if k not in by_sha[sha]])
         result.records.append(record)
-        if not record.is_canonical or kind == "skip" or (only is not None and key not in only):
+        if not record.has_export_folder or (only is not None and key not in only):
             continue
         tasks.append((key, f"exported {key} ({kind}, {len(body.groups)} groups, {mesh.triangle_count} triangles)",
                       (out_dir / record.dir, body, palette, [(n, anims[n]) for n in preview], (rest, mesh), ssaa, size)))
@@ -160,7 +160,7 @@ def export_models(data_dir, out_dir, log=print, only: set[str] | None = None,
         log(f"warning: skipped {reason}")
     write_manifest(out_dir / MANIFEST_NAME, data_dir, result.records,
                    [{"name": v.name, "yaw_deg": v.yaw_deg} for v in VIEWS], size)
-    canonical = sum(1 for r in result.records if r.is_canonical and r.kind != "skip")
+    canonical = sum(1 for r in result.records if r.has_export_folder)
     log(f"exported {len(result.written)} of {canonical} canonical bodies "
         f"({len(result.records)} animated bodies) to {out_dir}"
         + (f", {len(result.skipped)} skipped" if result.skipped else ""))

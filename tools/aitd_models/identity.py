@@ -11,6 +11,7 @@ import numpy as np
 from aitd_textures.files import png_bytes
 
 from .gltf import ARRAY_BUFFER, GlbBuilder, GltfError, read_glb
+from .hdm import TEXTURE_MIME, TEXTURE_PNG
 
 SWATCH = 16
 NEAREST, CLAMP = 9728, 33071
@@ -31,16 +32,11 @@ def identity_glb(original: bytes) -> bytes:
     uv = np.stack([(slot % SWATCH + 0.5) / SWATCH, (slot // SWATCH + 0.5) / SWATCH], axis=1)
 
     g = GlbBuilder()
-    image = g.image(png_bytes(swatch.reshape(SWATCH, SWATCH, 3)), "image/png")
-    sampler = g.add("samplers", {"magFilter": NEAREST, "minFilter": NEAREST, "wrapS": CLAMP, "wrapT": CLAMP})
-    texture = g.add("textures", {"source": image, "sampler": sampler})
-    material = g.add("materials", {"name": "palette", "doubleSided": True, "pbrMetallicRoughness": {
-        "baseColorTexture": {"index": texture}, "metallicFactor": 0.0, "roughnessFactor": 1.0}})
+    material = g.textured_material(png_bytes(swatch.reshape(SWATCH, SWATCH, 3)), TEXTURE_MIME[TEXTURE_PNG], "palette",
+                                   {"magFilter": NEAREST, "minFilter": NEAREST, "wrapS": CLAMP, "wrapT": CLAMP})
     primitive = {"attributes": {
         "POSITION": g.accessor(positions, "VEC3", target=ARRAY_BUFFER, bounds=True),
         "NORMAL": g.accessor(normals, "VEC3", target=ARRAY_BUFFER),
         "TEXCOORD_0": g.accessor(uv, "VEC2", target=ARRAY_BUFFER)}, "material": material}
-    mesh = g.add("meshes", {"name": "body", "primitives": [primitive]})
-    g.add("scenes", {"nodes": [g.add("nodes", {"name": "body", "mesh": mesh})]})
-    g.doc["scene"] = 0
+    g.single_mesh_scene(primitive)
     return g.to_bytes()

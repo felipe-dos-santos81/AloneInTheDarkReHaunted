@@ -69,6 +69,20 @@ class GlbBuilder:
     def image(self, data: bytes, mime: str) -> int:
         return self.add("images", {"bufferView": self.view(data), "mimeType": mime})
 
+    def textured_material(self, texture: bytes, mime: str, name: str, sampler: dict | None = None) -> int:
+        """A double-sided matte material (metallic 0, roughness 1) whose base colour is `texture`."""
+        tex = {"source": self.image(texture, mime)}
+        if sampler is not None:
+            tex["sampler"] = self.add("samplers", sampler)
+        return self.add("materials", {"name": name, "doubleSided": True, "pbrMetallicRoughness": {
+            "baseColorTexture": {"index": self.add("textures", tex)}, "metallicFactor": 0.0, "roughnessFactor": 1.0}})
+
+    def single_mesh_scene(self, primitive: dict, name: str = "body") -> None:
+        """One mesh of one primitive on one node, as the default scene."""
+        mesh = self.add("meshes", {"name": name, "primitives": [primitive]})
+        self.add("scenes", {"nodes": [self.add("nodes", {"name": name, "mesh": mesh})]})
+        self.doc["scene"] = 0
+
     def to_bytes(self) -> bytes:
         doc = dict(self.doc)
         if self._bin:

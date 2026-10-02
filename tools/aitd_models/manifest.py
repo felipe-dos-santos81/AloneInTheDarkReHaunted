@@ -44,6 +44,11 @@ class BodyRecord:
         return self.canonical == self.key
 
     @property
+    def has_export_folder(self) -> bool:
+        """Whether the export writes bodies/<KEY>/ for this body (canonical, and drawable)."""
+        return self.is_canonical and self.kind != "skip"
+
+    @property
     def dir(self) -> str:
         return f"bodies/{self.canonical}"
 

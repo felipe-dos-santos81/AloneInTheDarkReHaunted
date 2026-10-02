@@ -9,6 +9,7 @@ dropped (they are pixel-sized details the reference renders cannot show)."""
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import NamedTuple
 
 import numpy as np
 
@@ -17,6 +18,23 @@ from .skeleton import owners
 
 LINE_HALF_WIDTH = 3.0  # engine units: a 6-unit square prism
 SPHERE_SUBDIVISIONS = 2
+
+
+class Surface(NamedTuple):
+    """An indexed triangle mesh: what alignment, fit checks and silhouettes compare."""
+    positions: np.ndarray  # (V, 3) float64
+    triangles: np.ndarray  # (T, 3) int
+
+
+def triangle_cross(positions: np.ndarray, triangles: np.ndarray) -> np.ndarray:
+    """(T, 3) cross product of each triangle's two edges: the normal scaled by twice the area."""
+    tri = positions[triangles]
+    return np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
+
+
+def height(positions: np.ndarray) -> float:
+    """Vertical extent in engine units, at least 1 (the unit every percentage is of)."""
+    return max(float(np.ptp(np.asarray(positions)[..., 1])), 1.0)
 
 
 @dataclass
@@ -29,6 +47,11 @@ class Mesh:
     @property
     def triangle_count(self) -> int:
         return len(self.prim_index)
+
+    @property
+    def surface(self) -> Surface:
+        """The soup as an indexed surface (every triangle owns its three vertices)."""
+        return Surface(self.positions, np.arange(len(self.positions)).reshape(-1, 3))
 
 
 def icosphere(subdivisions: int = SPHERE_SUBDIVISIONS) -> tuple[np.ndarray, np.ndarray]:

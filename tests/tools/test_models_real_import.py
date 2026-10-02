@@ -11,7 +11,7 @@ from aitd_models.body import BodyError, parse_anim, parse_body
 from aitd_models.export import export_models
 from aitd_models.hdm import read_hdm
 from aitd_models.identity import identity_glb
-from aitd_models.importer import run_import
+from aitd_models.importer import ImportPaths, run_import
 from aitd_models.manifest import read_manifest
 from aitd_models.original import rest_mesh
 from aitd_models.pose import pose_float
@@ -36,7 +36,8 @@ def imported(tmp_path_factory):
         out = tmp / "ai" / "bodies" / key
         out.mkdir(parents=True)
         (out / "model.glb").write_bytes(identity_glb((tmp / "models" / "bodies" / key / "original.glb").read_bytes()))
-    result = run_import(data_dir, tmp / "models", records, tmp / "ai", tmp / "dest", None, log=lambda _m: None)
+    result = run_import(ImportPaths(data_dir, tmp / "models", tmp / "ai", tmp / "dest", None), records,
+                        log=lambda _m: None)
     return data_dir, tmp / "dest", result
 
 

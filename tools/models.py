@@ -29,7 +29,7 @@ if str(HERE) not in sys.path:
 from aitd_models.export import REFERENCE_SIZE, export_models  # noqa: E402
 from aitd_models.gltf import GltfError  # noqa: E402
 from aitd_models.identity import identity_glb  # noqa: E402
-from aitd_models.importer import DELIVERY_NAME, run_import  # noqa: E402
+from aitd_models.importer import DELIVERY_NAME, ImportPaths, run_import  # noqa: E402
 from aitd_models.manifest import MANIFEST_NAME, ManifestError, read_manifest  # noqa: E402
 from aitd_textures.files import atomic_write_bytes  # noqa: E402
 from aitd_textures.decode import DataNotFound, find_data_dir  # noqa: E402
@@ -73,7 +73,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _keys(text: str | None) -> set[str] | None:
+def _parse_keys(text: str | None) -> set[str] | None:
     return {k.strip() for k in text.split(",") if k.strip()} if text else None
 
 
@@ -81,7 +81,7 @@ def cmd_export(args, root: pathlib.Path, log) -> int:
     if args.size < 16 or not 1 <= args.ssaa <= 8:
         log("error: --size must be at least 16 and --ssaa between 1 and 8")
         return EXIT_USAGE
-    only = _keys(args.bodies)
+    only = _parse_keys(args.bodies)
     try:
         data_dir = find_data_dir(args.data if args.data is not None else root / DEFAULTS["data"])
         out = args.out if args.out is not None else root / DEFAULTS["models"]
@@ -107,8 +107,8 @@ def cmd_identity(args, root: pathlib.Path, log) -> int:
     if records is None:
         return EXIT_USAGE
     by_key = {r.key: r for r in records}
-    keys = sorted(_keys(args.bodies) or ())
-    bad = [k for k in keys if k not in by_key or not by_key[k].is_canonical or by_key[k].kind == "skip"]
+    keys = sorted(_parse_keys(args.bodies) or ())
+    bad = [k for k in keys if k not in by_key or not by_key[k].has_export_folder]
     if bad:
         log(f"error: not exported canonical bodies: {', '.join(bad)}")
         return EXIT_USAGE
@@ -136,7 +136,7 @@ def cmd_import(args, root: pathlib.Path, log) -> int:
     records = _manifest(models, log)
     if records is None:
         return EXIT_USAGE
-    only = _keys(args.bodies)
+    only = _parse_keys(args.bodies)
     canonical_of = {r.key: r.canonical for r in records}
     unknown = sorted((only or set()) - set(canonical_of))
     if unknown:
@@ -149,10 +149,9 @@ def cmd_import(args, root: pathlib.Path, log) -> int:
         only = {canonical_of[key] for key in only}
     try:
         data_dir = find_data_dir(args.data if args.data is not None else root / DEFAULTS["data"])
-        result = run_import(data_dir, models, records, src,
-                            args.dest if args.dest is not None else root / DEFAULTS["dest"],
-                            args.debug if args.debug is not None else root / DEFAULTS["debug"],
-                            only, args.dry_run, log)
+        paths = ImportPaths(data_dir, models, src, args.dest if args.dest is not None else root / DEFAULTS["dest"],
+                            args.debug if args.debug is not None else root / DEFAULTS["debug"])
+        result = run_import(paths, records, only, args.dry_run, log)
     except (DataNotFound, PakError, OSError) as exc:
         log(f"error: {exc}")
         return EXIT_USAGE

@@ -14,6 +14,7 @@ from PIL import Image
 
 from .gltf import Glb, GltfError, read_glb, trs_matrix
 from .hdm import MAX_TRIANGLES, TEXTURE_JPEG, TEXTURE_PNG
+from .mesh import Surface, triangle_cross
 from .original import FLIP, METRES_PER_UNIT
 
 MAX_TEXTURE_SIDE = 4096
@@ -33,6 +34,10 @@ class Delivery:
     texture: bytes
     texture_kind: int       # hdm.TEXTURE_PNG or hdm.TEXTURE_JPEG
     texture_size: tuple[int, int]
+
+    @property
+    def surface(self) -> Surface:
+        return Surface(self.positions, self.triangles)
 
 
 def _texture_kind(data: bytes) -> int:
@@ -56,8 +61,7 @@ def _base_color_image(glb: Glb, material_index) -> tuple[int, int]:
 
 def _vertex_normals(positions: np.ndarray, triangles: np.ndarray) -> np.ndarray:
     """Area-weighted smooth normals, for a delivery without NORMAL."""
-    tri = positions[triangles]
-    face = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
+    face = triangle_cross(positions, triangles)
     out = np.zeros_like(positions)
     for k in range(3):
         np.add.at(out, triangles[:, k], face)
@@ -126,8 +130,7 @@ def read_delivery(data: bytes) -> Delivery:
     if len(triangles) > MAX_TRIANGLES:
         raise DeliveryError(f"{len(triangles)} triangles (at most {MAX_TRIANGLES})")
     positions, normals, uv = np.concatenate(pos), np.concatenate(nrm), np.concatenate(uvs)
-    tri = positions[triangles]
-    if not np.linalg.norm(np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0]), axis=1).sum() > 0:
+    if not np.linalg.norm(triangle_cross(positions, triangles), axis=1).sum() > 0:
         raise DeliveryError("the mesh has no area")
     if not (np.isfinite(positions).all() and np.isfinite(normals).all() and np.isfinite(uv).all()):
         raise DeliveryError("non-finite vertex data")

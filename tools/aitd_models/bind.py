@@ -25,11 +25,13 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from .mesh import height
+
 SMOOTH_ITERATIONS = 5
 SMOOTH_SIGMA = 0.01
 AMBIGUOUS_MARGIN = 0.005
 WELD_UNITS = 1e-3
-CHUNK = 256
+CLOSEST_CHUNK = 256  # points per block: closest_on_triangles builds CLOSEST_CHUNK x T x 3 arrays
 
 
 @dataclass
@@ -59,7 +61,7 @@ def closest_on_triangles(p: np.ndarray, a: np.ndarray, b: np.ndarray, c: np.ndar
     bary = np.zeros(shape + (3,))
     done = np.zeros(shape, bool)
 
-    def put(mask, u, v, w):
+    def assign_where(mask, u, v, w):
         nonlocal done
         mask = mask & ~done
         bary[mask] = np.stack([u, v, w], axis=-1)[mask]
@@ -67,18 +69,18 @@ def closest_on_triangles(p: np.ndarray, a: np.ndarray, b: np.ndarray, c: np.ndar
 
     one, zero = np.ones(shape), np.zeros(shape)
     with np.errstate(divide="ignore", invalid="ignore"):
-        put((d1 <= 0) & (d2 <= 0), one, zero, zero)
-        put((d3 >= 0) & (d4 <= d3), zero, one, zero)
-        put((d6 >= 0) & (d5 <= d6), zero, zero, one)
+        assign_where((d1 <= 0) & (d2 <= 0), one, zero, zero)
+        assign_where((d3 >= 0) & (d4 <= d3), zero, one, zero)
+        assign_where((d6 >= 0) & (d5 <= d6), zero, zero, one)
         t = d1 / (d1 - d3)
-        put((vc <= 0) & (d1 >= 0) & (d3 <= 0), 1 - t, t, zero)
+        assign_where((vc <= 0) & (d1 >= 0) & (d3 <= 0), 1 - t, t, zero)
         t = d2 / (d2 - d6)
-        put((vb <= 0) & (d2 >= 0) & (d6 <= 0), 1 - t, zero, t)
+        assign_where((vb <= 0) & (d2 >= 0) & (d6 <= 0), 1 - t, zero, t)
         t = (d4 - d3) / ((d4 - d3) + (d5 - d6))
-        put((va <= 0) & ((d4 - d3) >= 0) & ((d5 - d6) >= 0), zero, 1 - t, t)
+        assign_where((va <= 0) & ((d4 - d3) >= 0) & ((d5 - d6) >= 0), zero, 1 - t, t)
         denom = va + vb + vc
         v, w = vb / denom, vc / denom
-        put(np.ones(shape, bool), 1 - v - w, v, w)
+        assign_where(np.ones(shape, bool), 1 - v - w, v, w)
     bary = np.nan_to_num(bary)  # degenerate triangles: any corner
     bary[~np.isfinite(bary).all(-1) | (bary.sum(-1) == 0)] = (1.0, 0.0, 0.0)
     q = bary[..., 0:1] * a[None] + bary[..., 1:2] * b[None] + bary[..., 2:3] * c[None]
@@ -98,15 +100,15 @@ def surface_weights(points: np.ndarray, tri_positions: np.ndarray, tri_groups: n
     member = np.zeros((len(tri_groups), len(related)), bool)
     member[np.arange(len(tri_groups))[:, None], tri_groups] = True
     near = (member.astype(int) @ related.astype(int)) > 0  # (T, G): triangle touches g or a relative of g
-    for s in range(0, len(points), CHUNK):
-        dist, bary = closest_on_triangles(points[s:s + CHUNK], a, b, c)
+    for s in range(0, len(points), CLOSEST_CHUNK):
+        dist, bary = closest_on_triangles(points[s:s + CLOSEST_CHUNK], a, b, c)
         best = dist.argmin(axis=1)
         rows = np.arange(len(best))
         for k in range(3):
             np.add.at(out, (s + rows, tri_groups[best, k]), bary[rows, best, k])
         unrelated = ~(member[best].astype(int) @ near.T.astype(int) > 0)  # (P, T)
         limit = 1.5 * dist[rows, best] + margin
-        ambiguous[s:s + CHUNK] = (unrelated & (dist <= limit[:, None])).any(axis=1)
+        ambiguous[s:s + CLOSEST_CHUNK] = (unrelated & (dist <= limit[:, None])).any(axis=1)
     return out, ambiguous
 
 
@@ -175,11 +177,11 @@ def bind(positions: np.ndarray, triangles: np.ndarray, tri_positions: np.ndarray
     ids = weld(positions)
     first = np.unique(ids, return_index=True)[1]
     related = allowed_groups(parents)
-    height = max(float(np.ptp(tri_positions[..., 1])), 1.0)
-    w, ambiguous = surface_weights(positions[first], tri_positions, tri_groups, related, AMBIGUOUS_MARGIN * height)
+    body_height = height(tri_positions)
+    w, ambiguous = surface_weights(positions[first], tri_positions, tri_groups, related, AMBIGUOUS_MARGIN * body_height)
     e = edges(triangles, ids)
     welded = positions[first]
-    w = smooth(w, e, np.linalg.norm(welded[e[:, 0]] - welded[e[:, 1]], axis=1), SMOOTH_SIGMA * height, related)
+    w = smooth(w, e, np.linalg.norm(welded[e[:, 0]] - welded[e[:, 1]], axis=1), SMOOTH_SIGMA * body_height, related)
     w = w[ids]
     joints, packed = pack(w)
     return Binding(w, ambiguous[ids], joints, packed)

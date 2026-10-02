@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from .align import chamfer, sample_surface
+from .mesh import Surface, height
 
 TRIANGLES_WARN = 30_000
 TEXTURE_WARN = 2048
@@ -34,19 +35,17 @@ def inside_zv(positions: np.ndarray, zv) -> bool:
     return bool((positions.min(axis=0) >= lo - pad).all() and (positions.max(axis=0) <= hi + pad).all())
 
 
-def check_fit(positions: np.ndarray, triangles: np.ndarray, target_positions: np.ndarray,
-              target_triangles: np.ndarray, zv, iou: dict[str, float],
+def check_fit(fitted: Surface, target: Surface, zv, iou: dict[str, float],
               texture_size: tuple[int, int]) -> FitReport:
-    """`positions` is the aligned delivery (engine space); `iou` from silhouette_iou."""
+    """`fitted` is the aligned delivery (engine space); `iou` from silhouette_iou."""
     report = FitReport()
-    height = max(float(np.ptp(target_positions[:, 1])), 1.0)
-    d = chamfer(sample_surface(positions, triangles, CHAMFER_SAMPLES, seed=3),
-                sample_surface(target_positions, target_triangles, CHAMFER_SAMPLES, seed=4))
-    mean, p95 = 100 * d.mean() / height, 100 * float(np.percentile(d, 95)) / height
+    unit = height(target.positions) / 100
+    d = chamfer(sample_surface(fitted, CHAMFER_SAMPLES, seed=3), sample_surface(target, CHAMFER_SAMPLES, seed=4))
+    mean, p95 = d.mean() / unit, float(np.percentile(d, 95)) / unit
     report.metrics = {"chamfer_mean_pct": round(mean, 3), "chamfer_p95_pct": round(p95, 3),
                       "iou": {k: round(v, 4) for k, v in iou.items()},
-                      "inside_zv": inside_zv(positions, zv),
-                      "triangles": int(len(triangles)), "texture": list(texture_size)}
+                      "inside_zv": inside_zv(fitted.positions, zv),
+                      "triangles": int(len(fitted.triangles)), "texture": list(texture_size)}
     if p95 > CHAMFER_P95_FAIL:
         report.failures.append(f"chamfer p95 {p95:.2f} % of height (at most {CHAMFER_P95_FAIL} %)")
     worst = min(iou, key=iou.get)
@@ -54,8 +53,8 @@ def check_fit(positions: np.ndarray, triangles: np.ndarray, target_positions: np
         report.failures.append(f"silhouette IoU {iou[worst]:.3f} in the {worst} view (at least {IOU_FAIL})")
     if not report.metrics["inside_zv"]:
         report.warnings.append("mesh reaches outside the collision box + 10 %")
-    if len(triangles) > TRIANGLES_WARN:
-        report.warnings.append(f"{len(triangles)} triangles (more than {TRIANGLES_WARN})")
+    if len(fitted.triangles) > TRIANGLES_WARN:
+        report.warnings.append(f"{len(fitted.triangles)} triangles (more than {TRIANGLES_WARN})")
     if max(texture_size) > TEXTURE_WARN:
         report.warnings.append(f"texture {texture_size[0]}x{texture_size[1]} (more than {TEXTURE_WARN} recommended)")
     return report
