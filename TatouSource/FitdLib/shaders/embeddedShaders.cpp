@@ -35,6 +35,8 @@ BGFX_EMBEDDED_SHADER(lantern_bloom_vs),
 BGFX_EMBEDDED_SHADER(lantern_bloom_ps),
 BGFX_EMBEDDED_SHADER(lantern_shadow_vs),
 BGFX_EMBEDDED_SHADER(lantern_shadow_ps),
+BGFX_EMBEDDED_SHADER(skinned_vs),
+BGFX_EMBEDDED_SHADER(model_ps),
 
 BGFX_EMBEDDED_SHADER_END()
 };

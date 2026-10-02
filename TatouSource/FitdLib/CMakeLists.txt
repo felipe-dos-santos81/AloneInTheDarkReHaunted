@@ -153,6 +153,7 @@ addShaderProgram(postprocess_vs ssgi_blur_ps postprocess.varying.def)
 addShaderProgram(particle_vs particle_ps particle.varying.def)
 addShaderProgram(lantern_bloom_vs lantern_bloom_ps lantern_bloom.varying.def)
 addShaderProgram(lantern_shadow_vs lantern_shadow_ps lantern_shadow.varying.def)
+addShaderProgram(skinned_vs model_ps model.varying.def)
 
 assign_source_group(${SOURCES})
 
