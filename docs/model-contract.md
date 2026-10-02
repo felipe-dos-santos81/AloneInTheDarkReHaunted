@@ -137,7 +137,7 @@ groups and write `Assets/models_hd/body_<KEY>.hdm` (see "Import output").
 |---|---|---|
 | Triangles | more than 50,000 | more than 30,000 |
 | Texture side | more than 4096 px | more than 2048 px |
-| Base-colour images | not exactly one, or not PNG/JPEG | |
+| Base-colour images | not exactly one, not embedded in the `.glb`, or not PNG/JPEG | |
 | `extensionsRequired` | any | |
 | Primitives | anything but triangles | |
 | Fit (chamfer p95, as % of height) | more than 4 % | |
@@ -145,12 +145,21 @@ groups and write `Assets/models_hd/body_<KEY>.hdm` (see "Import output").
 | Collision box | | the mesh reaches outside ZV + 10 % |
 | Binding | | more than 1 % of vertices as close to an unrelated part |
 
-The fit is a similarity transform (uniform scale, rotation, offset): import
-undoes any scale, offset or yaw, but not a mirrored or posed mesh.
+The fit is a similarity transform: import undoes any scale, offset or yaw,
+but not a mirrored or posed mesh. The scale comes from the height alone
+(feet to top of head made equal to the original's); rotation and offset are
+then refined, and the feet put back on the original's.
 
 `make identity-models bodies=KEY` writes each original as its own delivery
-(the original mesh, its palette colours in a 16x16 texture), which must
-import back onto itself; it is the pipeline's end-to-end check.
+(the original mesh, its palette colours in a 16x16 texture) into
+`data/models-identity/`, never into `data/models-ai/`. It must import back
+onto itself; it is the pipeline's end-to-end check. Import it away from the
+tracked `Assets/models_hd/`:
+
+```
+make identity-models bodies=LISTBODY_011
+make import-models models_ai=data/models-identity models_hd=data/models-hd-identity
+```
 
 ## Import output: body_<KEY>.hdm
 

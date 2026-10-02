@@ -56,3 +56,33 @@ def test_a_delivery_facing_backwards_is_turned_round():
 def test_identity_constant():
     p = np.array([[1.0, 2.0, 3.0]])
     assert np.array_equal(IDENTITY.apply(p), p)
+
+
+def displaced(pos, tris, amount, seed=0):
+    """`pos` pushed along its smooth normals by a low-frequency field of
+    amplitude `amount` x height: a mesh that resembles the original the way
+    generated art does, not a noisy copy of it."""
+    face = np.cross(pos[tris[:, 1]] - pos[tris[:, 0]], pos[tris[:, 2]] - pos[tris[:, 0]])
+    normals = np.zeros_like(pos)
+    for k in range(3):
+        np.add.at(normals, tris[:, k], face)
+    normals /= np.maximum(np.linalg.norm(normals, axis=1, keepdims=True), 1e-9)
+    height = np.ptp(pos[:, 1])
+    rng = np.random.default_rng(seed)
+    field = np.zeros(len(pos))
+    for _ in range(4):
+        k = rng.normal(size=3)
+        field += np.sin(2 * np.pi * (pos @ (k / np.linalg.norm(k))) / (0.5 * height) + rng.uniform(0, 6.3))
+    return pos + (amount * height * field / 4)[:, None] * normals
+
+
+def test_a_mesh_that_only_resembles_the_original_keeps_its_size_and_feet():
+    pos, tris = target()
+    height = np.ptp(pos[:, 1])
+    dense, dense_tris = subdivide(*subdivide(*subdivide(pos, tris)))
+    art = displaced(dense, dense_tris, 0.02)
+    moved = Similarity(0.37, yaw(30), np.array([10.0, -20.0, 5.0])).apply(art)
+    s = align(moved, dense_tris, pos, tris)
+    back = s.apply(moved)
+    assert abs(s.scale * 0.37 - 1) < 0.02
+    assert abs(back[:, 1].max() - art[:, 1].max()) < 0.01 * height

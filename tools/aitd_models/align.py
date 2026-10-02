@@ -6,9 +6,11 @@ similarity transform (uniform scale, rotation, translation), in engine space.
    engine is y down) and the XZ centre of the surface on the original's, then
    try every yaw in 15-degree steps and keep the lowest chamfer distance.
 2. Refine: trimmed ICP (the best 90 % of nearest-point pairs) with Umeyama's
-   closed-form similarity, until the step is negligible. The scale may move
-   at most ICP_SCALE_LIMIT from the coarse one: a shape that does not fit
-   would otherwise shrink towards a point.
+   closed-form rotation and offset, until the step is negligible, then put
+   the feet back on the original's. The scale stays the coarse one: the
+   original's height is the authority, and letting ICP fit a scale shrinks a
+   mesh that only resembles the original (trimming drops the pairs that lie
+   outside it: 0.93 on Carnby with a 2 %-of-height deviation).
 
 Distances are between area-weighted surface samples; nearest neighbours are
 brute force in chunks (numpy only)."""
@@ -24,7 +26,6 @@ TARGET_SAMPLES = 20000
 YAW_STEP_DEG = 15
 ICP_ITERATIONS = 60
 ICP_KEEP = 0.9
-ICP_SCALE_LIMIT = 0.25
 CHUNK = 512
 
 
@@ -79,15 +80,15 @@ def chamfer(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return np.concatenate([nearest(a, b)[0], nearest(b, a)[0]])
 
 
-def umeyama(src: np.ndarray, dst: np.ndarray) -> Similarity:
-    """Least-squares similarity mapping `src` onto `dst` (Umeyama 1991)."""
+def umeyama(src: np.ndarray, dst: np.ndarray, with_scale: bool = True) -> Similarity:
+    """Least-squares similarity mapping `src` onto `dst` (Umeyama 1991); with
+    `with_scale` False, the best rigid motion (scale 1)."""
     mu_s, mu_d = src.mean(axis=0), dst.mean(axis=0)
     xs, xd = src - mu_s, dst - mu_d
     u, sig, vt = np.linalg.svd(xd.T @ xs / len(src))
     d = np.diag([1.0, 1.0, np.sign(np.linalg.det(u @ vt)) or 1.0])
     rotation = u @ d @ vt
-    var = (xs * xs).sum() / len(src)
-    scale = float(np.trace(np.diag(sig) @ d) / var)
+    scale = float(np.trace(np.diag(sig) @ d) / ((xs * xs).sum() / len(src))) if with_scale else 1.0
     return Similarity(scale, rotation, mu_d - scale * rotation @ mu_s)
 
 
@@ -114,21 +115,20 @@ def coarse(src: np.ndarray, dst: np.ndarray) -> Similarity:
 
 
 def icp(src: np.ndarray, dst: np.ndarray, start: Similarity) -> Similarity:
-    """Trimmed ICP from `start`: each step fits the best ICP_KEEP of the pairs."""
+    """Trimmed rigid ICP from `start` (its scale is kept): each step fits the
+    best ICP_KEEP of the pairs; then the feet (max y) go back onto `dst`'s."""
     current = start
     keep = max(3, int(ICP_KEEP * len(src)))
     for _ in range(ICP_ITERATIONS):
         moved = current.apply(src)
         dist, index = nearest(moved, dst)
         best = np.argsort(dist)[:keep]
-        step = umeyama(moved[best], dst[index[best]])
-        if abs(current.scale * step.scale / start.scale - 1) > ICP_SCALE_LIMIT:
-            break
+        step = umeyama(moved[best], dst[index[best]], with_scale=False)
         current = current.then(step)
-        if abs(step.scale - 1) < 1e-7 and np.abs(step.rotation - np.eye(3)).max() < 1e-7 \
-                and np.abs(step.translation).max() < 1e-4:
+        if np.abs(step.rotation - np.eye(3)).max() < 1e-7 and np.abs(step.translation).max() < 1e-4:
             break
-    return current
+    feet = dst[:, 1].max() - current.apply(src)[:, 1].max()
+    return Similarity(current.scale, current.rotation, current.translation + (0.0, feet, 0.0))
 
 
 def align(positions: np.ndarray, triangles: np.ndarray,
