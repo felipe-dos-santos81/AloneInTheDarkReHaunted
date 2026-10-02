@@ -91,3 +91,17 @@ def test_a_foreign_manifest_is_rejected(tmp_path):
     path.write_text('{"schema": 99}')
     with pytest.raises(ManifestError, match="schema 99"):
         read_manifest(path)
+
+
+def test_writes_the_raw_body_and_the_palette(tmp_path):
+    import hashlib
+    from aitd_models.export import BODY_NAME, PALETTE_NAME
+    from aitd_textures.catalog import PALETTE_ENTRY, PALETTE_PAK
+    from aitd_textures.pak import Pak
+    result, out, _lines = run(tmp_path)
+    data = tmp_path / "INDARK"
+    assert (out / PALETTE_NAME).read_bytes() == Pak(data / f"{PALETTE_PAK}.PAK").read(PALETTE_ENTRY)
+    by_key = {r.key: r for r in result.records}
+    for key in result.written:
+        raw = (out / "bodies" / key / BODY_NAME).read_bytes()
+        assert hashlib.sha256(raw).hexdigest() == by_key[key].body_sha256

@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-only
 """Export every animated AITD1 body for the image-to-3D generator:
-bodies/<KEY>/original.glb, reference/<view>.png, reference/views.json, and
-manifest.json. Alias groups (byte-identical bodies) are exported once, under
+bodies/<KEY>/original.glb, body.bin (the raw entry), reference/<view>.png,
+reference/views.json, and manifest.json with palette.bin (the raw palette
+entry) beside it, so the import can run from the export alone. Alias groups (byte-identical bodies) are exported once, under
 their canonical key: the first in HQR order (LISTBODY before LISTBOD2), then
 by entry index."""
 from __future__ import annotations
@@ -34,6 +35,8 @@ from .skeleton import skeleton_hash, validate
 BODY_PAKS = (("LISTBODY", "LISTANIM"), ("LISTBOD2", "LISTANI2"))
 VIEWS = (View("front", 0.0), View("three_quarter", 45.0), View("side", 90.0), View("back", 180.0))
 REFERENCE_SIZE = 1024
+BODY_NAME = "body.bin"
+PALETTE_NAME = "palette.bin"
 PREVIEW_ANIMS = 3
 CHARACTER_MIN_GROUPS = 6
 # Folders are written in parallel; one 4x supersampled 1024 px render briefly holds ~0.7 GB.
@@ -50,8 +53,9 @@ class ExportResult:
 
 
 def _write_folder(args) -> None:
-    """original.glb and the reference views of one canonical body (runs in a worker)."""
-    folder, body, palette, animations, rest, ssaa, size = args
+    """body.bin, original.glb and the reference views of one canonical body (runs in a worker)."""
+    folder, raw, body, palette, animations, rest, ssaa, size = args
+    atomic_write_bytes(folder / BODY_NAME, raw)
     atomic_write_bytes(folder / "original.glb", build_original_glb(body, palette, animations, rest))
     mesh = rest[1]
     framing = framing_for(mesh.positions, size)
@@ -83,9 +87,10 @@ def export_models(data_dir, out_dir, log=print, only: set[str] | None = None,
     `only` (before writing anything). `jobs` worker processes write the
     folders."""
     data_dir, out_dir = pathlib.Path(data_dir), pathlib.Path(out_dir)
-    palette = decode_palette(Pak(data_dir / f"{PALETTE_PAK}.PAK").read(PALETTE_ENTRY))
+    palette_raw = Pak(data_dir / f"{PALETTE_PAK}.PAK").read(PALETTE_ENTRY)
+    palette = decode_palette(palette_raw)
     result = ExportResult()
-    found = []  # (key, hqr, index, sha256, skeleton hash, body, anims)
+    found = []  # (key, hqr, index, sha256, skeleton hash, body, anims, raw entry)
     for hqr, anim_hqr in BODY_PAKS:
         pak = Pak(data_dir / f"{hqr}.PAK")
         anims = _load_anims(Pak(data_dir / f"{anim_hqr}.PAK"), anim_hqr, log)
@@ -102,15 +107,16 @@ def export_models(data_dir, out_dir, log=print, only: set[str] | None = None,
             if problems:
                 result.skipped.append(f"{hqr} entry {i}: {'; '.join(problems)}")
                 continue
-            found.append((f"{hqr}_{i:03d}", hqr, i, hashlib.sha256(raw).hexdigest(), skeleton_hash(body), body, anims))
+            found.append((f"{hqr}_{i:03d}", hqr, i, hashlib.sha256(raw).hexdigest(), skeleton_hash(body), body, anims,
+                          raw))
 
     # found is in HQR order (LISTBODY first), so the first key of a group is canonical.
     by_sha, by_skeleton = defaultdict(list), defaultdict(list)
-    for key, _hqr, _i, sha, shash, _body, _anims in found:
+    for key, _hqr, _i, sha, shash, _body, _anims, _raw in found:
         by_sha[sha].append(key)
         by_skeleton[shash].append(key)
 
-    canonical_of = {key: by_sha[sha][0] for key, _h, _i, sha, _s, _b, _a in found}
+    canonical_of = {key: by_sha[sha][0] for key, _h, _i, sha, _s, _b, _a, _r in found}
     if only is not None:
         unknown = sorted(set(only) - set(canonical_of))
         if unknown:
@@ -122,7 +128,7 @@ def export_models(data_dir, out_dir, log=print, only: set[str] | None = None,
 
     rests = {}  # sha256 -> (rest pose, mesh, height): aliases are byte-identical
     tasks = []  # (key, log line, _write_folder arguments)
-    for key, hqr, index, sha, shash, body, anims in found:
+    for key, hqr, index, sha, shash, body, anims, raw in found:
         if sha not in rests:
             rest, mesh = rest_mesh(body, palette)
             rests[sha] = rest, mesh, float(np.ptp(skin(body, rest.group_matrices())[:, 1]))
@@ -147,7 +153,8 @@ def export_models(data_dir, out_dir, log=print, only: set[str] | None = None,
         if not record.has_export_folder or (only is not None and key not in only):
             continue
         tasks.append((key, f"exported {key} ({kind}, {len(body.groups)} groups, {mesh.triangle_count} triangles)",
-                      (out_dir / record.dir, body, palette, [(n, anims[n]) for n in preview], (rest, mesh), ssaa, size)))
+                      (out_dir / record.dir, raw, body, palette, [(n, anims[n]) for n in preview], (rest, mesh),
+                       ssaa, size)))
 
     workers = min(jobs, len(tasks))
     with ProcessPoolExecutor(workers) if workers > 1 else contextlib.nullcontext() as pool:
@@ -158,6 +165,7 @@ def export_models(data_dir, out_dir, log=print, only: set[str] | None = None,
 
     for reason in result.skipped:
         log(f"warning: skipped {reason}")
+    atomic_write_bytes(out_dir / PALETTE_NAME, palette_raw)
     write_manifest(out_dir / MANIFEST_NAME, data_dir, result.records,
                    [{"name": v.name, "yaw_deg": v.yaw_deg} for v in VIEWS], size)
     canonical = sum(1 for r in result.records if r.has_export_folder)
