@@ -152,7 +152,7 @@ export-models: ## Export animated bodies for the model generator [gamedata=DIR m
 identity-models: ## Write identity deliveries (each original as its own model) [models=DIR models_identity=DIR bodies=KEY,...]
 	$(PYTHON) tools/models.py identity --models "$(models)" --out "$(models_identity)" --bodies "$(bodies)"
 
-check-models: ## Check delivered models, write nothing but reports [models_ai=DIR models_hd=DIR bodies=KEY,... report=DIR]
+check-models: ## Check delivered models, write nothing, or only reports with report=DIR [models_ai=DIR models_hd=DIR bodies=KEY,... report=DIR]
 	$(MODEL_IMPORT) --dry-run
 
 import-models: ## Import delivered models into Assets/models_hd [models_ai=DIR models_hd=DIR bodies=KEY,...]
