@@ -115,3 +115,14 @@ def test_import_resolves_an_alias_to_its_canonical_key(tmp_path):
     assert code == 0
     assert lines[0] == "LISTBOD2_000 is an alias of LISTBODY_000; importing LISTBODY_000"
     assert lines[-1] == "dry run: would import 1 bodies (3 files), 0 failed"
+
+
+def test_identity_reports_one_unreadable_body_and_writes_the_rest(tmp_path):
+    export_for_import(tmp_path)
+    (tmp_path / "models/bodies/LISTBODY_000/original.glb").write_bytes(b"junk")
+    lines = []
+    code = models.main(["identity", "--models", str(tmp_path / "models"), "--out", str(tmp_path / "ai"),
+                        "--bodies", "LISTBODY_000,LISTBOD2_001"], root=tmp_path, log=lines.append)
+    assert code == 1
+    assert (tmp_path / "ai/bodies/LISTBOD2_001/model.glb").is_file()
+    assert any(line.startswith("error: LISTBODY_000: ") for line in lines)

@@ -112,15 +112,17 @@ def cmd_identity(args, root: pathlib.Path, log) -> int:
     if bad:
         log(f"error: not exported canonical bodies: {', '.join(bad)}")
         return EXIT_USAGE
+    failed = 0
     for key in keys:
         try:
             data = identity_glb((models / by_key[key].dir / "original.glb").read_bytes())
         except (OSError, GltfError) as exc:
             log(f"error: {key}: {exc}")
-            return EXIT_USAGE
+            failed += 1
+            continue
         atomic_write_bytes(out / "bodies" / key / DELIVERY_NAME, data)
         log(f"wrote {out / 'bodies' / key / DELIVERY_NAME}")
-    return EXIT_OK
+    return EXIT_FINDINGS if failed else EXIT_OK
 
 
 def cmd_import(args, root: pathlib.Path, log) -> int:
