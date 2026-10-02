@@ -16,9 +16,11 @@
 #include "configRemaster.h"
 #include "consoleLog.h"
 #include "hdCompare.h"
+#include "lanternLighting.h"
 #include "models/bodyPose.h"
 #include "models/hdmMesh.h"
 #include "models/mipChain.h"
+#include "models/modelLight.h"
 #include "models/renderCamera.h"
 #include "models/replacementGate.h"
 #include "models/skinnedBody.h"
@@ -96,6 +98,33 @@ models::PoseBody poseBodyOf(const sBody* body)
     for (uint16 o : body->m_groupOrder)
         p.order.push_back(o);
     return p;
+}
+
+// The planar shadows' direction (vars.cpp), so shading and shadows agree.
+void setLightUniforms(const models::RenderCamera& cam)
+{
+    const models::Vec3 key = models::cameraDirection(cam, { g_shadowLightDirX, g_shadowLightDirY, g_shadowLightDirZ });
+    const float keyLight[4] = { key.x, key.y, key.z, models::kKeyStrength };
+    bgfx::setUniform(uniform("u_keyLight", bgfx::UniformType::Vec4), keyLight);
+    const models::Vec3 up = models::cameraDirection(cam, { 0.0f, -1.0f, 0.0f }); // the engine's y points down
+    const float ambient[4] = { up.x, up.y, up.z, 0.0f };
+    bgfx::setUniform(uniform("u_ambient", bgfx::UniformType::Vec4), ambient);
+    const float levels[4] = { models::kAmbientGround, models::kAmbientSky, models::kSpecular, models::kShininess };
+    bgfx::setUniform(uniform("u_ambientLevels", bgfx::UniformType::Vec4), levels);
+    float pos[3], colour[3], intensity = 0.0f;
+    float lantern[4] = { 0.0f, 0.0f, 0.0f, 0.0f }, lanternColour[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    if (heldLanternLight(pos, colour, &intensity))
+    {
+        const models::Vec3 at = models::cameraPoint(cam, { pos[0], pos[1], pos[2] });
+        lantern[0] = at.x;
+        lantern[1] = at.y;
+        lantern[2] = at.z;
+        lantern[3] = models::kLanternReach;
+        for (int k = 0; k < 3; ++k)
+            lanternColour[k] = colour[k] * intensity;
+    }
+    bgfx::setUniform(uniform("u_lantern", bgfx::UniformType::Vec4), lantern);
+    bgfx::setUniform(uniform("u_lanternColour", bgfx::UniformType::Vec4), lanternColour);
 }
 
 models::RenderCamera engineCamera()
@@ -289,6 +318,7 @@ bool drawModelReplacement(ModelReplacement* r, sBody* pBody, int x, int y, int z
     const float tint[4] = { g_fadeLevel, g_roomIsDark ? kDarkRoomBrightness : 1.0f, 0.0f,
                             hdCompareUnlit() ? 1.0f : 0.0f };
     bgfx::setUniform(uniform("u_tint", bgfx::UniformType::Vec4), tint);
+    setLightUniforms(cam);
     bgfx::setTexture(0, uniform("s_albedo", bgfx::UniformType::Sampler), r->texture, r->textureFlags);
     bgfx::setVertexBuffer(0, r->vb);
     bgfx::setIndexBuffer(r->ib);

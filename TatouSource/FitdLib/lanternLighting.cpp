@@ -351,6 +351,28 @@ bool isLanternWithOil(int objectIdx)
            g_lanternStates[objectIdx].oilLevel > 0.0f;
 }
 
+bool heldLanternLight(float worldPos[3], float colour[3], float* intensity)
+{
+    const LanternState* held = nullptr;
+    for (const auto& pair : g_lanternStates)
+    {
+        const LanternState& state = pair.second;
+        if (state.isInHand && state.hasOil && state.effectiveGlowIntensity > 0.001f &&
+            (!held || state.effectiveGlowIntensity > held->effectiveGlowIntensity))
+            held = &state;
+    }
+    if (!held)
+        return false;
+    worldPos[0] = held->lightPosX;
+    worldPos[1] = held->lightPosY;
+    worldPos[2] = held->lightPosZ;
+    colour[0] = held->glowColorR;
+    colour[1] = held->glowColorG;
+    colour[2] = held->glowColorB;
+    *intensity = held->effectiveGlowIntensity;
+    return true;
+}
+
 LanternState* getLanternState(int objectIdx)
 {
     if (g_lanternStates.find(objectIdx) == g_lanternStates.end())

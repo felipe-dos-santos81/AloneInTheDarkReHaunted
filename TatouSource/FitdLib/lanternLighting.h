@@ -75,6 +75,11 @@ bool isLanternWithOil(int objectIdx);
 // Get lantern state by object index
 LanternState* getLanternState(int objectIdx);
 
+// The lit lantern the hero holds (the brightest, as the background lighting
+// picks it): its world position (engine units), glow colour and flickering
+// intensity. False when no lit lantern is held.
+bool heldLanternLight(float worldPos[3], float colour[3], float* intensity);
+
 // Set lantern oil state
 void setLanternOil(int objectIdx, bool hasOil, float oilLevel = 1.0f);
 
