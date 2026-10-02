@@ -30,6 +30,7 @@ void initDefaultRemasterConfig()
 
     // HD Graphics defaults (for future)
     g_remasterConfig.graphics.enableHDBackgrounds = false;
+    g_remasterConfig.graphics.enableHDModels = false;
     g_remasterConfig.graphics.backgroundScale = 2;
     g_remasterConfig.graphics.enableFiltering = true;
     g_remasterConfig.graphics.enableBlurredMenu = false;
@@ -182,6 +183,8 @@ void loadRemasterConfig()
             // HD Graphics settings
             else if (strcmp(key, "graphics.hdBackgrounds") == 0)
                 g_remasterConfig.graphics.enableHDBackgrounds = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
+            else if (strcmp(key, "graphics.hdModels") == 0)
+                g_remasterConfig.graphics.enableHDModels = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
             else if (strcmp(key, "graphics.backgroundScale") == 0)
                 g_remasterConfig.graphics.backgroundScale = atoi(value);
             else if (strcmp(key, "graphics.filtering") == 0)
@@ -456,6 +459,7 @@ void saveRemasterConfig()
 
     fprintf(file, "# HD Graphics Settings\n");
     fprintf(file, "graphics.hdBackgrounds = %s\n", g_remasterConfig.graphics.enableHDBackgrounds ? "true" : "false");
+    fprintf(file, "graphics.hdModels = %s\n", g_remasterConfig.graphics.enableHDModels ? "true" : "false");
     fprintf(file, "graphics.backgroundScale = %d\n", g_remasterConfig.graphics.backgroundScale);
     fprintf(file, "graphics.filtering = %s\n", g_remasterConfig.graphics.enableFiltering ? "true" : "false");
     fprintf(file, "graphics.blurredMenu = %s\n", g_remasterConfig.graphics.enableBlurredMenu ? "true" : "false");

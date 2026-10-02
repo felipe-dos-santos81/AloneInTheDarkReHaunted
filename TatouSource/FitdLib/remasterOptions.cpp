@@ -139,6 +139,9 @@ static void drawGraphicsTab()
     ImGui::TextDisabled("Backgrounds and renderer");
     ImGui::Separator();
     ImGui::Checkbox("HD backgrounds", &g_remasterConfig.graphics.enableHDBackgrounds);
+    ImGui::Checkbox("HD character models", &g_remasterConfig.graphics.enableHDModels);
+    helpMarker("Draws a character as its HD model (models_hd/body_<KEY>.hdm, from make import-models) "
+               "where one exists; every other character, and every model that fails its checks, stays classic.");
     const int scales[] = { 1, 2, 3, 4 };
     intChoice("Background scale", &g_remasterConfig.graphics.backgroundScale, scales, 4, "x");
     ImGui::Checkbox("Texture filtering", &g_remasterConfig.graphics.enableFiltering);

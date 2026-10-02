@@ -32,7 +32,8 @@ void transformPoint(float* ax, float* bx, float* cx);
 
 int AffObjet(int x, int y, int z, int alpha, int beta, int gamma, sBody* pBody);
 
-void setCurrentBodyNum(int bodyNum, sBody* pBody, const std::string& hqrName);
+// allowReplacement: the world's draws (AllRedraw, drawSceneObjects) may draw the body's HD replacement.
+void setCurrentBodyNum(int bodyNum, sBody* pBody, const std::string& hqrName, bool allowReplacement = false);
 
 struct ModelAtlasData;
 void setCurrentAtlas(ModelAtlasData* atlas);

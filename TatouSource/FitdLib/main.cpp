@@ -28,6 +28,7 @@ extern void playMenuSound(const char* soundName);
 #include "physics/collisionEscape.h"
 #include "assist/attackPace.h"
 #include "lanternLighting.h"
+#include "modelReplacement.h"
 #include "menuMouse.h"
 #include <math.h>
 #include <SDL.h>
@@ -3416,7 +3417,18 @@ void drawBgOverlay(tObject* actorPtr)
         return;
     }
 
-    SetClip(BBox3D1, BBox3D2, BBox3D3, BBox3D4);
+    // Masks cover the classic box and, when an HD replacement was drawn, its box
+    // too; actor->screen* above keeps the classic box (savegames, lamp glow).
+    int maskBox[4] = { BBox3D1, BBox3D2, BBox3D3, BBox3D4 };
+    int hdBox[4];
+    if (lastReplacementBox(hdBox))
+    {
+        maskBox[0] = hdBox[0] < maskBox[0] ? hdBox[0] : maskBox[0];
+        maskBox[1] = hdBox[1] < maskBox[1] ? hdBox[1] : maskBox[1];
+        maskBox[2] = hdBox[2] > maskBox[2] ? hdBox[2] : maskBox[2];
+        maskBox[3] = hdBox[3] > maskBox[3] ? hdBox[3] : maskBox[3];
+    }
+    SetClip(maskBox[0], maskBox[1], maskBox[2], maskBox[3]);
 
     cameraDataStruct* pCamera = cameraDataTable[NumCamera];
 
@@ -3809,7 +3821,7 @@ void drawSceneObjects()
             drawBlobShadow(actorPtr->worldX + actorPtr->stepX, actorPtr->worldY + actorPtr->stepY, actorPtr->worldZ + actorPtr->stepZ, actorPtr->alpha, actorPtr->beta, actorPtr->gamma, bodyPtr);
         }
 
-        setCurrentBodyNum(actorPtr->bodyNum, bodyPtr, HQ_Bodys->string);
+        setCurrentBodyNum(actorPtr->bodyNum, bodyPtr, HQ_Bodys->string, true);
         AffObjet(actorPtr->worldX + actorPtr->stepX, actorPtr->worldY + actorPtr->stepY, actorPtr->worldZ + actorPtr->stepZ, actorPtr->alpha, actorPtr->beta, actorPtr->gamma, bodyPtr);
 
         if (shouldDrawShadows && !actorPtr->hidePlanarShadow)
@@ -3953,7 +3965,7 @@ void AllRedraw(int flagFlip)
                             drawBlobShadow(actorPtr->worldX + actorPtr->stepX, actorPtr->worldY + actorPtr->stepY, actorPtr->worldZ + actorPtr->stepZ, actorPtr->alpha, actorPtr->beta, actorPtr->gamma, bodyPtr);
                         }
 
-                        setCurrentBodyNum(actorPtr->bodyNum, bodyPtr, HQ_Bodys->string);
+                        setCurrentBodyNum(actorPtr->bodyNum, bodyPtr, HQ_Bodys->string, true);
                         AffObjet(actorPtr->worldX + actorPtr->stepX, actorPtr->worldY + actorPtr->stepY, actorPtr->worldZ + actorPtr->stepZ, actorPtr->alpha, actorPtr->beta, actorPtr->gamma, bodyPtr);
 
                         // CRITICAL: Populate lamp primitive cache immediately after body 11 is rendered
@@ -5764,6 +5776,7 @@ void cleanupAndExit(void)
     // Clean up HD background resources before shutdown to prevent heap corruption
     extern void cleanupHDBackgroundResources();
     cleanupHDBackgroundResources();
+    shutdownModelReplacements();
 
     // Close audio archive
     extern void closeAudioArchive();

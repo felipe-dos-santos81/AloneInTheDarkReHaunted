@@ -10,6 +10,7 @@
 #include "common.h"
 #include "consoleLog.h"
 #include "modelAtlas.h"
+#include "modelReplacement.h"
 #include "hdBackground.h"
 
 extern int numSpheresPrimitives;
@@ -75,6 +76,7 @@ static ModelAtlasData* s_currentAtlas = nullptr;
 static int s_currentPrimIndex = 0;
 static bool s_modelHasTexturedPrims = false;  // Track if model has textured primitives (type 9/10)
 static int s_currentBodyNum = -1;  // Track current rendering body number for special handling
+static ModelReplacement* s_currentReplacement = nullptr; // set by setCurrentBodyNum, used once by the next AffObjet
 
 // Near-camera floating polygon clipping thresholds.
 // When a model is close to the camera, small detail polygons (eyes, nostrils)
@@ -1267,9 +1269,10 @@ renderFunction renderFunctions[]={
 	renderPoly, // polyTexture10 (10) - textured polygon
 };
 
-void setCurrentBodyNum(int bodyNum, sBody* pBody, const std::string& hqrName)
+void setCurrentBodyNum(int bodyNum, sBody* pBody, const std::string& hqrName, bool allowReplacement)
 {
     s_currentBodyNum = bodyNum;  // Track current body for special rendering rules
+    s_currentReplacement = allowReplacement ? findModelReplacement(bodyNum, pBody, hqrName) : nullptr;
 
     // JACK/Grace uses model atlases independently of HD backgrounds. Other
     // games keep the existing HD-background gate for atlas replacement.
@@ -1296,6 +1299,9 @@ void setCurrentAtlas(ModelAtlasData* atlas)
 
 int AffObjet(int x,int y,int z,int alpha,int beta,int gamma, sBody* pBody)
 {
+    ModelReplacement* replacement = s_currentReplacement; // used by this call only, whatever path it takes
+    s_currentReplacement = nullptr;
+    forgetReplacementBox();
     if (!pBody)
         return 2;
 
@@ -1634,15 +1640,19 @@ int AffObjet(int x,int y,int z,int alpha,int beta,int gamma, sBody* pBody)
 		// Track which body's primitives are now in primTable[] (for external code like lantern glow detection)
 		g_currentPrimTableBodyNum = s_currentBodyNum;
 
-				// Render primitives in order
-		for(i=0;i<numOfPrimitiveToRender;i++)
+		// Render primitives in order, unless the body's HD replacement draws instead
+		// (everything above, including BBox3D and primTable, stays the classic body's).
+		if (!(replacement && drawModelReplacement(replacement, pBody, x, y, z, alpha, beta, gamma)))
 		{
-			if (primTable[i].nearClipped)
-				continue;
-			int type = primTable[i].type;
-			if(type >= 0 && type < (int)(sizeof(renderFunctions)/sizeof(renderFunctions[0])) && renderFunctions[type])
+			for(i=0;i<numOfPrimitiveToRender;i++)
 			{
-				renderFunctions[type](&primTable[i]);
+				if (primTable[i].nearClipped)
+					continue;
+				int type = primTable[i].type;
+				if(type >= 0 && type < (int)(sizeof(renderFunctions)/sizeof(renderFunctions[0])) && renderFunctions[type])
+				{
+					renderFunctions[type](&primTable[i]);
+				}
 			}
 		}
 
