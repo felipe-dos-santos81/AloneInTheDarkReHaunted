@@ -208,3 +208,31 @@ def test_a_real_import_writes_reports_to_the_report_folder_when_given(setup):
     run_import(ImportPaths(data, models, src, dest, debug, report), records, log=lambda _m: None)
     assert [p.name for p in report.iterdir()] == ["body_LISTBODY_000.json"]
     assert [p.name for p in debug.iterdir()] == ["body_LISTBODY_000.glb"]
+
+
+def test_the_identity_does_not_tear(setup):
+    result, _ = run(setup, dry_run=True)
+    assert result.metrics["LISTBODY_000"]["stretch_torn_pct"] == 0.0
+    assert result.metrics["LISTBODY_000"]["stretch_max"] >= 1.0
+
+
+def test_a_mesh_that_tears_in_the_preview_animations_fails(setup, monkeypatch):
+    # The chain's spanning polygons stretch a little when its spine bends 90 degrees;
+    # with any stretch counted as a tear, the identity itself must fail.
+    import aitd_models.importer as importer
+    monkeypatch.setattr(importer, "STRETCH_RATIO", 1.0)
+    result, _ = run(setup, dry_run=True)
+    assert "tears beyond 1x its rest size in the preview animations" in result.failed["LISTBODY_000"]
+    assert result.metrics["LISTBODY_000"]["stretch_torn_pct"] > importer.STRETCH_AREA_PCT
+
+
+def test_a_body_without_preview_animation_skips_the_stretch_check(setup):
+    from aitd_models.body import parse_body
+    from aitd_models.original import build_original_glb
+    from model_helpers import body_bytes, synthetic_palette_rgb
+    models = setup[1]
+    (models / "bodies/LISTBODY_000/original.glb").write_bytes(
+        build_original_glb(parse_body(body_bytes()), synthetic_palette_rgb()))
+    result, _ = run(setup, dry_run=True)
+    assert result.imported == ["LISTBODY_000"]
+    assert result.metrics["LISTBODY_000"]["stretch"] == "no animation"

@@ -6,8 +6,9 @@ Per delivery: read the original body -- from the game data, or from the
 export's body.bin and palette.bin when no game data is given -- and check it
 still matches the export (SHA-256, skeleton hash); read the delivery
 (delivery.py), align it to the original rest mesh (align.py), check
-the fit (silhouette.py, validate.py), derive skin weights (bind.py) and pack
-the engine file (hdm.py). A debug .glb of the aligned mesh, coloured by bone
+the fit (silhouette.py, validate.py), derive skin weights (bind.py), check
+the bound mesh does not tear in the export's preview animations (stretch.py)
+and pack the engine file (hdm.py). A debug .glb of the aligned mesh, coloured by bone
 group, goes to --debug for inspection in Blender, with a report per key
 (body_<KEY>.json: status, reason, warnings, every metric, files written) for
 imported and failed bodies alike, in --report when given, else beside the
@@ -32,13 +33,14 @@ from .bind import bind
 from .body import parse_body
 from .delivery import Delivery, DeliveryError, read_delivery
 from .export import BODY_NAME, PALETTE_NAME
-from .gltf import ARRAY_BUFFER, UNSIGNED_INT, GlbBuilder
+from .gltf import ARRAY_BUFFER, UNSIGNED_INT, GlbBuilder, read_glb
 from .hdm import TEXTURE_MIME, VERTEX, HdmError, HdmMesh, write_hdm
 from .manifest import BodyRecord
 from .mesh import Surface
 from .original import rest_mesh, to_gltf_points
 from .silhouette import silhouette_iou
 from .skeleton import skeleton_hash, validate
+from .stretch import STRETCH_AREA_PCT, STRETCH_RATIO, posed_stretch, preview_skins, torn_pct
 from .validate import check_fit
 
 DELIVERY_NAME = "model.glb"
@@ -115,12 +117,31 @@ def debug_glb(fitted: Surface, uv: np.ndarray, texture: bytes, texture_kind: int
     return g.to_bytes()
 
 
-def build_hdm(record: BodyRecord, body, palette, delivery: Delivery, reference_dir) -> BuildOutcome:
-    """Align, check, bind and pack one delivery."""
+def check_stretch(outcome: BuildOutcome, fitted: Surface, binding, original_glb: bytes, groups: int) -> None:
+    """Pose the bound mesh at every key of the preview animations; fail it
+    when too much of it tears (fused limbs pulled apart)."""
+    skins = preview_skins(read_glb(original_glb), groups)
+    if not skins:
+        outcome.metrics["stretch"] = "no animation"
+        return
+    worst, area = posed_stretch(fitted.positions, fitted.triangles, binding.joints.astype(int),
+                                binding.packed / 255.0, skins)
+    torn = torn_pct(worst, area, STRETCH_RATIO)
+    outcome.metrics["stretch_torn_pct"] = round(torn, 3)
+    outcome.metrics["stretch_max"] = round(float(worst.max()), 2)
+    if torn > STRETCH_AREA_PCT:
+        outcome.failure = (f"{torn:.2f} % of the surface tears beyond {STRETCH_RATIO:g}x its rest size in the "
+                           f"preview animations (limbs fused together?)")
+
+
+def build_hdm(record: BodyRecord, body, palette, delivery: Delivery, export_dir) -> BuildOutcome:
+    """Align, check, bind and pack one delivery. `export_dir` is the body's
+    export folder (original.glb, reference/)."""
     rest, mesh = rest_mesh(body, palette)
     fit = align(delivery.surface, mesh.surface)
     fitted = Surface(fit.apply(delivery.positions), delivery.triangles)
-    report = check_fit(fitted, mesh.surface, record.zv, silhouette_iou(fitted, reference_dir), delivery.texture_size)
+    report = check_fit(fitted, mesh.surface, record.zv, silhouette_iou(fitted, export_dir / "reference"),
+                       delivery.texture_size)
     report.metrics["align"] = {"scale": round(fit.scale, 6),
                                "translation": [round(float(t), 3) for t in fit.translation]}
     outcome = BuildOutcome(report.metrics, list(report.warnings))
@@ -133,6 +154,9 @@ def build_hdm(record: BodyRecord, body, palette, delivery: Delivery, reference_d
     outcome.metrics["ambiguous_pct"] = round(ambiguous, 3)
     if ambiguous > AMBIGUOUS_WARN:
         outcome.warnings.append(f"{ambiguous:.1f} % of vertices lie as close to an unrelated part (check the debug .glb)")
+    check_stretch(outcome, fitted, binding, (export_dir / "original.glb").read_bytes(), len(body.groups))
+    if outcome.failure:
+        return outcome
     vertices = np.zeros(len(fitted.positions), VERTEX)
     vertices["position"], vertices["uv"] = fitted.positions, delivery.uv
     vertices["normal"] = delivery.normals @ fit.rotation.T
@@ -199,8 +223,8 @@ def run_import(paths: ImportPaths, records: list[BodyRecord], only: set[str] | N
             result.failed[key] = str(exc)
             continue
         try:
-            outcome = build_hdm(record, body, palette, delivery, paths.models / record.dir / "reference")
-        except (ValueError, OSError) as exc:  # a reference view missing or unreadable, a degenerate fit
+            outcome = build_hdm(record, body, palette, delivery, paths.models / record.dir)
+        except (ValueError, OSError) as exc:  # an export file missing or unreadable, a degenerate fit
             result.failed[key] = f"import failed: {exc}"
             continue
         result.metrics[key] = outcome.metrics

@@ -46,6 +46,7 @@ def test_identity_round_trip(imported, key):
     data_dir, dest, result = imported
     assert key in result.imported, result.failed.get(key)
     assert min(result.metrics[key]["iou"].values()) >= 0.97
+    assert result.metrics[key]["stretch_torn_pct"] == 0.0
     hqr, index = key.split("_")
     body = parse_body(Pak(data_dir / f"{hqr}.PAK").read(int(index)))
     rest, mesh = rest_mesh(body, decode_palette(Pak(data_dir / "ITD_RESS.PAK").read(3)))
