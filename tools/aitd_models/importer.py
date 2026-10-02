@@ -4,8 +4,9 @@ Assets/models_hd/body_<KEY>.hdm (and one copy per alias).
 
 Per delivery: read the original body -- from the game data, or from the
 export's body.bin and palette.bin when no game data is given -- and check it
-still matches the export (SHA-256, skeleton hash); read the delivery
-(delivery.py), align it to the original rest mesh (align.py), check
+still matches the export: the export's body.bin against the manifest's
+SHA-256, the game data against the manifest's skeleton hash; read the
+delivery (delivery.py), align it to the original rest mesh (align.py), check
 the fit (silhouette.py, validate.py), derive skin weights (bind.py), check
 the bound mesh does not tear in the export's preview animations (stretch.py)
 and pack the engine file (hdm.py). A debug .glb of the aligned mesh, coloured by bone

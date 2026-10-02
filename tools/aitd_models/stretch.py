@@ -80,7 +80,10 @@ def posed_stretch(positions: np.ndarray, triangles: np.ndarray, joints: np.ndarr
                   skins: list[np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
     """(per-triangle worst edge ratio over every pose, the triangles' rest
     areas). `joints` (V, 4) and `weights` (V, 4, summing to 1) are the
-    binding the engine skins with."""
+    binding the engine skins with: `joints` holds engine group indices, which
+    index `skins` (one (groups, 4, 4) matrix per pose) -- not glTF skin-joint
+    slots, which differ for the groups that zoom (their gNN_geo joint is
+    appended after the plain ones)."""
     positions = np.asarray(positions, float)
     rest = _edges(positions, triangles)
     usable = rest > 1e-6 * max(float(np.ptp(positions, axis=0).max()), 1.0)

@@ -136,10 +136,12 @@ groups and write `Assets/models_hd/body_<KEY>.hdm` (see "Import output").
 The make targets read the bodies and the palette from the game data.
 `tools/models.py import` without `--data` reads `palette.bin` and each
 `body.bin` from the export instead, so a generator host can run the same
-checks with no game data. Every `body.bin` is checked against the manifest's
-`body_sha256`, so one that is missing or differs fails that body alone, while
-a missing `palette.bin` sends the import back to the game data. An export
-written before these files existed still needs the game data.
+checks with no game data. On that path, every `body.bin` is checked against
+the manifest's `body_sha256`, so one that is missing or differs fails that
+body alone, while a missing `palette.bin` sends the import back to the game
+data (checked by skeleton hash alone: the game-data path never compares the
+SHA-256). An export written before these files existed still needs the game
+data.
 
 ### What import checks
 
@@ -182,19 +184,23 @@ make import-models models_ai=data/models-identity models_hd=data/models-hd-ident
 
 Next to each debug `.glb` (`data/models-hd-debug/` by default), import writes
 `body_<KEY>.json` for every body it looked at, imported or failed: its
-status, the reason it failed, warnings, every fit metric (with
-`stretch_torn_pct` and `stretch_max`) and the `.hdm` files it wrote, or would
-have written. A dry run (`make check-models`) writes nothing, unless
-`report=DIR` (`--report DIR`) asks for the reports there; given to a real
-import, `--report` takes the reports away from the debug folder, and the
-debug `.glb` still goes to `--debug`.
+status, the reason it failed, warnings and every fit metric -- the stretch
+metrics only for a body that got that far, since a body that failed the fit
+reports no `stretch` at all, and one with no preview animations reports
+`"stretch": "no animation"` instead of `stretch_torn_pct` / `stretch_max` --
+and the `.hdm` names it wrote, or would have written. A dry run (`make
+check-models`) writes nothing, unless `report=DIR` (`--report DIR`) asks for
+the reports there; given to a real import, `--report` takes the reports away
+from the debug folder, and the debug `.glb` still goes to `--debug`.
 
 A report says what the check decided, not what reached the disk: a dry run
 fills it exactly as a real import does, with `status: "imported"` and the
-`.hdm` paths in `files` for every body that passed. A gate must read the
-process exit code (0 nothing failed, 1 at least one body failed, 2 a usage or
-data error) to know a delivery is clean, and look in the output folder for the
-`.hdm` files themselves; neither `status` nor `files` says a file was written.
+`.hdm` names in `files` for every body that passed -- bare names, one per file
+import would write (the body's own, plus one per alias), with no folder (the
+engine folder is not in the report). A gate must read the process exit code
+(0 nothing failed, 1 at least one body failed, 2 a usage or data error) to
+know a delivery is clean, and look in the output folder for the `.hdm` files
+themselves; neither `status` nor `files` says a file was written.
 
 ## Import output: body_<KEY>.hdm
 
