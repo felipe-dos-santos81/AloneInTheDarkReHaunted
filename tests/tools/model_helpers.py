@@ -1,6 +1,7 @@
 """Builders for synthetic AITD1 bodies and animations used by the model tool
 tests, in the byte layout of createBodyFromPtr / createAnimationFromPtr
 (TatouSource/FitdLib/hqr.cpp)."""
+import pathlib
 import struct
 
 import numpy as np
@@ -164,3 +165,28 @@ def write_model_data_dir(d):
     (d / "LISTANIM.PAK").write_bytes(anims)
     (d / "LISTANI2.PAK").write_bytes(anims)
     return d
+
+
+# ── HD import ────────────────────────────────────────────────────────────────
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+# A 1x1 RGB PNG (one texel, colour (192, 64, 32)), spelled out so the shared
+# fixture never depends on an encoder version.
+TINY_PNG = bytes.fromhex(
+    "89504e470d0a1a0a0000000d4948445200000001000000010802000000907753de"
+    "0000000c4944415478da6338e0a0000002e40121bfd81b640000000049454e44ae426082")
+# The .hdm both test suites read: tests/tools/test_models_hdm.py checks the
+# writer reproduces it, TatouSource/tests/engine/test_hdm_mesh.cpp parses it.
+TINY_HDM = ROOT / "TatouSource" / "tests" / "engine" / "fixtures" / "tiny.hdm"
+
+
+def tiny_hdm():
+    """Two groups, four vertices, two triangles; vertex 1 blends both groups."""
+    from aitd_models.hdm import TEXTURE_PNG, VERTEX, HdmMesh
+    v = np.zeros(4, VERTEX)
+    v["position"] = [(0, 0, 0), (100, 0, 0), (0, -200, 0), (100, -200, 50)]
+    v["normal"] = [(0, 0, -1)] * 4
+    v["uv"] = [(0, 0), (1, 0), (0, 1), (1, 1)]
+    v["joints"] = [(0, 0, 0, 0), (0, 1, 0, 0), (1, 0, 0, 0), (1, 0, 0, 0)]
+    v["weights"] = [(255, 0, 0, 0), (128, 127, 0, 0), (255, 0, 0, 0), (255, 0, 0, 0)]
+    return HdmMesh(2, 0x0123456789ABCDEF, v, np.array([0, 1, 2, 2, 1, 3], np.uint32), TINY_PNG, TEXTURE_PNG)
