@@ -103,3 +103,19 @@ def test_primitives_sharing_one_image_merge_under_nested_transforms():
     d = read_delivery(g.to_bytes())
     assert d.triangles.tolist() == [[0, 1, 2], [3, 4, 5]]
     assert np.allclose(d.positions[3], (10000, 0, -2000))  # (5, 0, 1) scaled by 2, then to engine space
+
+
+def test_an_image_by_uri_is_refused_not_a_crash():
+    from aitd_models.gltf import read_glb
+    from aitd_models.gltf import GlbBuilder
+    glb = read_glb(delivery_glb(QUAD, QUAD_TRIS, QUAD_UV))
+    glb.doc["images"][0] = {"uri": "texture.png"}
+    b = GlbBuilder(doc=glb.doc)
+    b._bin += glb.bin
+    with pytest.raises(DeliveryError, match="image"):
+        read_delivery(b.to_bytes())
+
+
+def test_a_zero_scale_node_is_refused_not_a_crash():
+    with pytest.raises(DeliveryError):
+        read_delivery(delivery_glb(QUAD, QUAD_TRIS, QUAD_UV, node={"scale": [0, 0, 0]}))

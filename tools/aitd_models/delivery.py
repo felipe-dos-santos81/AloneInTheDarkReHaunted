@@ -114,6 +114,8 @@ def read_delivery(data: bytes) -> Delivery:
     try:
         for root in roots:
             walk(root, np.eye(4))
+    except np.linalg.LinAlgError:
+        raise DeliveryError("a mesh node has a singular (zero-scale) transform")
     except (KeyError, IndexError, TypeError, GltfError) as exc:
         raise DeliveryError(f"bad glTF structure: {exc}")
     if not tris:
@@ -131,7 +133,10 @@ def read_delivery(data: bytes) -> Delivery:
         raise DeliveryError("non-finite vertex data")
     length = np.linalg.norm(normals, axis=1, keepdims=True)
     normals = np.divide(normals, length, out=np.tile([0.0, 1.0, 0.0], (len(normals), 1)), where=length > 1e-12)
-    texture, _mime = glb.image_bytes(images.pop())
+    try:
+        texture, _mime = glb.image_bytes(images.pop())
+    except (KeyError, IndexError, TypeError):
+        raise DeliveryError("the base-colour image is not embedded in the .glb (an external uri is not allowed)")
     kind = _texture_kind(texture)
     try:
         size = Image.open(io.BytesIO(texture)).size
