@@ -217,3 +217,12 @@ def delivery_glb(positions, triangles, uv, texture=TINY_PNG, *, normals=None, no
     g.doc["scene"] = 0
     g.doc.update(doc or {})
     return g.to_bytes()
+
+
+def chain_rest_mesh():
+    """(body, rest pose, mesh) of the four-group chain with the synthetic palette."""
+    from aitd_models.body import parse_body
+    from aitd_models.original import rest_mesh
+    body = parse_body(body_bytes())
+    rest, mesh = rest_mesh(body, synthetic_palette_rgb())
+    return body, rest, mesh
