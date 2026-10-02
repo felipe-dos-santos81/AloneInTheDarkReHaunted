@@ -44,3 +44,12 @@ def test_soft_limits_warn():
     assert "30006 triangles (more than 30000)" in report.warnings
     assert "texture 4096x1024 (more than 2048 recommended)" in report.warnings
     assert "mesh reaches outside the collision box + 10 %" in report.warnings
+
+
+def test_a_flat_prop_matched_to_itself_passes():
+    """Fit percentages are of the body's size (its largest extent): a prop 2 %
+    as tall as it is wide still matches itself."""
+    body, pos, tris = chain()
+    flat = pos * (1.0, 0.02, 1.0)
+    report = check_fit(Surface(flat, tris), Surface(flat, tris), body.zv, GOOD_IOU, (16, 16))
+    assert report.failures == []

@@ -140,7 +140,7 @@ groups and write `Assets/models_hd/body_<KEY>.hdm` (see "Import output").
 | Base-colour images | not exactly one, not embedded in the `.glb`, or not PNG/JPEG | |
 | `extensionsRequired` | any | |
 | Primitives | anything but triangles | |
-| Fit (chamfer p95, as % of height) | more than 4 % | |
+| Fit (chamfer p95, as % of the body's size: its largest extent, a standing character's height) | more than 4 % | |
 | Silhouette IoU, worst reference view | less than 0.85 | |
 | Collision box | | the mesh reaches outside ZV + 10 % |
 | Binding | | more than 1 % of vertices as close to an unrelated part |

@@ -32,9 +32,13 @@ def triangle_cross(positions: np.ndarray, triangles: np.ndarray) -> np.ndarray:
     return np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
 
 
-def height(positions: np.ndarray) -> float:
-    """Vertical extent in engine units, at least 1 (the unit every percentage is of)."""
-    return max(float(np.ptp(np.asarray(positions)[..., 1])), 1.0)
+def size(positions: np.ndarray) -> float:
+    """The largest extent of the bounding box in engine units, at least 1: the
+    unit every fit and binding percentage is of (a standing character's
+    height; a flat prop's width, so 2 units of sampling noise on a 22-unit-tall
+    tray stay small)."""
+    extents = np.ptp(np.asarray(positions).reshape(-1, 3), axis=0)
+    return max(float(extents.max()), 1.0)
 
 
 @dataclass

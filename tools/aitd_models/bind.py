@@ -8,7 +8,7 @@
 2. Smoothing: SMOOTH_ITERATIONS rounds of averaging with mesh neighbours
    (vertices welded by position), each neighbour weighted by
    exp(-(edge length / sigma)^2) with sigma = SMOOTH_SIGMA of the body's
-   height, so a dense generated mesh blends over a few centimetres and a
+   size (mesh.size: its height, for a standing character), so a dense generated mesh blends over a few centimetres and a
    coarse one (whose edges span whole limbs) barely at all. Each vertex keeps
    only its own group, that group's parent and its children.
 3. Pack: the four largest weights, quantised to u8 summing exactly to 255.
@@ -25,7 +25,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .mesh import height
+from .mesh import size
 
 SMOOTH_ITERATIONS = 5
 SMOOTH_SIGMA = 0.01
@@ -177,11 +177,11 @@ def bind(positions: np.ndarray, triangles: np.ndarray, tri_positions: np.ndarray
     ids = weld(positions)
     first = np.unique(ids, return_index=True)[1]
     related = allowed_groups(parents)
-    body_height = height(tri_positions)
-    w, ambiguous = surface_weights(positions[first], tri_positions, tri_groups, related, AMBIGUOUS_MARGIN * body_height)
+    body_size = size(tri_positions)
+    w, ambiguous = surface_weights(positions[first], tri_positions, tri_groups, related, AMBIGUOUS_MARGIN * body_size)
     e = edges(triangles, ids)
     welded = positions[first]
-    w = smooth(w, e, np.linalg.norm(welded[e[:, 0]] - welded[e[:, 1]], axis=1), SMOOTH_SIGMA * body_height, related)
+    w = smooth(w, e, np.linalg.norm(welded[e[:, 0]] - welded[e[:, 1]], axis=1), SMOOTH_SIGMA * body_size, related)
     w = w[ids]
     joints, packed = pack(w)
     return Binding(w, ambiguous[ids], joints, packed)

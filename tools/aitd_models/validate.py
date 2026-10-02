@@ -11,11 +11,11 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from .align import chamfer, sample_surface
-from .mesh import Surface, height
+from .mesh import Surface, size
 
 TRIANGLES_WARN = 30_000
 TEXTURE_WARN = 2048
-CHAMFER_P95_FAIL = 4.0   # % of body height
+CHAMFER_P95_FAIL = 4.0   # % of the body's size (mesh.size)
 IOU_FAIL = 0.85
 ZV_MARGIN = 0.10         # of each axis' extent
 CHAMFER_SAMPLES = 5000
@@ -39,7 +39,7 @@ def check_fit(fitted: Surface, target: Surface, zv, iou: dict[str, float],
               texture_size: tuple[int, int]) -> FitReport:
     """`fitted` is the aligned delivery (engine space); `iou` from silhouette_iou."""
     report = FitReport()
-    unit = height(target.positions) / 100
+    unit = size(target.positions) / 100
     d = chamfer(sample_surface(fitted, CHAMFER_SAMPLES, seed=3), sample_surface(target, CHAMFER_SAMPLES, seed=4))
     mean, p95 = d.mean() / unit, float(np.percentile(d, 95)) / unit
     report.metrics = {"chamfer_mean_pct": round(mean, 3), "chamfer_p95_pct": round(p95, 3),
@@ -47,7 +47,7 @@ def check_fit(fitted: Surface, target: Surface, zv, iou: dict[str, float],
                       "inside_zv": inside_zv(fitted.positions, zv),
                       "triangles": int(len(fitted.triangles)), "texture": list(texture_size)}
     if p95 > CHAMFER_P95_FAIL:
-        report.failures.append(f"chamfer p95 {p95:.2f} % of height (at most {CHAMFER_P95_FAIL} %)")
+        report.failures.append(f"chamfer p95 {p95:.2f} % of size (at most {CHAMFER_P95_FAIL} %)")
     worst = min(iou, key=iou.get)
     if iou[worst] < IOU_FAIL:
         report.failures.append(f"silhouette IoU {iou[worst]:.3f} in the {worst} view (at least {IOU_FAIL})")
