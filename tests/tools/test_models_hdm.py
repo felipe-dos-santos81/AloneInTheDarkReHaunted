@@ -18,6 +18,11 @@ def resign(data: bytes) -> bytes:
     return data[:-4] + struct.pack("<I", zlib.crc32(data[:-4]))
 
 
+def cut(data: bytes, offset: int, size: int) -> bytes:
+    """`data` without `size` bytes at `offset` (re-sign with `patch` after)."""
+    return data[:offset] + data[offset + size:]
+
+
 def patch(data: bytes, offset: int, fmt: str, *values) -> bytes:
     out = bytearray(data)
     struct.pack_into(fmt, out, offset, *values)
@@ -62,6 +67,11 @@ def test_round_trip():
     (lambda d: patch(d, VERTS + 40 + 36, "<B", 127), "weights sum to 254"),
     (lambda d: patch(d, VERTS, "<f", float("nan")), "non-finite position"),
     (lambda d: patch(d, VERTS + 3 * 40 + 12, "<f", float("inf")), "non-finite normal"),
+    (lambda d: patch(d, VERTS + 24, "<f", float("nan")), "non-finite uv"),
+    (lambda d: patch(d, 16, "<I", 150_001), "counts over budget"),
+    (lambda d: patch(cut(d, VERTS + 2 * 40, 2 * 40), 16, "<I", 2), "vertex count 2 outside 3..150000"),
+    (lambda d: patch(cut(d, INDICES + 20, 4), 20, "<I", 5), "index count 5 is not 1..50000 triangles"),
+    (lambda d: patch(cut(d, TEXTURE, len(TINY_PNG)), 24, "<I", 0), "texture of 0 bytes"),
 ])
 def test_rejections(mutate, message):
     with pytest.raises(HdmError, match=message):

@@ -9,6 +9,7 @@
 #include "doctest.h"
 
 #include <cmath>
+#include <cstddef>
 #include <cstring>
 #include <fstream>
 #include <iterator>
@@ -34,6 +35,12 @@ void resign(std::vector<uint8_t>& d)
     const uint32_t crc = hdmCrc32(d.data(), d.size() - 4);
     for (size_t i = 0; i < 4; ++i)
         d[d.size() - 4 + i] = (uint8_t)(crc >> (8 * i));
+}
+
+// `d` without `size` bytes at `offset` (re-sign with put() after).
+void cut(std::vector<uint8_t>& d, size_t offset, size_t size)
+{
+    d.erase(d.begin() + (std::ptrdiff_t)offset, d.begin() + (std::ptrdiff_t)(offset + size));
 }
 
 template <typename T>
@@ -144,6 +151,29 @@ TEST_CASE("hdm: every broken rule is refused with its reason")
     d = good;
     put<float>(d, kVerts + 3 * 40 + 12, std::numeric_limits<float>::infinity());
     CHECK(reason(d) == "non-finite normal");
+
+    d = good;
+    put<float>(d, kVerts + 24, std::numeric_limits<float>::quiet_NaN());
+    CHECK(reason(d) == "non-finite uv");
+
+    d = good;
+    put<uint32_t>(d, 16, 150001);
+    CHECK(reason(d) == "counts over budget");
+
+    d = good;
+    cut(d, kVerts + 2 * 40, 2 * 40);
+    put<uint32_t>(d, 16, 2);
+    CHECK(reason(d) == "vertex count 2 outside 3..150000");
+
+    d = good;
+    cut(d, kIndices + 20, 4);
+    put<uint32_t>(d, 20, 5);
+    CHECK(reason(d) == "index count 5 is not 1..50000 triangles");
+
+    d = good;
+    cut(d, kTexture, 69);
+    put<uint32_t>(d, 24, 0);
+    CHECK(reason(d) == "texture of 0 bytes");
 }
 
 TEST_CASE("hdm: a null buffer is refused, and *why is optional")
