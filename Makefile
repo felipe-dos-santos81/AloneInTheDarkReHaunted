@@ -44,6 +44,7 @@ anims       ?= $(dest)
 dark        ?= mirror
 models      ?= data/models
 models_ai   ?= data/models-ai
+models_identity ?= data/models-identity
 models_hd   ?= Assets/models_hd
 bodies      ?=
 
@@ -147,8 +148,8 @@ hda-unpack: build-tools ## Extract an .hda archive [archive=FILE out=DIR]
 export-models: ## Export animated bodies for the model generator [gamedata=DIR models=DIR bodies=KEY,...]
 	$(PYTHON) tools/models.py export --data "$(gamedata)" --out "$(models)"$(if $(bodies), --bodies "$(bodies)")
 
-identity-models: ## Write identity deliveries (each original as its own model) [models=DIR models_ai=DIR bodies=KEY,...]
-	$(PYTHON) tools/models.py identity --models "$(models)" --out "$(models_ai)" --bodies "$(bodies)"
+identity-models: ## Write identity deliveries (each original as its own model) [models=DIR models_identity=DIR bodies=KEY,...]
+	$(PYTHON) tools/models.py identity --models "$(models)" --out "$(models_identity)" --bodies "$(bodies)"
 
 check-models: ## Check delivered models, write nothing [models_ai=DIR models_hd=DIR bodies=KEY,...]
 	$(MODEL_IMPORT) --dry-run

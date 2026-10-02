@@ -75,8 +75,16 @@ def test_check_models_is_import_dry_run():
 
 
 def test_identity_models_target():
-    out = make_n("identity-models", "models_ai=data/models-identity", "bodies=LISTBODY_011")
-    assert 'tools/models.py identity --models "data/models" --out "data/models-identity" --bodies "LISTBODY_011"' in out
+    out = make_n("identity-models", "models_identity=/i", "bodies=LISTBODY_011")
+    assert 'tools/models.py identity --models "data/models" --out "/i" --bodies "LISTBODY_011"' in out
+
+
+def test_identity_models_never_writes_into_the_delivery_tree_by_default():
+    # The identity meshes must not overwrite generated art in data/models-ai.
+    out = make_n("identity-models", "bodies=LISTBODY_011")
+    assert '--out "data/models-identity"' in out and "data/models-ai" not in out
+    out = make_n("identity-models", "models_ai=/a", "bodies=LISTBODY_011")
+    assert '--out "data/models-identity"' in out
 
 
 def test_help_lists_the_texture_targets():
