@@ -19,8 +19,9 @@ hdcompare.txt, inside its screen box (grown by a game pixel):
   classic silhouette (1.0 = as bright as the classic body), for the lighting
   sign-off.
 
-A body fails when its iou is below --limit (default 0.85). Exit codes: 0
-every body passes, 1 a body fails, 2 missing or unreadable files."""
+A body fails when its iou is below --limit (default 0.85), and so does a
+run that drew no replacement at all. Exit codes: 0 every body passes, 1 a
+body fails or none was drawn, 2 missing or unreadable files."""
 from __future__ import annotations
 
 import argparse
@@ -100,6 +101,9 @@ def main(argv=None, log=print) -> int:
         log("error: the frames differ in size")
         return 2
     scores = score(frames, boxes)
+    if not scores:
+        log("no replacement was drawn: nothing to compare (are the .hdm files in models_hd/?)")
+        return 1
     failed = [s for s in scores if s.iou < args.limit]
     for s in scores:
         log(f"{s.key}: box {s.box}, iou {s.iou:.3f}, brightness {s.brightness:.2f}, "

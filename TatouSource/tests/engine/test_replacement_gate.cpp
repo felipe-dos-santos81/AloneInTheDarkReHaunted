@@ -10,10 +10,11 @@ using namespace models;
 
 TEST_CASE("replacement gate: drawn only when every condition holds")
 {
-    const GateInput all{ true, true, true, true, false, true, true };
+    const GateInput all{ true, true, true, true, false, true, true, true };
     CHECK(drawReplacement(all));
     bool GateInput::*const needed[] = { &GateInput::optionOn,  &GateInput::isAitd1,    &GateInput::callerAllows,
-                                        &GateInput::infoAnim,  &GateInput::entryReady, &GateInput::poseOk };
+                                        &GateInput::infoAnim,  &GateInput::entryReady, &GateInput::poseOk,
+                                        &GateInput::programReady };
     for (bool GateInput::*field : needed)
     {
         GateInput g = all;

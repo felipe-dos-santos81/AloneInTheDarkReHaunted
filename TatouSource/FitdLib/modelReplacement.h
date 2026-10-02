@@ -28,7 +28,8 @@ ModelReplacement* findModelReplacement(int bodyNum, sBody* pBody, const std::str
 bool drawModelReplacement(ModelReplacement* r, sBody* pBody, int x, int y, int z, int alpha, int beta, int gamma);
 
 // The 320x200 box [x0, y0, x1, y1] the last AffObjet's replacement covered;
-// false when it drew the classic body. AffObjet forgets it at its start.
+// false when it drew the classic body. AffObjet forgets it at its start, and
+// drawBgOverlay once it has used it.
 bool lastReplacementBox(int box[4]);
 void forgetReplacementBox();
 

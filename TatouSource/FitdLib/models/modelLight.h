@@ -20,6 +20,11 @@ constexpr float kKeyStrength = 0.30f;   // Lambert key light, from the planar-sh
 constexpr float kSpecular = 0.15f;      // mild Blinn highlight
 constexpr float kShininess = 24.0f;
 constexpr float kLanternReach = 2500.0f; // engine units (about 2.5 m) a held lantern lights a model to
+constexpr float kLanternHandHeight = 800.0f; // a held lantern hangs this far above the hero's floor point
+
+// Where a held lantern shines from: kLanternHandHeight above the hero's floor
+// point (the engine's y points down, so above is a smaller y).
+Vec3 lanternHandPoint(Vec3 heroFloor);
 
 // A world direction in camera space (rotation only), unit length; (0, 0, 0)
 // stays (0, 0, 0).

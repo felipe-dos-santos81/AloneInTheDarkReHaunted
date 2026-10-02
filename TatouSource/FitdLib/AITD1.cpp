@@ -676,12 +676,12 @@ void startAITD1()
 
 #ifndef AITD_UE4
         int startupMenuResult;
-        if (g_remasterConfig.debug.loadSaveOnStart >= 0)
+        static bool s_startSaveUsed = false; // the setting stays in the config file; it applies once per run
+        if (g_remasterConfig.debug.loadSaveOnStart >= 0 && !s_startSaveUsed)
         {
             // Developer captures: load the configured save once, without the menu.
-            const int save = g_remasterConfig.debug.loadSaveOnStart;
-            g_remasterConfig.debug.loadSaveOnStart = -1;
-            startupMenuResult = loadSave(save) ? 3 : MainMenu();
+            s_startSaveUsed = true;
+            startupMenuResult = loadSave(g_remasterConfig.debug.loadSaveOnStart) ? 3 : MainMenu();
         }
         else
             startupMenuResult = MainMenu();

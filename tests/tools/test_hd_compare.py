@@ -56,3 +56,11 @@ def test_missing_frames_are_a_usage_error(tmp_path):
     lines = []
     assert hd_compare.main([str(tmp_path)], log=lines.append) == 2
     assert lines[-1].startswith("error: ")
+
+
+def test_no_body_drawn_is_a_failure_not_a_pass(tmp_path):
+    d = write_frames(tmp_path)
+    (d / "hdcompare.txt").write_text("# key x0 y0 x1 y1\n")
+    lines = []
+    assert hd_compare.main([str(d)], log=lines.append) == 1
+    assert lines[-1] == "no replacement was drawn: nothing to compare (are the .hdm files in models_hd/?)"

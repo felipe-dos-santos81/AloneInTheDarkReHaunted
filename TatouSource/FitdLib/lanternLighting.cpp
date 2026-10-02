@@ -363,9 +363,13 @@ bool heldLanternLight(float worldPos[3], float colour[3], float* intensity)
     }
     if (!held)
         return false;
-    worldPos[0] = held->lightPosX;
-    worldPos[1] = held->lightPosY;
-    worldPos[2] = held->lightPosZ;
+    s16 heroSlot = currentCameraTargetActor; // as updateLanternLighting finds the hero
+    if (heroSlot < 0 || heroSlot >= NUM_MAX_OBJECT)
+        heroSlot = 0;
+    const tObject& hero = ListObjets[heroSlot];
+    worldPos[0] = static_cast<float>(hero.worldX);
+    worldPos[1] = static_cast<float>(hero.worldY); // lightPosY sits 50 units below it, for the background glow
+    worldPos[2] = static_cast<float>(hero.worldZ);
     colour[0] = held->glowColorR;
     colour[1] = held->glowColorG;
     colour[2] = held->glowColorB;

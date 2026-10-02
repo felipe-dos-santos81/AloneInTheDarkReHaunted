@@ -70,11 +70,22 @@ int s_loads = 0;
 bool s_boxValid = false;
 int s_box[4] = { 0, 0, 0, 0 };
 
+// Created once. An invalid program (a backend whose shaders were not built)
+// is reported once; every body then draws classic instead of vanishing.
 bgfx::ProgramHandle modelProgram()
 {
+    static bool tried = false;
     static bgfx::ProgramHandle program = BGFX_INVALID_HANDLE;
-    if (!bgfx::isValid(program))
+    if (!tried)
+    {
+        tried = true;
         program = loadBgfxProgram("skinned_vs", "model_ps");
+        if (!bgfx::isValid(program))
+        {
+            printf(HDM_WARN "the HD model shaders are not available on this renderer: drawing classic bodies" CON_RESET "\n");
+            fflush(stdout);
+        }
+    }
     return program;
 }
 
@@ -115,7 +126,7 @@ void setLightUniforms(const models::RenderCamera& cam)
     float lantern[4] = { 0.0f, 0.0f, 0.0f, 0.0f }, lanternColour[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
     if (heldLanternLight(pos, colour, &intensity))
     {
-        const models::Vec3 at = models::cameraPoint(cam, { pos[0], pos[1], pos[2] });
+        const models::Vec3 at = models::cameraPoint(cam, models::lanternHandPoint({ pos[0], pos[1], pos[2] }));
         lantern[0] = at.x;
         lantern[1] = at.y;
         lantern[2] = at.z;
@@ -262,7 +273,7 @@ void load(ModelReplacement& r, const std::string& key, const sBody* body)
 
 bool hdModelsActive()
 {
-    return g_remasterConfig.graphics.enableHDModels && g_gameId == AITD1;
+    return g_remasterConfig.graphics.enableHDModels && g_gameId == AITD1 && !hdCompareForcesClassic();
 }
 
 ModelReplacement* findModelReplacement(int bodyNum, sBody* pBody, const std::string& hqrName)
@@ -297,7 +308,7 @@ bool drawModelReplacement(ModelReplacement* r, sBody* pBody, int x, int y, int z
     const bool poseOk = models::boneMatrices(r->pose, states.data(), alpha, beta, gamma, x, y, z, cam, r->skin, bones);
     const models::GateInput gate{ hdModelsActive(), g_gameId == AITD1, true, (pBody->m_flags & models::kInfoAnim) != 0,
                                   (pBody->m_flags & models::kInfoOptimise) != 0, r->state == ModelReplacement::State::Ready,
-                                  poseOk };
+                                  poseOk, bgfx::isValid(modelProgram()) };
     if (!models::drawReplacement(gate))
         return false;
 

@@ -28,7 +28,7 @@ namespace
 struct Shot
 {
     const char* file;
-    bool hdModels; // graphics.hdModels while this frame draws
+    bool hdModels; // replacements drawn in this frame (false: hdCompareForcesClassic)
     bool unlit;
     bool hidden;
 };
@@ -51,6 +51,7 @@ int s_frames = 0;
 bool s_capturing = false; // the snapshot of the current shot is being read back
 bool s_unlit = false;
 bool s_hidden = false;
+bool s_classic = false;
 bool s_holdTime = false;
 std::vector<Draw> s_draws, s_unlitDraws;
 
@@ -87,6 +88,11 @@ bool hdCompareUnlit()
 bool hdCompareHidden()
 {
     return s_hidden;
+}
+
+bool hdCompareForcesClassic()
+{
+    return s_classic;
 }
 
 bool hdCompareHoldsTime()
@@ -133,14 +139,14 @@ void hdCompareEndFrame()
     s_capturing = false;
     if (++s_shot < kShotCount)
     {
-        g_remasterConfig.graphics.enableHDModels = kShots[s_shot].hdModels; // the next frame draws as it wants
+        s_classic = !kShots[s_shot].hdModels; // the next frame draws as it wants
         s_unlit = kShots[s_shot].unlit;
         s_hidden = kShots[s_shot].hidden;
     }
     else
     {
         writeDraws();
-        g_remasterConfig.graphics.enableHDModels = true;
+        s_classic = false;
         s_unlit = false;
         s_hidden = false;
         s_holdTime = false;

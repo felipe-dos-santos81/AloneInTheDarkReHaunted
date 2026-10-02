@@ -18,11 +18,13 @@ struct GateInput
     bool infoOptimise; // AITD2+ pose math: never replaced
     bool entryReady;   // a valid .hdm for this body is loaded
     bool poseOk;       // poseGroups produced matrices this frame
+    bool programReady; // the skinned shader program exists on this backend (else nothing would show)
 };
 
 inline bool drawReplacement(const GateInput& g)
 {
-    return g.optionOn && g.isAitd1 && g.callerAllows && g.infoAnim && !g.infoOptimise && g.entryReady && g.poseOk;
+    return g.optionOn && g.isAitd1 && g.callerAllows && g.infoAnim && !g.infoOptimise && g.entryReady && g.poseOk &&
+           g.programReady;
 }
 
 } // namespace models

@@ -63,3 +63,13 @@ TEST_CASE("light: a zero direction stays zero")
     CHECK(d.y == 0.0f);
     CHECK(d.z == 0.0f);
 }
+
+TEST_CASE("light: a held lantern hangs at hand height above the hero's floor point")
+{
+    // The engine's y points down: above the floor is a smaller y.
+    const Vec3 p = lanternHandPoint(Vec3{ 1000.0f, 0.0f, -500.0f });
+    CHECK(p.x == 1000.0f);
+    CHECK(p.y == -kLanternHandHeight);
+    CHECK(p.z == -500.0f);
+    CHECK(kLanternHandHeight > 0.0f);
+}

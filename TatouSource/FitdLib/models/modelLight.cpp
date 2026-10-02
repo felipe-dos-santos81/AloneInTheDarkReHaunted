@@ -22,6 +22,11 @@ Vec3 cameraDirection(const RenderCamera& cam, Vec3 worldDir)
     return Vec3{ x / length, y / length, z / length };
 }
 
+Vec3 lanternHandPoint(Vec3 heroFloor)
+{
+    return Vec3{ heroFloor.x, heroFloor.y - kLanternHandHeight, heroFloor.z };
+}
+
 Vec3 cameraPoint(const RenderCamera& cam, Vec3 worldPoint)
 {
     return apply(viewMatrix(cam), worldPoint);

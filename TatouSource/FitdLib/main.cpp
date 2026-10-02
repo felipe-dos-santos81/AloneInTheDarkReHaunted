@@ -3421,7 +3421,9 @@ void drawBgOverlay(tObject* actorPtr)
     // too; actor->screen* above keeps the classic box (savegames, lamp glow).
     int maskBox[4] = { BBox3D1, BBox3D2, BBox3D3, BBox3D4 };
     int hdBox[4];
-    if (lastReplacementBox(hdBox))
+    const bool hadReplacement = lastReplacementBox(hdBox);
+    forgetReplacementBox(); // one actor's box: an actor drawn without AffObjet (2D, special) must not inherit it
+    if (hadReplacement)
     {
         maskBox[0] = hdBox[0] < maskBox[0] ? hdBox[0] : maskBox[0];
         maskBox[1] = hdBox[1] < maskBox[1] ? hdBox[1] : maskBox[1];

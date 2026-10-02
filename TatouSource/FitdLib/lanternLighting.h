@@ -76,7 +76,8 @@ bool isLanternWithOil(int objectIdx);
 LanternState* getLanternState(int objectIdx);
 
 // The lit lantern the hero holds (the brightest, as the background lighting
-// picks it): its world position (engine units), glow colour and flickering
+// picks it): the hero's floor point (world, engine units; the lantern hangs
+// above it, models::lanternHandPoint), its glow colour and flickering
 // intensity. False when no lit lantern is held.
 bool heldLanternLight(float worldPos[3], float colour[3], float* intensity);
 
