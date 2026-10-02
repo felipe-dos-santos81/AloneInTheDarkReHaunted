@@ -60,8 +60,16 @@ def test_dry_run_writes_nothing(setup):
 
 
 def test_only_limits_the_keys(setup):
-    result, _ = run(setup, only={"LISTBOD2_001"})
-    assert result.imported == [] and result.failed == {}
+    deliver(setup[3], "LISTBOD2_001", b"junk")
+    result, _ = run(setup, only={"LISTBODY_000"})
+    assert result.imported == ["LISTBODY_000"] and result.failed == {}
+
+
+def test_a_requested_key_without_a_delivery_fails(setup):
+    result, lines = run(setup, only={"LISTBODY_000", "LISTBOD2_001"})
+    assert result.imported == ["LISTBODY_000"]
+    assert result.failed == {"LISTBOD2_001": "no delivery folder"}
+    assert "error: LISTBOD2_001: no delivery folder" in lines
 
 
 @pytest.mark.parametrize("key, data, reason", [

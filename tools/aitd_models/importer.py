@@ -120,6 +120,8 @@ def run_import(data_dir, models_dir, records: list[BodyRecord], src, dest, debug
     palette = decode_palette(Pak(data_dir / f"{PALETTE_PAK}.PAK").read(PALETTE_ENTRY))
     paks: dict[str, Pak] = {}
     folders = sorted(p for p in (src / "bodies").iterdir() if p.is_dir()) if (src / "bodies").is_dir() else []
+    for key in sorted((only or set()) - {f.name for f in folders}):
+        result.failed[key] = "no delivery folder"
     for folder in folders:
         key = folder.name
         if only is not None and key not in only:
