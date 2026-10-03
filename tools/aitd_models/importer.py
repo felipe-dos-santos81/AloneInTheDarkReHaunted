@@ -137,7 +137,13 @@ def check_stretch(outcome: BuildOutcome, fitted: Surface, binding, original_glb:
 
 def build_hdm(record: BodyRecord, body, palette, delivery: Delivery, export_dir) -> BuildOutcome:
     """Align, check, bind and pack one delivery. `export_dir` is the body's
-    export folder (original.glb, reference/)."""
+    export folder (original.glb, reference/).
+
+    Binding and the stretch check run even when the fit failed: a rejected mesh
+    still reports `stretch_torn_pct`, so "do a generated mesh's fused limbs tear
+    when posed?" is answerable. The fit reason stays the reported failure; only
+    `ambiguous_pct` says how far to trust a stretch number taken from a mesh
+    that does not fit."""
     rest, mesh = rest_mesh(body, palette)
     fit = align(delivery.surface, mesh.surface)
     fitted = Surface(fit.apply(delivery.positions), delivery.triangles)
@@ -146,9 +152,6 @@ def build_hdm(record: BodyRecord, body, palette, delivery: Delivery, export_dir)
     report.metrics["align"] = {"scale": round(fit.scale, 6),
                                "translation": [round(float(t), 3) for t in fit.translation]}
     outcome = BuildOutcome(report.metrics, list(report.warnings))
-    if report.failures:
-        outcome.failure = "; ".join(report.failures)
-        return outcome
     binding = bind(fitted.positions, fitted.triangles, mesh.positions.reshape(-1, 3, 3),
                    mesh.groups.reshape(-1, 3), [g.parent for g in body.groups])
     ambiguous = 100 * float(binding.ambiguous.mean())
@@ -156,7 +159,9 @@ def build_hdm(record: BodyRecord, body, palette, delivery: Delivery, export_dir)
     if ambiguous > AMBIGUOUS_WARN:
         outcome.warnings.append(f"{ambiguous:.1f} % of vertices lie as close to an unrelated part (check the debug .glb)")
     check_stretch(outcome, fitted, binding, (export_dir / "original.glb").read_bytes(), len(body.groups))
-    if outcome.failure:
+    failures = [*report.failures, *([outcome.failure] if outcome.failure else [])]
+    if failures:
+        outcome.failure = "; ".join(failures)
         return outcome
     vertices = np.zeros(len(fitted.positions), VERTEX)
     vertices["position"], vertices["uv"] = fitted.positions, delivery.uv

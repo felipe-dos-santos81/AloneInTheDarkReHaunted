@@ -185,9 +185,14 @@ make import-models models_ai=data/models-identity models_hd=data/models-hd-ident
 Next to each debug `.glb` (`data/models-hd-debug/` by default), import writes
 `body_<KEY>.json` for every body it looked at, imported or failed: its
 status, the reason it failed, warnings and every fit metric -- the stretch
-metrics only for a body that got that far, since a body that failed the fit
-reports no `stretch` at all, and one with no preview animations reports
-`"stretch": "no animation"` instead of `stretch_torn_pct` / `stretch_max` --
+metrics for every body that has preview animations, taken even when the fit
+failed, because binding and the stretch check run before the fit failure is
+returned: a rejected body still reports whether its fused limbs tear. A body
+with no preview animations reports `"stretch": "no animation"` instead of
+`stretch_torn_pct` / `stretch_max`. On a body that failed the fit, trust
+`stretch_torn_pct` only as far as `ambiguous_pct` allows: a mesh that does not
+fit binds unreliably, so some of its tearing can be an artifact of the binding
+rather than of the mesh --
 and the `.hdm` names it wrote, or would have written. A dry run (`make
 check-models`) writes nothing, unless `report=DIR` (`--report DIR`) asks for
 the reports there; given to a real import, `--report` takes the reports away

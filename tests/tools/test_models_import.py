@@ -236,3 +236,20 @@ def test_a_body_without_preview_animation_skips_the_stretch_check(setup):
     result, _ = run(setup, dry_run=True)
     assert result.imported == ["LISTBODY_000"]
     assert result.metrics["LISTBODY_000"]["stretch"] == "no animation"
+
+
+def test_a_mesh_that_fails_the_fit_still_reports_the_stretch(setup):
+    # The fit used to return before check_stretch, so a rejected mesh never said
+    # whether its fused limbs tear - the question the stretch gate exists for.
+    from aitd_models.delivery import read_delivery
+    models, src = setup[1], setup[3]
+    identity = read_delivery(identity_glb((models / "bodies/LISTBODY_000/original.glb").read_bytes()))
+    flat = identity.positions.copy()
+    flat[:, [0, 2]] *= 0.55          # sideways: align() restores the height, not the width
+    deliver(src, "LISTBODY_000", delivery_glb(flat, identity.triangles, identity.uv, identity.texture,
+                                              normals=identity.normals))
+    result, _ = run(setup, dry_run=True)
+    assert result.imported == []
+    assert "silhouette IoU" in result.failed["LISTBODY_000"]
+    assert result.metrics["LISTBODY_000"]["stretch_torn_pct"] == 0.0
+    assert result.metrics["LISTBODY_000"]["stretch_max"] >= 1.0
