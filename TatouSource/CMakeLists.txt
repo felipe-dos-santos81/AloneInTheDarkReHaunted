@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.10)
 project(FITD)
 
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBX_CONFIG_DEBUG=0")
@@ -86,6 +86,10 @@ set(BGFX_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(BGFX_INSTALL OFF CACHE BOOL "" FORCE)
 add_subdirectory( ${THIRD_PARTY}/bgfx.cmake )
 
+# Vendored SoLoud and zlib still ask for CMake < 3.10: configure them with 3.10
+# policies, which CMake 4 no longer warns about (older CMake ignores this).
+set(CMAKE_POLICY_VERSION_MINIMUM 3.10)
+
 # Only build SDL and SoLoud if not on Nintendo Switch
 if(NOT NINTENDO_SWITCH)
     add_subdirectory( ${THIRD_PARTY}/soloud.cmake )
@@ -100,6 +104,7 @@ set(ZLIB_LIBRARY zlibstatic)
 # Don't build zlib tests
 set(ZLIB_TESTS OFF CACHE BOOL "Build zlib tests")
 add_subdirectory(${THIRD_PARTY}/zlib ${CMAKE_BINARY_DIR}/zlib/zlib-build)
+unset(CMAKE_POLICY_VERSION_MINIMUM)
 
 if(WIN32)
     add_compile_definitions(NOMINMAX)
