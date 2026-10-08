@@ -82,6 +82,60 @@ alternate in lockstep through the `startOfRender`/`endOfRender` semaphores, so
 state handed over between `readKeyboard()` and `SDL_SignalSemaphore` needs no
 lock. SDL cursor and window calls belong on the main thread.
 
+## Unit tests: fewer, better
+
+Every test is code someone has to read, maintain and wait on in CI. A test
+earns its place only if it can fail for a reason no other test already
+covers: aim for distinct behaviours verified, not test count or coverage.
+This applies to the doctest suite (`TatouSource/tests/engine/`) and the
+pytest suite (`tests/tools/`). The "doctest first" rules below still hold for
+each new behaviour.
+
+**Before writing a test**
+
+1. Read the existing tests for the code you touch. If a behaviour is already
+   covered, extend or adjust that test instead of adding one beside it.
+2. List the distinct behaviours to verify, one line each. Merge any two that
+   would fail for the same underlying bug.
+3. For each one, name the bug that would slip through if you deleted the
+   test and the others stayed. If you can't, don't write it.
+
+**Redundant**
+
+- Several inputs from one equivalence class: pick one representative plus
+  the boundaries.
+- The same logic tested at several layers: test it once, at the lowest layer
+  that owns it. Higher layers test only their own wiring and logic.
+- Tests that differ only in inputs and expected values: make them one
+  table-driven test (a loop over a table in one `TEST_CASE`, or
+  `pytest.mark.parametrize`).
+- A new test that is a strict subset of an existing, broader one.
+
+**Not tested at all**
+
+- Trivial code with no logic: getters, setters, plain constructors,
+  constants, simple delegation.
+- The language, the standard library, SDL, bgfx or other dependencies.
+- Implementation details: private helpers, internal call order, or mocks
+  that restate the implementation. Test observable behaviour through the
+  public interface.
+- What the type system or compiler already rules out.
+
+**Still tested**
+
+- Each distinct branch or behaviour of the public contract, once.
+- Boundaries and edge cases: empty, zero, the largest value, null, off by
+  one.
+- Error paths with their own handling.
+- A regression test for each bug fixed, aimed at that bug.
+
+**When changing code**, update the tests that cover the changed behaviour
+rather than adding parallel ones, and delete the tests the change makes
+obsolete. Don't add tests for code you didn't change unless asked.
+
+**When done**, state briefly which behaviours you tested and which you
+skipped as redundant or trivial, so the reviewer can disagree.
+
 ## Firm rules
 
 1. **Never lock, grab, confine or warp the OS cursor.** Do not call — or
