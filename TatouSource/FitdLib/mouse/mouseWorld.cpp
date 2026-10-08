@@ -310,10 +310,10 @@ void tickNavigation(uint32_t now)
             const double wx = d.target.x - at.x, wz = d.target.z - at.z, wn = std::hypot(wx, wz);
             const double mx = at.x - s_lastAt.x, mz = at.z - s_lastAt.z, mn = std::hypot(mx, mz);
             printf("MTRACE nav hero=(%d,%d) beta=%d dest=(%d,%d) waypoints=%zu first=(%d,%d) want=(%.2f,%.2f) moved=(%.2f,%.2f)/%.0f "
-                   "joyd=0x%x adv=%d arrived=%d abandoned=%d\n",
+                   "joyd=0x%x adv=%d arrived=%d abandoned=%d zv=(%d..%d,%d..%d) anim=%d\n",
                    at.x, at.z, h.beta, in.dest.x, in.dest.z, in.waypoints.size(), d.target.x, d.target.z, wn ? wx / wn : 0.0,
                    wn ? wz / wn : 0.0, mn ? mx / mn : 0.0, mn ? mz / mn : 0.0, mn, d.joyd, (int)d.advance, (int)d.arrived,
-                   (int)d.abandoned);
+                   (int)d.abandoned, h.zv.ZVX1, h.zv.ZVX2, h.zv.ZVZ1, h.zv.ZVZ2, h.ANIM);
             s_lastMs = now;
             s_lastAt = at;
         }
@@ -408,7 +408,9 @@ void mouseWorldFrame(int allowSystemMenu)
     }
 
     const uint32_t now = (uint32_t)SDL_GetTicks();
-    const int camera = NumCamera;
+    // The floor camera, not NumCamera: a room change keeps the slot number while
+    // the view changes (room 3's slot 1 is camera 4, room 4's is camera 1).
+    const int camera = currentFloorCamera();
     const mouse::Resolver resolve = [](mouse::Point p) {
         g_traceResolve = g_remasterConfig.debug.mouseNavOverlay; // clicks only, never hover
         const mouse::ClickResult r = resolveAt(p);

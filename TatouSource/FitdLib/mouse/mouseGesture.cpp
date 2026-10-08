@@ -67,7 +67,7 @@ Decision pressDecision(PointerState& s, Point pos, int clicks, int camera,
         d.payload = r.payload;
         return d;
     }
-    if (latchedPush || r.kind == ClickKind::Blocked)
+    if (latchedPush || r.kind == ClickKind::Blocked || r.kind == ClickKind::OnHero)
         return d;
 
     ClickResult issued = r;
@@ -128,6 +128,8 @@ Decision holdDecision(PointerState& s, std::optional<Point> pos, int camera,
         d.run = s.run; // the run belongs to the hold, not to the destination
         return d;
     }
+    if (r.kind == ClickKind::OnHero)
+        return d; // the hero walked under the pointer: no new place, so the walk goes on
     if (r.kind == ClickKind::Blocked)
     {
         s.follow.reset();

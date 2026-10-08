@@ -54,6 +54,7 @@ constexpr ClickKindInfo kClickKinds[] = {
     { "push", mouse::CursorShape::Move },
     { "attack", mouse::CursorShape::Crosshair },
     { "exit", mouse::CursorShape::Exit },
+    { "on hero", mouse::CursorShape::NotAllowed },
     { "hud:inventory", mouse::CursorShape::Pointer },
     { "hud:map", mouse::CursorShape::Pointer },
     { "hud:menu", mouse::CursorShape::Pointer },
@@ -539,8 +540,8 @@ mouse::ClickResult resolveAt(mouse::Point p)
     if (h.screenXMax >= 0 && h.screenYMax >= 0 &&
         mouse::contains(mouse::Rect{ h.screenXMin, h.screenYMin, h.screenXMax, h.screenYMax }, p))
     {
-        MTRACE("  -> on the hero: blocked\n");
-        return {}; // on the hero: blocked, never the floor behind the hero
+        MTRACE("  -> on the hero\n");
+        return mouse::ClickResult{ mouse::ClickKind::OnHero, {} }; // never the floor behind the hero
     }
     if (auto furniture = furnitureAt(p))
         return *furniture;

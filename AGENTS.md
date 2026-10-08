@@ -99,7 +99,10 @@ lock. SDL cursor and window calls belong on the main thread.
 3. **Mouse rules** (`FitdLib/mouse/`):
    - Walk intents are hold-bound: no button, no movement.
    - A held pointer is re-resolved only when it moves; a still pointer never
-     retargets at a camera cut (6 px dead zone after a cut).
+     retargets at a camera cut (6 px dead zone after a cut). A cut is a change
+     of floor camera, not of `NumCamera`, the room's own slot number. A held
+     walk goes on while the hero walks under the pointer; a press on the hero
+     does nothing.
    - A held push never asserts the global Action (`0x2000`).
    - One resolver (`resolveAt`) drives both the cursor and the click;
      hovering never changes game state.
