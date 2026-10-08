@@ -17,7 +17,7 @@
 
 #define STB_IMAGE_WRITE_STATIC
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../ThirdParty/bgfx.cmake/bimg/3rdparty/stb/stb_image_write.h"
+#include "stbImageWrite.h"
 
 extern "C" {
     extern char homePath[512];

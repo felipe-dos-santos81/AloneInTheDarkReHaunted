@@ -62,7 +62,7 @@
 // inside that TU and ours stays static inside this one.
 #define STB_IMAGE_WRITE_STATIC
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../ThirdParty/bgfx.cmake/bimg/3rdparty/stb/stb_image_write.h"
+#include "stbImageWrite.h"
 
 // stb_image: same approach, private to this TU.
 #define STB_IMAGE_STATIC

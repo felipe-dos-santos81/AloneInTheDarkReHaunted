@@ -49,7 +49,7 @@ email                : yaz0r@yaz0r.net
 // stb_image_write for mask dumping (static to avoid linker conflicts)
 #define STB_IMAGE_WRITE_STATIC
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../ThirdParty/bgfx.cmake/bimg/3rdparty/stb/stb_image_write.h"
+#include "stbImageWrite.h"
 
 // stb_image for loading replacement mask PNGs (static to avoid linker conflicts)
 #define STB_IMAGE_STATIC
