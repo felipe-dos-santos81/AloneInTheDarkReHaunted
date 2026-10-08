@@ -8,7 +8,8 @@ docs/superpowers/
 tools/.venv/
 __pycache__/
 .pytest_cache/
-TatouSource/backgrounds_hd.hda
+# Packed .hda archives (make hd-install, make hda-pack)
+*.hda
 # graphify knowledge-graph output, at any depth (regenerate with /graphify)
 graphify-out/
 # Runtime log the game writes next to its data

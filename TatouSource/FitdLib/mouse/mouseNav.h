@@ -35,6 +35,7 @@ struct Grid
     int nx = 0;
     int nz = 0;
     std::vector<uint8_t> walk; // nx * nz, index i * nz + j
+    std::vector<uint8_t> seam; // nx * nz: floor between zones that no zone holds (buildGrid)
 
     bool at(int i, int j) const
     {
@@ -52,10 +53,18 @@ struct Grid
         return at(i + di, j + dj) && (!(di && dj) || (at(i + di, j) && at(i, j + dj)));
     }
     bool isWalkable(int x, int z) const;
+    bool isSeam(int x, int z) const;
     bool any() const;
 };
 
-// Cover-zone union (cover units) minus hard cols inflated by the agent. Nothing
+// A deeper hole may be scenery the zones leave out: floor 5 room 4 (26), floor 6
+// room 6 (8) and floor 1 room 7 (9 and 5) stay unwalkable.
+constexpr int kSeamDepth = 4;
+
+// Cover-zone union (cover units) and its seams, minus hard cols inflated by the
+// agent. A seam is floor no zone holds, closed in by zones and the walls of the
+// agent's band and at most kSeamDepth cells in from its edge: two cameras' zones
+// often leave one between them (floor 2's landing, cameras 28 and 27). Nothing
 // when there are no cover zones.
 std::optional<Grid> buildGrid(const std::vector<std::vector<XZ>>& coverPolys,
                               const std::vector<Box>& hardCols, const Agent& agent,

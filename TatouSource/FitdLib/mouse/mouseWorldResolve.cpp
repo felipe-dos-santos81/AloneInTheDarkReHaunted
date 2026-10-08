@@ -172,7 +172,8 @@ std::optional<FloorHit> floorUnder(mouse::Point p)
         const auto* fits = fitsFor(room, floorY);
         if (!fits)
             continue;
-        auto hit = mouse::pickFloor(*fits, p);
+        const mouse::Grid* grid = gridFor(room, agentIn(room));
+        auto hit = mouse::pickFloor(*fits, p, [&](mouse::XZ c) { return grid && grid->isSeam(c.x, c.z); });
         MTRACE("  floor room=%d y=%d pick=%s(%d,%d)\n", room, floorY, hit ? "" : "none", hit ? hit->x : 0, hit ? hit->z : 0);
         if (hit)
             return FloorHit{ room, floorY, *hit };

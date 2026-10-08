@@ -90,6 +90,60 @@ TEST_CASE("buildGrid has no grid for a room no camera covers")
     CHECK_FALSE(buildGrid({}, {}, kHero));
 }
 
+namespace
+{
+// Two cameras' zones over a 100x60 room (cover units) leaving the strip
+// z 26..34 to neither, closed at both ends by walls when `walled`.
+std::optional<Grid> seamRoom(bool walled)
+{
+    const std::vector<XZ> south{ XZ{ 0, 0 }, XZ{ 100, 0 }, XZ{ 100, 25 }, XZ{ 0, 25 } };
+    const std::vector<XZ> north{ XZ{ 0, 35 }, XZ{ 100, 35 }, XZ{ 100, 60 }, XZ{ 0, 60 } };
+    std::vector<Box> walls;
+    if (walled)
+        walls = { Box{ -100, 0, -3000, 0, 0, 600 }, Box{ 1000, 1100, -3000, 0, 0, 600 } };
+    return buildGrid({ south, north }, walls, kHero);
+}
+
+// Four zones framing an uncovered square hole `side` cover units wide.
+std::optional<Grid> framedHole(int side)
+{
+    const int a = 40, b = 40 + side, c = b + 40;
+    return buildGrid({ { XZ{ 0, 0 }, XZ{ c, 0 }, XZ{ c, a }, XZ{ 0, a } },
+                       { XZ{ 0, b }, XZ{ c, b }, XZ{ c, c }, XZ{ 0, c } },
+                       { XZ{ 0, a }, XZ{ a, a }, XZ{ a, b }, XZ{ 0, b } },
+                       { XZ{ b, a }, XZ{ c, a }, XZ{ c, b }, XZ{ b, b } } },
+                     {}, kHero);
+}
+}
+
+TEST_CASE("buildGrid walks the seam two cameras' zones leave between walls")
+{
+    auto grid = seamRoom(true);
+    REQUIRE(grid);
+    CHECK(grid->isWalkable(500, 300));
+    CHECK(grid->isSeam(500, 300));
+    CHECK_FALSE(grid->isSeam(500, 100)); // a zone holds it
+}
+
+TEST_CASE("buildGrid leaves a gap open to the room's edge uncovered")
+{
+    auto grid = seamRoom(false);
+    REQUIRE(grid);
+    CHECK_FALSE(grid->isWalkable(500, 300));
+    CHECK_FALSE(grid->isSeam(500, 300));
+}
+
+TEST_CASE("buildGrid fills a narrow enclosed hole but not a wide one")
+{
+    auto narrow = framedHole(60); // 6 cells across: 3 from its edge at most
+    REQUIRE(narrow);
+    CHECK(narrow->isWalkable(700, 700));
+    auto wide = framedHole(120); // 12 cells across
+    REQUIRE(wide);
+    CHECK_FALSE(wide->isWalkable(1000, 1000));
+    CHECK_FALSE(wide->isSeam(500, 500)); // the whole hole stays uncovered, edge included
+}
+
 TEST_CASE("nearestWalkable searches rings and honours accept and the ring limit")
 {
     Box wall{ 0, 1000, -800, 0, 200, 400 }; // cells z=200..400 blocked across the room

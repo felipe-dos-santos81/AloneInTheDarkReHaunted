@@ -58,5 +58,6 @@ with a one-line note. Build: `make build-fitd`; run: `make run data=DIR`.
 | 49 | Bedroom (floor 1, room 4): Use the dresser key from the inventory, then click the dresser with the teddy bear: the hero walks to it, touches it and plays the use gesture; the drawer opens and offers the two small mirrors. With a weapon in hand instead, the same click pushes as before | | |
 | 50 | Floor 2 stairwell (room 2, at the top of the stairs): hold at the screen's left edge until the hero walks under the pointer; he keeps walking with the pointer on him and a small drift does not stop him | | |
 | 51 | Floor 2: from room 3, hold on the doorway back into room 4 and keep holding through the camera cut with the pointer nearly still: the hero keeps heading for the door, not for whatever now shows under the pointer | | |
+| 52 | Floor 2 landing (room 2, camera 28): the strip at the left edge of the screen, below the hero and leading towards the door to room 4, shows walk-grid dots (debug.mouseNavOverlay); pressing or holding there walks the hero to the pointer, not straight left. In the attic the narrow gaps between neighbouring cameras' zones now show dots too, and walking across them behaves as on the rest of the floor | | |
 
 Signed off by: ______  Date: ______  Build: `git rev-parse --short HEAD` = ______
