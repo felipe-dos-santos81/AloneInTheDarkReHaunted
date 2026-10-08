@@ -1100,17 +1100,16 @@ void osystem_updateSaveSlotPreviewTexture(unsigned char* rgbaData, int width, in
         if (bgfx::isValid(g_saveSlotPreviewTex))
             bgfx::destroy(g_saveSlotPreviewTex);
 
+        // No initial data: bgfx makes a texture created with data immutable,
+        // and every save's preview has the same size, so the next slot's
+        // update would be dropped.
         g_saveSlotPreviewTex = bgfx::createTexture2D(width, height, false, 1,
-            bgfx::TextureFormat::RGBA8, BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP,
-            bgfx::copy(rgbaData, width * height * 4));
+            bgfx::TextureFormat::RGBA8, BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP);
         g_saveSlotPreviewW = width;
         g_saveSlotPreviewH = height;
     }
-    else
-    {
-        bgfx::updateTexture2D(g_saveSlotPreviewTex, 0, 0, 0, 0, width, height,
-            bgfx::copy(rgbaData, width * height * 4));
-    }
+    bgfx::updateTexture2D(g_saveSlotPreviewTex, 0, 0, 0, 0, width, height,
+        bgfx::copy(rgbaData, width * height * 4));
 }
 
 void osystem_drawSaveSlotPreviewHD(float x1, float y1, float x2, float y2)
