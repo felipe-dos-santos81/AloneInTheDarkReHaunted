@@ -60,8 +60,10 @@ void stopHero()
     }
 }
 
-void cancelIntent()
+void cancelIntent(const char* why)
 {
+    if (g_world.intent && g_remasterConfig.debug.mouseNavOverlay) // mouse trace
+        printf("MTRACE intent ended: %s\n", why);
     const bool held = g_world.intent && g_world.intent->requiresHold;
     g_world.intent.reset();
     g_world.decision.reset();
@@ -126,7 +128,7 @@ void applyDecision(const mouse::Decision& d)
         startIntent(d.kind, d.payload, d.run);
         break;
     case mouse::DecisionType::Cancel:
-        cancelIntent();
+        cancelIntent("held pointer moved onto a blocked pixel");
         break;
     case mouse::DecisionType::Attack:
         armAttack(d.payload.actor);
@@ -136,16 +138,16 @@ void applyDecision(const mouse::Decision& d)
     }
 }
 
-void endPointerHold()
+void endPointerHold(const char* why)
 {
     mouse::endHold(g_world.pointer, g_world.intent && g_world.intent->steering);
-    cancelIntent();
+    cancelIntent(why);
 }
 
-void releaseAll()
+void releaseAll(const char* why)
 {
     mouse::resetPointer(g_world.pointer);
-    cancelIntent();
+    cancelIntent(why);
     clearAttack();
     g_world.actionHold.reset();
 }
@@ -155,7 +157,7 @@ void leaveWorld()
 {
     s_worldActive = false;
     if (g_world.intent || g_world.attackTarget >= 0 || g_world.pointer.held || g_world.actionHold)
-        releaseAll();
+        releaseAll("mouse play inactive (cutscene, option off, no camera or hero)");
     mouseInputRequestCursor(mouse::CursorShape::Default);
 }
 
@@ -342,7 +344,7 @@ void mouseWorldTakeOver()
 {
     s_worldActive = false;
     s_screenGate.arm();
-    releaseAll();
+    releaseAll("a screen took over");
     counterAttackReset(); // the automatic counter-attack ends with play too
     if (g_world.wroteJoyD)
     {
@@ -400,7 +402,7 @@ void mouseWorldFrame(int allowSystemMenu)
     s_worldActive = true;
     if (frame.blocked)
     {
-        releaseAll(); // F1 dialog or an ImGui window owns the mouse
+        releaseAll("ImGui owns the mouse"); // F1 dialog or an ImGui window owns the mouse
         mouseInputRequestCursor(mouse::CursorShape::Default);
         return;
     }
@@ -419,7 +421,7 @@ void mouseWorldFrame(int allowSystemMenu)
     {
         if (g_world.pointer.held)
             mouse::rebase(g_world.pointer);
-        cancelIntent();
+        cancelIntent("floor changed");
         g_world.actionHold.reset();
         g_world.intentFloor = g_currentFloor;
     }
@@ -439,16 +441,16 @@ void mouseWorldFrame(int allowSystemMenu)
                 applyDecision(mouse::pressDecision(g_world.pointer, *e.pos, e.clicks, camera, resolve, latchedPush()));
             break;
         case mouse::EventType::Up:
-            endPointerHold();
+            endPointerHold("button released");
             break;
         case mouse::EventType::FocusLost:
-            releaseAll();
+            releaseAll("window focus lost");
             break;
         }
     }
     // A release SDL never delivered: the button is up now.
     if (haveFrame && g_world.pointer.held && !frame.leftDown)
-        endPointerHold();
+        endPointerHold("button found up (release not delivered)");
 
     const std::optional<mouse::Point> pointerNow = haveFrame ? frame.pos : g_world.pointer.pos;
 
@@ -459,14 +461,14 @@ void mouseWorldFrame(int allowSystemMenu)
 
     // Every walk is hold-bound.
     if (g_world.intent && !g_world.pointer.held)
-        cancelIntent();
+        cancelIntent("hold ended");
 
     // A script took the hero (cutscene walk, death): drop the walk and the
     // swing, and spend the hold so only a new press moves the hero once it is
     // handed back.
     if (hero().trackMode != 1)
     {
-        cancelIntent();
+        cancelIntent("a script owns the hero");
         clearAttack();
         g_world.actionHold.reset();
         if (g_world.pointer.held)
@@ -486,7 +488,7 @@ void mouseWorldKeyboardTookOver()
     g_world.lastInputMouse = false;
     if (g_world.intent || g_world.attackTarget >= 0)
     {
-        cancelIntent();
+        cancelIntent("keyboard took over");
         clearAttack();
     }
     g_world.actionHold.reset(); // the keyboard holds its own Action

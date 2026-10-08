@@ -163,7 +163,7 @@ void setJoyD(int value);
 void initHeroAnim(int anim, int type, int info);
 // Stop the hero where it stands, back in its stand pose when that is safe.
 void stopHero();
-void cancelIntent();
+void cancelIntent(const char* why = "arrived, gone or stuck");
 // Aim a live intent somewhere new: plan afresh and forget stall progress.
 void retarget(mouse::NavIntent& in, mouse::XZ dest, int room);
 
