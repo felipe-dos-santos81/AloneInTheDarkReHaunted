@@ -17,7 +17,7 @@
 // also include the implementation, e.g. sequence.cpp / rendererBGFX.cpp).
 #define STB_IMAGE_WRITE_STATIC
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../ThirdParty/bgfx.cmake/bimg/3rdparty/stb/stb_image_write.h"
+#include "stbImageWrite.h"
 
 #ifdef _WIN32
 #include <direct.h>
