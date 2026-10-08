@@ -14,7 +14,14 @@
 // stb_image_write for sequence frame dumping (static to avoid linker conflicts)
 #define STB_IMAGE_WRITE_STATIC
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#if defined(__GNUC__) // clang too: stb's HDR writer calls sprintf, which macOS deprecates
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #include "../ThirdParty/bgfx.cmake/bimg/3rdparty/stb/stb_image_write.h"
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 // stb_image for loading HD replacement sequence frames
 #define STB_IMAGE_STATIC

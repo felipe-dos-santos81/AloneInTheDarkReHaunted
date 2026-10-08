@@ -87,6 +87,8 @@ void handleKeyDown(SDL_Event& event)
     case SDL_SCANCODE_F11:
         toggleFullscreen();
         break;
+    default:
+        break;
     }
 }
 
@@ -314,7 +316,7 @@ void initController()
     }
 
     // Initialize SDL gamepad subsystem
-    if (SDL_InitSubSystem(SDL_INIT_GAMEPAD) < 0)
+    if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) // SDL3 returns false on failure
     {
         printf(INP_ERR "Failed to initialize SDL gamepad subsystem: %s" CON_RESET "\n", SDL_GetError());
         return;
