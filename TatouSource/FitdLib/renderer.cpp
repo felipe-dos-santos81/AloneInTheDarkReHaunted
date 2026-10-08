@@ -1193,8 +1193,10 @@ void renderPoly(primEntryStruct* pEntry) // poly
         return;
     }
 
-    // Other material polygons (material 1: dither, material 2: transparent) - other atlas overlay
-    if (pEntry->type == primTypeEnum_Poly && (pEntry->material == 1 || pEntry->material == 2))
+    // Dither polygons (material 1) - other atlas overlay. Transparent ones
+    // (material 2, the ghosts) get none: an atlas texel drawn over the blended
+    // base would make them opaque (body 141's atlas is all alpha 255).
+    if (pEntry->type == primTypeEnum_Poly && pEntry->material == 1)
     {
         if (bgfx::isValid(s_currentAtlas->otherTexture)
             && pEntry->originalPrimIndex < (int)s_currentAtlas->otherPolyUVs.size())
