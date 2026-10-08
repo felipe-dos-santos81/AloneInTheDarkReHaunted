@@ -9,6 +9,7 @@
 
 #include <array>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <vector>
 
@@ -103,8 +104,9 @@ struct PolyFit
 std::vector<PolyFit> fitFloor(const Camera& camera, const std::vector<std::vector<XZ>>& coverPolys, int floorY);
 
 // The floor point under `pixel` (room units) inside a zone by the engine's
-// isInPoly rule, or nothing.
-std::optional<XZ> pickFloor(const std::vector<PolyFit>& fits, Point pixel);
+// isInPoly rule, or that `alsoFloor` accepts (a seam between zones), or nothing.
+std::optional<XZ> pickFloor(const std::vector<PolyFit>& fits, Point pixel,
+                            const std::function<bool(XZ)>& alsoFloor = {});
 
 // Whether `pixel` lies on the box's outline on screen: the convex hull of its
 // eight projected corners, false when any corner is culled. A box standing on

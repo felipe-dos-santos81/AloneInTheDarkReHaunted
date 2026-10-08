@@ -143,6 +143,17 @@ TEST_CASE("pickFloor refuses pixels whose floor point lies outside every polygon
     CHECK_FALSE(pickFloor(fits, pixelOf(c, 3000, 3000)));
 }
 
+TEST_CASE("pickFloor takes a floor point outside every polygon that alsoFloor accepts")
+{
+    Camera c = levelCamera();
+    auto fits = fitFloor(c, { kSquare }, 0);
+    auto hit = pickFloor(fits, pixelOf(c, 3000, 3000), [](XZ p) { return p.x > 2500; });
+    REQUIRE(hit);
+    CHECK(std::abs(hit->x - 3000) <= 15);
+    CHECK(std::abs(hit->z - 3000) <= 15);
+    CHECK_FALSE(pickFloor(fits, pixelOf(c, -3000, 3000), [](XZ p) { return p.x > 2500; }));
+}
+
 TEST_CASE("fitFloor skips polygons with fewer than four usable vertices")
 {
     Camera c = levelCamera();

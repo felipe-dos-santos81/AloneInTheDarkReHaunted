@@ -54,7 +54,9 @@ void mouseWorldDrawDebugOverlay()
     {
         if (const auto* fits = fitsFor(h.room, h.roomY))
         {
-            if (auto hit = mouse::pickFloor(*fits, mouse::Point{ (int)gm.x, (int)gm.y }))
+            const mouse::Grid* grid = gridFor(h.room, agentIn(h.room));
+            auto seam = [&](mouse::XZ c) { return grid && grid->isSeam(c.x, c.z); }; // as floorUnder
+            if (auto hit = mouse::pickFloor(*fits, mouse::Point{ (int)gm.x, (int)gm.y }, seam))
             {
                 if (auto s = mouse::projectPoint(camera, hit->x, h.roomY, hit->z))
                 {

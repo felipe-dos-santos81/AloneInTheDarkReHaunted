@@ -51,7 +51,7 @@ Guidance for anyone (human or agent) changing this repository.
 ```bash
 make help                # every target, grouped, with its arguments
 make build-fitd          # build the game
-make run data=DIR        # run from a directory holding the original .PAK files
+make run [data=DIR]      # play from the folder of .PAK files (default data/aitd1)
 make test-engine         # C++ unit tests (doctest) for engine-free modules
 make test-tools          # Python texture-tool tests
 make test                # both
@@ -106,6 +106,9 @@ lock. SDL cursor and window calls belong on the main thread.
    - A held push never asserts the global Action (`0x2000`).
    - One resolver (`resolveAt`) drives both the cursor and the click;
      hovering never changes game state.
+   - The floor is the cover zones plus the seams `buildGrid` fills (enclosed
+     gaps between zones, at most `kSeamDepth` cells deep); the walk grid, the
+     floor pick and the debug overlay all read it the same way.
    - Picking uses only the engine's integer projection
      (`mouse::projectPoint` replicates `transformPoint` + the renderer
      divide), never a float render path.

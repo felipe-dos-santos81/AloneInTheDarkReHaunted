@@ -377,7 +377,7 @@ std::vector<PolyFit> fitFloor(const Camera& camera, const std::vector<std::vecto
     return fits;
 }
 
-std::optional<XZ> pickFloor(const std::vector<PolyFit>& fits, Point pixel)
+std::optional<XZ> pickFloor(const std::vector<PolyFit>& fits, Point pixel, const std::function<bool(XZ)>& alsoFloor)
 {
     for (const PolyFit& fit : fits)
     {
@@ -391,7 +391,7 @@ std::optional<XZ> pickFloor(const std::vector<PolyFit>& fits, Point pixel)
             continue;
         if (std::fabs(forward->x - pixel.x) > kReprojectPx || std::fabs(forward->y - pixel.y) > kReprojectPx)
             continue; // the fit does not explain this pixel
-        if (insideCoverZone(wx, wz, fit.cover))
+        if (insideCoverZone(wx, wz, fit.cover) || (alsoFloor && alsoFloor(XZ{ wx, wz })))
             return XZ{ wx, wz };
     }
     return std::nullopt;

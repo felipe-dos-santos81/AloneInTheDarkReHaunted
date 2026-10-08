@@ -48,6 +48,98 @@ bool Grid::any() const
     return std::any_of(walk.begin(), walk.end(), [](uint8_t w) { return w != 0; });
 }
 
+bool Grid::isSeam(int x, int z) const
+{
+    int i = 0;
+    int j = 0;
+    return cellOf(x, z, &i, &j) && seam[(size_t)i * nz + j] != 0;
+}
+
+namespace
+{
+constexpr std::pair<int, int> kSides[] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+
+// The cells of a 4-connected region of `in` (cells with in[k] set) holding
+// `start`, each cleared from `in` as it is taken.
+std::vector<size_t> takeRegion(int nx, int nz, std::vector<uint8_t>& in, size_t start)
+{
+    std::vector<size_t> region{ start };
+    in[start] = 0;
+    for (size_t q = 0; q < region.size(); ++q)
+    {
+        const int i = (int)(region[q] / nz), j = (int)(region[q] % nz);
+        for (auto [di, dj] : kSides)
+        {
+            const int a = i + di, b = j + dj;
+            const size_t m = (size_t)a * nz + b;
+            if (a >= 0 && b >= 0 && a < nx && b < nz && in[m])
+            {
+                in[m] = 0;
+                region.push_back(m);
+            }
+        }
+    }
+    return region;
+}
+
+// The cells neither a zone nor a wall holds that the grid's edge cannot reach
+// through such cells, in holes whose deepest cell is at most kSeamDepth cells
+// in from the hole's edge (an edge cell is 0 in).
+std::vector<uint8_t> findSeams(int nx, int nz, const std::vector<uint8_t>& covered, const std::vector<uint8_t>& wall)
+{
+    const size_t n = (size_t)nx * nz;
+    std::vector<uint8_t> open(n);
+    for (size_t k = 0; k < n; ++k)
+        open[k] = !covered[k] && !wall[k];
+    for (int i = 0; i < nx; ++i)
+        for (int j = 0; j < nz; ++j)
+            if ((i == 0 || j == 0 || i == nx - 1 || j == nz - 1) && open[(size_t)i * nz + j])
+                takeRegion(nx, nz, open, (size_t)i * nz + j); // open to the room beyond the zones
+    const std::vector<uint8_t> hole = open;
+
+    // How far in from the hole's edge each hole cell lies.
+    std::vector<int> depth(n, -1);
+    std::vector<size_t> queue;
+    for (size_t k = 0; k < n; ++k)
+        if (hole[k])
+        {
+            const int i = (int)(k / nz), j = (int)(k % nz);
+            for (auto [di, dj] : kSides)
+                if (!hole[(size_t)(i + di) * nz + (j + dj)]) // a hole never touches the grid's edge
+                {
+                    depth[k] = 0;
+                    queue.push_back(k);
+                    break;
+                }
+        }
+    for (size_t q = 0; q < queue.size(); ++q)
+    {
+        const int i = (int)(queue[q] / nz), j = (int)(queue[q] % nz);
+        for (auto [di, dj] : kSides)
+        {
+            const size_t m = (size_t)(i + di) * nz + (j + dj);
+            if (hole[m] && depth[m] < 0)
+            {
+                depth[m] = depth[queue[q]] + 1;
+                queue.push_back(m);
+            }
+        }
+    }
+
+    std::vector<uint8_t> seam(n, 0);
+    for (size_t k = 0; k < n; ++k)
+        if (open[k])
+        {
+            const std::vector<size_t> region = takeRegion(nx, nz, open, k);
+            const bool shallow = std::all_of(region.begin(), region.end(), [&](size_t c) { return depth[c] <= kSeamDepth; });
+            if (shallow)
+                for (size_t c : region)
+                    seam[c] = 1;
+        }
+    return seam;
+}
+}
+
 std::optional<Grid> buildGrid(const std::vector<std::vector<XZ>>& coverPolys,
                               const std::vector<Box>& hardCols, const Agent& agent, int step)
 {
@@ -71,28 +163,35 @@ std::optional<Grid> buildGrid(const std::vector<std::vector<XZ>>& coverPolys,
     g.nz = ((maxZ - minZ) * kCoverScale) / step + 1;
     g.walk.assign((size_t)g.nx * g.nz, 0);
 
+    // outside the hero's Y band: room links fall out here
+    const auto inBand = [&](const Box& col) { return agent.y1 < col.y2 && col.y1 < agent.y2; };
+    std::vector<uint8_t> covered(g.walk.size()), wall(g.walk.size());
     for (int i = 0; i < g.nx; ++i)
         for (int j = 0; j < g.nz; ++j)
         {
             const int wx = g.x0 + i * step;
             const int wz = g.z0 + j * step;
-            const bool inside = std::any_of(coverPolys.begin(), coverPolys.end(),
-                                            [&](const std::vector<XZ>& poly) { return insideCoverZone(wx, wz, poly); });
-            if (!inside)
+            covered[(size_t)i * g.nz + j] = std::any_of(coverPolys.begin(), coverPolys.end(),
+                                                        [&](const std::vector<XZ>& poly) { return insideCoverZone(wx, wz, poly); });
+            wall[(size_t)i * g.nz + j] = std::any_of(hardCols.begin(), hardCols.end(), [&](const Box& col) {
+                return inBand(col) && col.x1 <= wx && wx <= col.x2 && col.z1 <= wz && wz <= col.z2;
+            });
+        }
+    g.seam = findSeams(g.nx, g.nz, covered, wall);
+
+    for (int i = 0; i < g.nx; ++i)
+        for (int j = 0; j < g.nz; ++j)
+        {
+            const size_t k = (size_t)i * g.nz + j;
+            if (!covered[k] && !g.seam[k])
                 continue;
-            bool blocked = false;
-            for (const Box& col : hardCols)
-            {
-                if (!(agent.y1 < col.y2 && col.y1 < agent.y2))
-                    continue; // outside the hero's Y band: room links fall out here
-                if (wx - agent.half < col.x2 && col.x1 < wx + agent.half &&
-                    wz - agent.half < col.z2 && col.z1 < wz + agent.half)
-                {
-                    blocked = true;
-                    break;
-                }
-            }
-            g.walk[(size_t)i * g.nz + j] = blocked ? 0 : 1;
+            const int wx = g.x0 + i * step;
+            const int wz = g.z0 + j * step;
+            const bool blocked = std::any_of(hardCols.begin(), hardCols.end(), [&](const Box& col) {
+                return inBand(col) && wx - agent.half < col.x2 && col.x1 < wx + agent.half &&
+                       wz - agent.half < col.z2 && col.z1 < wz + agent.half;
+            });
+            g.walk[k] = blocked ? 0 : 1;
         }
     return g;
 }
