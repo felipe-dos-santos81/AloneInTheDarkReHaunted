@@ -199,6 +199,34 @@ TEST_CASE("a blocked resolution while held cancels a live intent once")
     CHECK(holdDecision(s, m2, 0, r.fn(), false, false).type == DecisionType::Nothing);
 }
 
+TEST_CASE("a press on the hero does nothing and opens no follow")
+{
+    FakeResolver r{ { ClickKind::OnHero, {} } };
+    PointerState s;
+    onPress(s, kAt);
+    CHECK(pressDecision(s, kAt, 1, 0, r.fn(), false).type == DecisionType::Nothing);
+    CHECK_FALSE(s.follow.has_value());
+}
+
+TEST_CASE("a held walk goes on while the hero walks under the pointer")
+{
+    // Room 2's stairwell: the hero steered toward the screen edge reaches the
+    // pointer, and a one-pixel drift then resolves to the hero, not a new place.
+    FakeResolver r{ { ClickKind::Steer, kSteer } };
+    PointerState s = heldAfterPress(r);
+    r.result = { ClickKind::OnHero, {} };
+    Point m1{ kAt.x - 1, kAt.y };
+    onMove(s, m1);
+    CHECK(holdDecision(s, m1, 0, r.fn(), false, true).type == DecisionType::Nothing);
+    REQUIRE(s.follow);
+    CHECK(s.follow->payload == kSteer);
+
+    r.result = { ClickKind::Steer, kSteer }; // off the hero again, same heading: nothing new
+    Point m2{ kAt.x - 2, kAt.y };
+    onMove(s, m2);
+    CHECK(holdDecision(s, m2, 0, r.fn(), false, true).type == DecisionType::Nothing);
+}
+
 TEST_CASE("after a camera cut the pointer must leave a dead zone before re-resolving")
 {
     FakeResolver r{ { ClickKind::Walk, kWalkA } };
@@ -296,7 +324,7 @@ TEST_CASE("isWalkLike names the kinds a held pointer follows")
 {
     for (ClickKind k : { ClickKind::Walk, ClickKind::Steer, ClickKind::Target, ClickKind::Exit })
         CHECK(isWalkLike(k));
-    for (ClickKind k : { ClickKind::Blocked, ClickKind::Push, ClickKind::Attack, ClickKind::HudInventory,
+    for (ClickKind k : { ClickKind::Blocked, ClickKind::OnHero, ClickKind::Push, ClickKind::Attack, ClickKind::HudInventory,
                          ClickKind::HudMap, ClickKind::HudMenu })
         CHECK_FALSE(isWalkLike(k));
 }

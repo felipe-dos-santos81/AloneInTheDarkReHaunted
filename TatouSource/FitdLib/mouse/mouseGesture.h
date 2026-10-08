@@ -23,6 +23,7 @@ enum class ClickKind : uint8_t
     Push,
     Attack,
     Exit, // walk into a floor-change zone, often drawn behind a wall
+    OnHero, // the hero: a press does nothing, a held walk the hero walked under goes on
     HudInventory,
     HudMap,
     HudMenu,
@@ -144,7 +145,7 @@ struct PointerState
     std::optional<ClickResult> follow;
     // Pixel follow was resolved at; empty = resolve next frame regardless.
     std::optional<Point> followPos;
-    // Camera slot followPos was resolved under; a mismatch means a cut.
+    // On-screen floor camera followPos was resolved under; a mismatch means a cut.
     std::optional<int> followCamera;
     // Where the pointer was when a cut was noticed.
     std::optional<Point> settleOrigin;
