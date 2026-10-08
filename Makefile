@@ -1,5 +1,5 @@
 # Alone In The Dark: Re-Haunted — the Tatou (FITD) engine.
-# Usual flow: make deps → make build-fitd → make run data=DIR.
+# Usual flow: make deps (Linux), then make run (game data in data/aitd1).
 # `make help` lists every target with its arguments.
 
 # ── Settings ─────────────────────────────────────────────────────────────────
@@ -9,7 +9,7 @@ SRC_DIR    ?= TatouSource
 BUILD_TYPE ?= Release
 JOBS       ?= $(shell sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)
 CMAKE       = cmake
-# Texture tools prefer the project venv (make tools-deps) when it exists.
+# The Python tools use the project venv (make tools-deps) when it exists.
 PYTHON     ?= $(if $(wildcard tools/.venv/bin/python),tools/.venv/bin/python,python3)
 
 ifeq ($(shell uname -s),Darwin)
@@ -28,15 +28,15 @@ CONFIGURE_FLAGS = -DCMAKE_BUILD_TYPE="$(BUILD_TYPE)" -DCMAKE_EXPORT_COMPILE_COMM
                   $(PLATFORM_FLAGS) $(if $(generator),-G "$(generator)")
 CMAKE_BUILD     = $(CMAKE) --build "$(BUILD_DIR)" --config "$(BUILD_TYPE)" --parallel "$(JOBS)"
 
-# ── Target arguments (make run data=data/aitd1) ──────────────────────────────
+# ── Target arguments (make run data=DIR) ─────────────────────────────────────
 
-data    ?= .
-src     ?= Assets/backgrounds_hd
-out     ?= $(notdir $(src)).hda
-archive ?= backgrounds_hd.hda
+gamedata ?= data/aitd1
+data     ?= $(gamedata)
+src      ?= Assets/backgrounds_hd
+out      ?= $(notdir $(src)).hda
+archive  ?= backgrounds_hd.hda
 
-# The texture pipeline never reuses `data`/`out`: run and hda-pack own them.
-gamedata    ?= data/aitd1
+# The asset pipelines read `gamedata`; `data` and `out` belong to run and hda-pack.
 textures    ?= data/textures
 textures_ai ?= data/textures-ai
 dest        ?= Assets/backgrounds_hd
@@ -83,7 +83,7 @@ help: ## List the targets
 deps: ## Install the build dependencies for this platform
 	@$(SRC_DIR)/install_deps.sh
 
-tools-deps: ## Create tools/.venv for the texture tools
+tools-deps: ## Create tools/.venv for the texture and model tools
 	python3 -m venv tools/.venv
 	tools/.venv/bin/pip install -q -r tools/requirements-dev.txt
 
@@ -101,7 +101,7 @@ build-fitd: configure ## Build the game only
 build-tools: configure ## Build the .hda archive tools only
 	$(CMAKE_BUILD) --target build_hda_archive unpack_hda_archive
 
-run: build ## Play from a folder holding the game data [data=DIR]
+run: build-fitd ## Build the game and play from the game data folder [data=DIR, default data/aitd1]
 	$(call require,$(BINARY),binary,did the build fail?)
 	cd "$(data)" && "$(abspath $(BINARY))"
 
@@ -109,7 +109,7 @@ run: build ## Play from a folder holding the game data [data=DIR]
 
 test: test-engine test-tools ## Run every test suite
 
-test-engine: configure ## Engine unit tests (doctest: engine-free mouse and model modules, cursor rule)
+test-engine: configure ## Engine unit tests (doctest)
 	$(CMAKE_BUILD) --target engine_tests
 	cd "$(BUILD_DIR)" && ctest -C "$(BUILD_TYPE)" --output-on-failure -R engine_tests
 
@@ -118,16 +118,16 @@ test-tools: ## Texture and model tool tests (pytest)
 
 ##@ HD backgrounds
 
-export-textures: ## Export original plates, screens and animations [gamedata=DIR textures=DIR anims=DIR]
+export-textures: ## Export the original backgrounds, screens and animations [gamedata=DIR textures=DIR anims=DIR]
 	$(PYTHON) tools/textures.py export --data "$(gamedata)" --out "$(textures)" --anims "$(anims)"
 
-check-textures: ## Validate upscaled textures, writing nothing [textures_ai=DIR dest=DIR dark=mirror|all|none]
+check-textures: ## Validate upscaled textures, write nothing [textures_ai=DIR dest=DIR dark=mirror|all|none]
 	$(TEXTURE_IMPORT) --dry-run
 
 import-textures: ## Import upscaled textures into Assets/backgrounds_hd [textures_ai=DIR dest=DIR dark=mirror|all|none]
 	$(TEXTURE_IMPORT)
 
-hd-install: ## Pack Assets/backgrounds_hd and copy it into the app bundle (after build-tools)
+hd-install: build-tools ## Pack Assets/backgrounds_hd into backgrounds_hd.hda and copy it into the app bundle
 	$(call require,$(HDA_TOOL),build_hda_archive,run 'make build-tools')
 	"$(HDA_TOOL)" "$(dest)" "$(HD_ARCHIVE)"
 	@if [ -n "$(BUNDLE_RESOURCES)" ] && [ -d "$(BUNDLE_RESOURCES)" ]; then \
@@ -152,7 +152,7 @@ export-models: ## Export animated bodies for the model generator [gamedata=DIR m
 identity-models: ## Write identity deliveries (each original as its own model) [models=DIR models_identity=DIR bodies=KEY,...]
 	$(PYTHON) tools/models.py identity --models "$(models)" --out "$(models_identity)" --bodies "$(bodies)"
 
-check-models: ## Check delivered models, write nothing, or only reports with report=DIR [models_ai=DIR models_hd=DIR bodies=KEY,... report=DIR]
+check-models: ## Check delivered models, write nothing (report=DIR writes reports only) [models_ai=DIR models_hd=DIR bodies=KEY,...]
 	$(MODEL_IMPORT) --dry-run
 
 import-models: ## Import delivered models into Assets/models_hd [models_ai=DIR models_hd=DIR bodies=KEY,...]
