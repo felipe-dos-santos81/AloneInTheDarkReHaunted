@@ -5,25 +5,6 @@ the Infogrames engine in C++ (FITD, here called Tatou) with bgfx rendering,
 SoLoud audio and SDL3 input. It runs on Windows, Linux and macOS 11.3+ under
 the **GNU GPL v2**.
 
-## Original Upscaled vs HD
-
-Seven saved games: the original graphics upscaled on the left; HD
-backgrounds, HD character models and post effects on the right.
-
-![Save 0: original graphics upscaled, then HD](docs/screenshots/save0-original-vs-hd.jpg)
-
-![Save 1: original graphics upscaled, then HD](docs/screenshots/save1-original-vs-hd.jpg)
-
-![Save 2: original graphics upscaled, then HD](docs/screenshots/save2-original-vs-hd.jpg)
-
-![Save 3: original graphics upscaled, then HD](docs/screenshots/save3-original-vs-hd.jpg)
-
-![Save 4: original graphics upscaled, then HD](docs/screenshots/save4-original-vs-hd.jpg)
-
-![Save 5: original graphics upscaled, then HD](docs/screenshots/save5-original-vs-hd.jpg)
-
-![Save 6: original graphics upscaled, then HD](docs/screenshots/save6-original-vs-hd.jpg)
-
 ## This fork
 
 A fork of
@@ -42,6 +23,25 @@ focused on *Alone in the Dark 1*. It adds:
 *Original project © 2026 Infogrames / Spacefarer Retro Remasters LLC, by Jake
 Jackson (jake@spacefarergames.com): free and non-profit. Support it at
 https://buymeacoffee.com/jakeysbakery or by PayPal to jake@spacefarergames.com.*
+
+## Original Upscaled vs HD
+
+Seven saved games: the original graphics upscaled on the left; HD
+backgrounds, HD character models and post effects on the right.
+
+![Save 0: original graphics upscaled, then HD](docs/screenshots/save0-original-vs-hd.jpg)
+
+![Save 1: original graphics upscaled, then HD](docs/screenshots/save1-original-vs-hd.jpg)
+
+![Save 2: original graphics upscaled, then HD](docs/screenshots/save2-original-vs-hd.jpg)
+
+![Save 3: original graphics upscaled, then HD](docs/screenshots/save3-original-vs-hd.jpg)
+
+![Save 4: original graphics upscaled, then HD](docs/screenshots/save4-original-vs-hd.jpg)
+
+![Save 5: original graphics upscaled, then HD](docs/screenshots/save5-original-vs-hd.jpg)
+
+![Save 6: original graphics upscaled, then HD](docs/screenshots/save6-original-vs-hd.jpg)
 
 ## Game data
 
