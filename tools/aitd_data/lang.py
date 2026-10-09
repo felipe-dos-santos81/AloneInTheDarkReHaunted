@@ -15,9 +15,9 @@ END = b"\x1a\r\n"
 _DECODE_OVERRIDES = {0xA9: "©"}
 _ENCODE_OVERRIDES = {v: k for k, v in _DECODE_OVERRIDES.items()}
 
-# Composed by TatouSource/FitdLib/text/fontCompose.cpp kComposed: code -> (base, mark donor).
+# Composed by TatouSource/FitdLib/text/fontCompose.h kComposed: code -> (base, mark donor).
 COMPOSED = {0xC6: (ord("a"), 0xA4), 0xE4: (ord("o"), 0xA4)}
-# Drawn as the plain capital in the bitmap font (fontCompose.cpp kPlainCapitals).
+# Drawn as the plain capital in the bitmap font (fontCompose.h kPlainCapitals).
 PLAIN_CAPITALS = {0xB7: ord("A"), 0xB5: ord("A"), 0xB6: ord("A"), 0xC7: ord("A"), 0xD2: ord("E"),
                   0xD6: ord("I"), 0xE0: ord("O"), 0xE2: ord("O"), 0xE5: ord("O"), 0xE9: ord("U")}
 # Letters the original bitmap font draws beyond printable ASCII, as the game uses them.
@@ -26,7 +26,6 @@ ALLOWED = (set(chr(c) for c in range(0x20, 0x7F)) | set(_FONT_LETTERS)
            | {bytes([c]).decode("cp850") for c in COMPOSED}
            | {bytes([c]).decode("cp850") for c in PLAIN_CAPITALS} | {"\n"})
 
-_MESSAGE = re.compile(r"^@(\d+):", re.MULTILINE)
 _IMAGE = re.compile(r"#G\d+")
 
 
@@ -67,10 +66,6 @@ def bad_chars(text: str) -> list[tuple[int, str]]:
     return found
 
 
-def message_numbers(text: str) -> list[int]:
-    return [int(m) for m in _MESSAGE.findall(text)]
-
-
 def image_codes(text: str) -> list[str]:
     return _IMAGE.findall(text)
 
@@ -78,7 +73,7 @@ def image_codes(text: str) -> list[str]:
 def validate(pt: list[bytes], en: list[bytes]) -> list[str]:
     """Problems with the Portuguese entries against the English ones."""
     problems = []
-    pt_nums, en_nums = message_numbers(decode(pt[0])), message_numbers(decode(en[0]))
+    pt_nums, en_nums = list(_messages(pt[0])), list(_messages(en[0]))
     missing = [n for n in en_nums if n not in pt_nums]
     extra = [n for n in pt_nums if n not in en_nums]
     if missing:
@@ -90,18 +85,6 @@ def validate(pt: list[bytes], en: list[bytes]) -> list[str]:
         if got != want:
             problems.append(f"doc{i:02d}: image codes {got} != English {want}")
     return problems
-
-
-def pak_image(entries: list[bytes]) -> bytes:
-    """A PAK of raw (flag 0) entries, in the layout the engine and pak.Pak read:
-    u32 0, u32 offsets[n], then per entry u32 0, u32 size, u32 size, u8 flag,
-    u8 info5, u16 name_len, payload."""
-    blobs = [struct.pack("<IIIBBH", 0, len(e), len(e), 0, 0, 0) + e for e in entries]
-    pos, offsets = 4 * (len(entries) + 1), []
-    for blob in blobs:
-        offsets.append(pos)
-        pos += len(blob)
-    return struct.pack("<I", 0) + b"".join(struct.pack("<I", o) for o in offsets) + b"".join(blobs)
 
 
 def embedded_cpp(name: str, data: bytes) -> str:

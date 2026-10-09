@@ -117,9 +117,11 @@ static int detectAvailableLanguages(int* availableLanguages, int maxCount)
 
 // Top of the list. The flags are painted into the HD background beside the
 // original five rows, so those stay put and further languages go below them.
+static const int kFlagRows = 5;   // English, Français, Italiano, Español, Deutsch
+
 static int languageListTop(int availableCount)
 {
-    const int centred = availableCount < 5 ? availableCount : 5;
+    const int centred = availableCount < kFlagRows ? availableCount : kFlagRows;
     return 100 - centred * 16 / 2;
 }
 

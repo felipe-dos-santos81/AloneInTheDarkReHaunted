@@ -26,7 +26,7 @@ if str(HERE) not in sys.path:
 from aitd_data import lang  # noqa: E402
 from aitd_data.decode import DataNotFound, find_data_dir  # noqa: E402
 from aitd_data.files import atomic_write_bytes  # noqa: E402
-from aitd_data.pak import Pak, PakError  # noqa: E402
+from aitd_data.pak import Pak, PakError, pak_image  # noqa: E402
 
 ROOT = HERE.parent
 DEFAULTS = {"data": "data/aitd1", "out": "data/lang", "src": "Assets/lang/pt-BR",
@@ -69,7 +69,7 @@ def cmd_pack(args) -> int:
     if problems:
         print("\n".join(problems))
         return 1
-    image = lang.pak_image(pt)
+    image = pak_image(pt)
     atomic_write_bytes(args.cpp or ROOT / DEFAULTS["cpp"], lang.embedded_cpp("PORTUGUE", image).encode())
     if args.pak:
         atomic_write_bytes(args.pak, image)
@@ -80,12 +80,12 @@ def cmd_pack(args) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="lang.py", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
+    data = argparse.ArgumentParser(add_help=False)
+    data.add_argument("--data", type=pathlib.Path, help=f"INDARK folder or any folder above it (default {DEFAULTS['data']})")
     sub = parser.add_subparsers(dest="command", required=True)
-    ext = sub.add_parser("extract", help="write the English and French text as UTF-8 files")
-    ext.add_argument("--data", type=pathlib.Path, help=f"INDARK folder or any folder above it (default {DEFAULTS['data']})")
+    ext = sub.add_parser("extract", parents=[data], help="write the English and French text as UTF-8 files")
     ext.add_argument("--out", type=pathlib.Path, help=f"output folder (default {DEFAULTS['out']})")
-    pck = sub.add_parser("pack", help="check and pack the Portuguese text")
-    pck.add_argument("--data", type=pathlib.Path, help=f"INDARK folder or any folder above it (default {DEFAULTS['data']})")
+    pck = sub.add_parser("pack", parents=[data], help="check and pack the Portuguese text")
     pck.add_argument("--src", type=pathlib.Path, help=f"translation folder (default {DEFAULTS['src']})")
     pck.add_argument("--cpp", type=pathlib.Path, help=f"embedded source to write (default {DEFAULTS['cpp']})")
     pck.add_argument("--pak", type=pathlib.Path, help="also write a PORTUGUE.PAK here")

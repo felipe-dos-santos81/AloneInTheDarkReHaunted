@@ -8,7 +8,7 @@ import sys
 import pytest
 
 from aitd_data import lang
-from aitd_data.pak import Pak
+from aitd_data.pak import pak_image
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 EN0 = "@1:Alone in the Dark\n@2:©1992\n\n@10:You cannot carry anything else\n"
@@ -48,16 +48,6 @@ def test_validate_message_numbers_and_image_codes():
     assert lang.validate(no_image, en) == ["doc01: image codes [] != English ['#G4']"]
 
 
-def test_pak_image_reads_back_through_pak(tmp_path):
-    entries = [lang.encode(EN0), lang.encode(EN_DOC)]
-    path = tmp_path / "PORTUGUE.PAK"
-    path.write_bytes(lang.pak_image(entries))
-    pak = Pak(path)
-    assert pak.count == 2
-    assert [pak.read(i) for i in range(2)] == entries
-    assert int.from_bytes(path.read_bytes()[4:8], "little") == 4 * (len(entries) + 1)
-
-
 def test_embedded_cpp_matches_the_registry_format():
     cpp = lang.embedded_cpp("PORTUGUE", bytes(range(20)))
     assert "extern const unsigned char embdata_PORTUGUE_PAK[] = {" in cpp
@@ -92,9 +82,9 @@ def test_pack_cli_writes_the_embedded_source_and_fails_on_problems(tmp_path):
     data = tmp_path / "data"
     data.mkdir()
     en = [lang.encode("@1:abc\n")] + [lang.encode(f"doc {i}\n") for i in range(1, lang.ENTRY_COUNT)]
-    (data / "ENGLISH.PAK").write_bytes(lang.pak_image(en))
-    (data / "FRANCAIS.PAK").write_bytes(lang.pak_image(en))
-    (data / "ITD_RESS.PAK").write_bytes(lang.pak_image([b""] * 5 + [synthetic_font({c: 5 for c in range(97, 123)})]))
+    (data / "ENGLISH.PAK").write_bytes(pak_image(en))
+    (data / "FRANCAIS.PAK").write_bytes(pak_image(en))
+    (data / "ITD_RESS.PAK").write_bytes(pak_image([b""] * 5 + [synthetic_font({c: 5 for c in range(97, 123)})]))
     src = tmp_path / "pt"
     src.mkdir()
     for i in range(lang.ENTRY_COUNT):
@@ -111,7 +101,7 @@ def test_pack_cli_writes_the_embedded_source_and_fails_on_problems(tmp_path):
 
 
 def test_composed_codes_match_the_engine():
-    src = (ROOT / "TatouSource/FitdLib/text/fontCompose.cpp").read_text()
+    src = (ROOT / "TatouSource/FitdLib/text/fontCompose.h").read_text()
     composed = {int(c, 16): (b, int(d, 16)) for c, b, d in
                 re.findall(r"\{ 0x([0-9A-F]{2}), '(\w)', 0x([0-9A-F]{2}) \}", src)}
     capitals = {int(c, 16): p for c, p in re.findall(r"\{ 0x([0-9A-F]{2}), '(\w)' \}", src)}

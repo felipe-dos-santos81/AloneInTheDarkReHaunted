@@ -15,12 +15,15 @@ namespace text {
 struct ComposedGlyph { unsigned char code, base, markDonor; };
 // ã and õ (CP850 0xC6, 0xE4): a / o with the tilde of ñ (0xA4).
 // tools/aitd_data/lang.py COMPOSED lists the same codes.
-extern const ComposedGlyph kComposed[2];
+inline constexpr ComposedGlyph kComposed[] = { { 0xC6, 'a', 0xA4 }, { 0xE4, 'o', 0xA4 } };
 
 // Accented capitals the font has no room to mark: drawn as the plain capital.
 // tools/aitd_data/lang.py PLAIN_CAPITALS lists the same codes.
 struct PlainCapital { unsigned char code, plain; };
-extern const PlainCapital kPlainCapitals[10];
+inline constexpr PlainCapital kPlainCapitals[] = {
+    { 0xB7, 'A' }, { 0xB5, 'A' }, { 0xB6, 'A' }, { 0xC7, 'A' }, { 0xD2, 'E' },
+    { 0xD6, 'I' }, { 0xE0, 'O' }, { 0xE2, 'O' }, { 0xE5, 'O' }, { 0xE9, 'U' },
+};
 
 // A copy of `font` (ITD_RESS entry 5, the layout font.cpp SetFont reads) with
 // kComposed appended to the glyph strip and kPlainCapitals pointing at their

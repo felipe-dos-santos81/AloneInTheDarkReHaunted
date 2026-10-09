@@ -383,7 +383,9 @@ void InitCopyBox(char* var0, char* var1)
     screenSm5 = var1;
 }
 
-void allocTextes(void)
+// Parses the language PAK's entry 0 into tabTextes, caching each message's width
+// with the current font.
+static void parseTextes()
 {
     int currentIndex;
     u8* currentPosInTextes;
@@ -391,39 +393,6 @@ void allocTextes(void)
     int stringIndex;
     u8* stringPtr;
     int textLength;
-
-    tabTextes = (textEntryStruct*)malloc(NUM_MAX_TEXT_ENTRY * sizeof(textEntryStruct)); // 2000 = 250 * 8
-
-    ASSERT_PTR(tabTextes);
-
-    if (!tabTextes)
-    {
-        fatalError(1, "TabTextes");
-    }
-
-    // setup languageNameString (skip auto-detection if already set by reloadLanguage)
-    if (!languageNameString.length())
-    {
-        for (int i = 0; i < languageNameTable.size(); i++)
-        {
-            char tempString[20];
-
-            strcpy(tempString, languageNameTable[i].c_str());
-            strcat(tempString, ".PAK");
-
-            if (fileExists(tempString))
-            {
-                languageNameString = languageNameTable[i].c_str();
-                break;
-            }
-        }
-    }
-
-    if (!languageNameString.length())
-    {
-        printf(MAIN_WARN "Unable to detect language file.." CON_RESET "\n");
-        assert(0);
-    }
 
     systemTextes = (u8*)CheckLoadMallocPak(languageNameString.c_str(), 0); // todo: use real language name
     textLength = getPakSize(languageNameString.c_str(), 0);
@@ -484,6 +453,67 @@ void allocTextes(void)
     }
 }
 
+void allocTextes(void)
+{
+    tabTextes = (textEntryStruct*)malloc(NUM_MAX_TEXT_ENTRY * sizeof(textEntryStruct)); // 2000 = 250 * 8
+
+    ASSERT_PTR(tabTextes);
+
+    if (!tabTextes)
+    {
+        fatalError(1, "TabTextes");
+    }
+
+    // setup languageNameString (skip auto-detection if already set by reloadLanguage)
+    if (!languageNameString.length())
+    {
+        for (int i = 0; i < languageNameTable.size(); i++)
+        {
+            char tempString[20];
+
+            strcpy(tempString, languageNameTable[i].c_str());
+            strcat(tempString, ".PAK");
+
+            if (fileExists(tempString))
+            {
+                languageNameString = languageNameTable[i].c_str();
+                break;
+            }
+        }
+    }
+
+    if (!languageNameString.length())
+    {
+        printf(MAIN_WARN "Unable to detect language file.." CON_RESET "\n");
+        assert(0);
+    }
+
+    // The game font for this language (Portuguese adds a-tilde and o-tilde), set
+    // before the message widths are cached with it.
+    if (s_originalFont)
+    {
+        PtrFont = (char*)text::pickLanguageFont(languageNameString, s_originalFont, s_portugueseFont);
+        SetFont(PtrFont, 14);
+    }
+
+    parseTextes();
+
+#ifndef _WIN32
+    // Message 13 ("Return to DOS") names this platform instead.
+#if defined(__APPLE__)
+    const char* platformReturn = trDos("Return to macOS");
+#else
+    const char* platformReturn = trDos("Return to Linux");
+#endif
+    int entry13 = 0;
+    while (entry13 < NUM_MAX_TEXT_ENTRY - 1 && tabTextes[entry13].index != 13 && tabTextes[entry13].index != -1)
+        entry13++;
+    tabTextes[entry13].index = 13;
+    tabTextes[entry13].textPtr = (u8*)platformReturn;
+    tabTextes[entry13].width = ExtGetSizeFont(tabTextes[entry13].textPtr);
+#endif
+}
+
 void reloadLanguage(const char* langName)
 {
     // Free old text data
@@ -500,11 +530,6 @@ void reloadLanguage(const char* langName)
 
     // Set the new language
     languageNameString = langName;
-    if (s_originalFont)
-    {
-        PtrFont = (char*)text::pickLanguageFont(languageNameString, s_originalFont, s_portugueseFont);
-        SetFont(PtrFont, 14);   // allocTextes caches each message's width with this font
-    }
 
     // Reload text data using allocTextes (it will use the pre-set languageNameString)
     allocTextes();
@@ -695,23 +720,6 @@ void freeAll(void)
 
 textEntryStruct* getTextFromIdx(int index)
 {
-#ifndef _WIN32
-    // Platform-specific text overrides
-    // String 13 = "Return to Windows" -> platform name
-    if (index == 13)
-    {
-#if defined(__APPLE__)
-        static textEntryStruct platformReturnEntry = { 13, (u8*)trDos("Return to macOS"), 0 };
-        platformReturnEntry.textPtr = (u8*)trDos("Return to macOS");
-#else
-        static textEntryStruct platformReturnEntry = { 13, (u8*)trDos("Return to Linux"), 0 };
-        platformReturnEntry.textPtr = (u8*)trDos("Return to Linux");
-#endif
-        platformReturnEntry.width = ExtGetSizeFont(platformReturnEntry.textPtr);
-        return &platformReturnEntry;
-    }
-#endif
-
     int currentIndex;
 
     for (currentIndex = 0; currentIndex < NUM_MAX_TEXT_ENTRY; currentIndex++)
