@@ -20,9 +20,7 @@ focused on *Alone in the Dark 1*. It adds:
 - **HD asset tools** to pack the HD backgrounds and to generate, check and
   import HD character models ([HD assets](#hd-assets)).
 
-*Original project © 2026 Infogrames / Spacefarer Retro Remasters LLC, by Jake
-Jackson (jake@spacefarergames.com): free and non-profit. Support it at
-https://buymeacoffee.com/jakeysbakery or by PayPal to jake@spacefarergames.com.*
+*Original project © 2026 Infogrames.*
 
 ## Original Upscaled vs HD
 
