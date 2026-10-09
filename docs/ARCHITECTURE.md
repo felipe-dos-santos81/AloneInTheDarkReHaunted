@@ -48,7 +48,7 @@ third-party libraries vendored in `TatouSource/ThirdParty/`.
 |--------|------|-------------|
 | `Fitd` | Executable | Entry point (`Fitd/fitd.cpp`). Output: `Tatou.exe`, `Tatou` on Linux, `Tatou.app` on macOS |
 | `FitdLib` | Static library | All engine code, plus the ImGui sources |
-| `hd_models` | Custom | Copies `Assets/models_hd` next to the executable on every `Fitd` build |
+| `game_assets` | Custom | Copies `Assets/models_hd` and `Assets/fonts` next to the executable on every `Fitd` build |
 | `engine_tests` | Executable | doctest suite for the engine-free modules (`tests/engine/`) |
 | `build_hda_archive`, `unpack_hda_archive` | Executables | Pack and unpack `.hda` archives (`tools/`) |
 | `DOSBoxStub` | Executable (Windows) | Replaces the Steam/GOG `DOSBox.exe` so the store launches `Tatou.exe` |

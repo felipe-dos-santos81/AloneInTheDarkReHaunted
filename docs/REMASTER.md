@@ -58,8 +58,9 @@ Each effect has its own switch and settings under `postprocessing.*`:
 ## Text and menus
 
 - **TrueType text** (`font.*`): anti-aliased text drawn through ImGui over or
-  instead of the bitmap font. Put the font (default `BLKCHCRY.TTF`, Black
-  Chancery) in the game folder; 14–18 px reads best.
+  instead of the bitmap font. Every build ships IM Fell English
+  (`Assets/fonts`, SIL Open Font License), and a `font.path` that does not load
+  falls back to it; 14–18 px reads best.
 - **Blurred menus** (`graphics.blurredMenu`): a blurred, see-through system
   menu instead of opaque frames.
 

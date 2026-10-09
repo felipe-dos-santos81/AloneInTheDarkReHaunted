@@ -163,6 +163,10 @@ make build-fitd       # the build copies the models next to the game
 [docs/model-contract.md](docs/model-contract.md); in-game sign-off:
 [docs/hd-models-checklist.md](docs/hd-models-checklist.md).
 
+**Font:** `Assets/fonts` holds IM Fell English (SIL Open Font License,
+`OFL.txt`) for the TrueType text (`font.enableTTF`); every build copies it next
+to the game.
+
 ## Remaster features
 
 | Feature | Details |
@@ -201,7 +205,7 @@ alone-in-the-dark-re-haunted-v2/
 │   └── tools/           # .hda archive tools
 ├── tools/               # Python HD model tools
 ├── tests/tools/         # its pytest suite (make test-tools)
-├── Assets/              # HD backgrounds, masks, atlases and models
+├── Assets/              # HD backgrounds, masks, atlases, models and the TTF font
 ├── docs/                # guides, contracts, in-game checklists, screenshots
 └── data/                # your game files and exports (git-ignored)
 ```

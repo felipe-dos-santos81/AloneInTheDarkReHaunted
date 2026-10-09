@@ -67,8 +67,6 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES Darwin)
         "${CMAKE_SOURCE_DIR}/audio_fre.hda"
         "${CMAKE_BINARY_DIR}/Fitd/backgrounds_hd.hda"
         "${CMAKE_SOURCE_DIR}/backgrounds_hd.hda"
-        "${CMAKE_BINARY_DIR}/Fitd/BLKCHCRY.TTF"
-        "${CMAKE_SOURCE_DIR}/BLKCHCRY.TTF"
         "${CMAKE_BINARY_DIR}/Fitd/version.txt"
         "${CMAKE_SOURCE_DIR}/version.txt"
     )
@@ -98,11 +96,11 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES Darwin)
     )
 endif()
 
-# The HD character models, refreshed on every build of the game (graphics.hdModels
-# is on by default) next to the executable, or in the app's Resources on macOS; the
-# game also looks there. Not the atlases: the game reads those with HD models off
-# too. A plain path: a generator expression naming Fitd here would make the two
-# targets depend on each other.
+# The HD character models and the TrueType font, refreshed on every build of the
+# game (graphics.hdModels is on by default) next to the executable, or in the app's
+# Resources on macOS; the game also looks there. Not the atlases: the game reads
+# those with HD models off too. A plain path: a generator expression naming Fitd
+# here would make the two targets depend on each other.
 set(_hd_dir "${CMAKE_CURRENT_BINARY_DIR}")
 if(CMAKE_CONFIGURATION_TYPES)
     string(APPEND _hd_dir "/$<CONFIG>")
@@ -110,13 +108,14 @@ endif()
 IF(${CMAKE_SYSTEM_NAME} MATCHES Darwin)
     string(APPEND _hd_dir "/Tatou.app/Contents/Resources")
 endif()
-add_custom_target(hd_models
+add_custom_target(game_assets
     COMMAND ${CMAKE_COMMAND} "-DDESTINATION=${_hd_dir}"
         "-DMODELS=${CMAKE_SOURCE_DIR}/../Assets/models_hd"
         -P "${CMAKE_SOURCE_DIR}/cmake/copy_hd_models.cmake"
-    COMMENT "Copying Assets/models_hd next to the game"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/../Assets/fonts" "${_hd_dir}/fonts"
+    COMMENT "Copying Assets/models_hd and Assets/fonts next to the game"
 )
-add_dependencies(Fitd hd_models)
+add_dependencies(Fitd game_assets)
 
 
 # Platform-specific linking
