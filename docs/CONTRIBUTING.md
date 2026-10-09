@@ -8,7 +8,7 @@ testing guidelines. Read it before you change code.
 1. Fork the repository and clone your fork:
 
    ```bash
-   git clone https://github.com/<you>/AloneInTheDarkReHaunted.git
+   git clone https://github.com/<you>/alone-in-the-dark-re-haunted-v2.git
    ```
 
 2. Build it: [BUILDING.md](BUILDING.md).

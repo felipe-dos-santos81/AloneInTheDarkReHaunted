@@ -15,8 +15,8 @@ The third-party libraries (bgfx, SDL3, SoLoud, ImGui, zlib, doctest) are
 vendored in `TatouSource/ThirdParty/`, so a plain clone is enough:
 
 ```bash
-git clone https://github.com/felipe-dos-santos81/AloneInTheDarkReHaunted.git
-cd AloneInTheDarkReHaunted
+git clone https://github.com/felipe-dos-santos81/alone-in-the-dark-re-haunted-v2.git
+cd alone-in-the-dark-re-haunted-v2
 ```
 
 The root `Makefile` wraps the usual flow (`make help` lists every target):
@@ -107,7 +107,7 @@ cd /path/to/game-data
 From the Windows-side checkout, use the `linux-wsl` preset:
 
 ```bash
-cd /mnt/<drive>/AloneInTheDarkReHaunted/TatouSource
+cd /mnt/<drive>/alone-in-the-dark-re-haunted-v2/TatouSource
 cmake --preset linux-wsl
 cmake --build --preset linux-wsl --target Fitd --parallel 4
 ```
