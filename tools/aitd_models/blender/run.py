@@ -28,6 +28,7 @@ STAGE = HERE / "stage.py"
 EDITS = HERE / "edits"
 ATLASES = HERE.parents[2] / "Assets" / "atlases"
 DELIVERY = "model.glb"
+BAKES = ("color.npy", "ao.npy", "mask.npy")  # the stage's bakes; mask.npy only for a translucent body
 STAGE_SETTINGS = {"merge_distance": 0.0005, "crease_angle": 1.0, "cage": 0.02, "ray": 0.06,
                   "bake_size": 2048, "samples_emit": 8, "samples_ao": 64}
 STAGE_TIMEOUT_S = 900
@@ -110,12 +111,12 @@ def run_bodies(records: list[BodyRecord], models: pathlib.Path, out: pathlib.Pat
                 runs.append(BodyRun(record.key, "skipped", edits.skip))
                 log(f"skipped {record.key}: {edits.skip}")
                 continue
-            for stale in ("refined.npz", "color.npy", "ao.npy", "mask.npy"):
+            for stale in ("refined.npz", *BAKES):
                 (body_work / stale).unlink(missing_ok=True)
             stage(body_work)
             glb, triangles = finish_glb(body_work)
             atomic_write_bytes(delivery, glb)
-            for bake in ("color.npy", "ao.npy", "mask.npy"):
+            for bake in BAKES:
                 (body_work / bake).unlink(missing_ok=True)
             run = BodyRun(record.key, "delivered", "", triangles, texture_source(record.key, paths),
                           time.monotonic() - start)

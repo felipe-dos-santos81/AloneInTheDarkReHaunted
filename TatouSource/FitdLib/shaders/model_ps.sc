@@ -27,10 +27,10 @@ void main()
     vec4 albedo = texture2D(s_albedo, v_texcoord0);
     if (albedo.a < 0.5)
         discard;
-    float translucent = (albedo.a < 0.99 ? 1.0 : 0.0) * step(-0.5, u_tint.z);
-    if (abs(translucent - max(u_tint.z, 0.0)) > 0.5)
+    bool blended = albedo.a < 0.99;
+    if (u_tint.z > -0.5 && blended != (u_tint.z > 0.5))
         discard; // the other pass draws this texel
-    float alpha = translucent > 0.5 ? albedo.a : 1.0;
+    float alpha = u_tint.z > 0.5 ? albedo.a : 1.0;
     if (u_tint.w > 0.5)
     {
         gl_FragColor = vec4(albedo.rgb * (u_tint.x * u_tint.y), alpha);

@@ -140,8 +140,16 @@ def _piece(src: bpy.types.Object, faces: np.ndarray, level: int, flat: bool, job
 
 # Directions a face looks along to see which of its sides is open: its normal,
 # and six more 45 degrees off it (along, tangent, bitangent).
-RAYS = [(1.0, 0.0, 0.0)] + [(math.cos(math.pi / 4), math.sin(math.pi / 4) * math.cos(a),
-                             math.sin(math.pi / 4) * math.sin(a)) for a in (k * math.pi / 3 for k in range(6))]
+RAYS = [(1.0, 0.0, 0.0)] + [(math.cos(math.pi / 4), math.sin(math.pi / 4) * math.cos(k * math.pi / 3),
+                             math.sin(math.pi / 4) * math.sin(k * math.pi / 3)) for k in range(6)]
+
+
+def _hits(tree, centre, frame, side: int) -> list[float]:
+    """Distances to what the RAYS see from `centre`, on the `side` (1 front,
+    -1 back) of the face whose normal, tangent and bitangent are `frame`."""
+    n, t, b = frame
+    casts = (tree.ray_cast(centre + n * (side * 1e-5), (n * a + t * u + b * v) * side)[3] for a, u, v in RAYS)
+    return [d for d in casts if d is not None]
 
 
 def _orient_outward(model: bpy.types.Object) -> int:
@@ -160,13 +168,11 @@ def _orient_outward(model: bpy.types.Object) -> int:
             continue
         centre, t = face.calc_center_median(), n.orthogonal().normalized()
         b = n.cross(t)
-        counts, nearest = [], []
-        for side in (1, -1):
-            hits = [tree.ray_cast(centre + n * (side * 1e-5), (n * a + t * u + b * v) * side)[3] for a, u, v in RAYS]
-            hits = [d for d in hits if d is not None]
-            counts.append(len(hits))
-            nearest.append(min(hits, default=math.inf))
-        if counts[0] > counts[1] or (counts[0] == counts[1] and nearest[0] < nearest[1]):
+        front = _hits(tree, centre, (n, t, b), 1)
+        if not front:
+            continue  # an open front already faces outward
+        back = _hits(tree, centre, (n, t, b), -1)
+        if len(front) > len(back) or (len(front) == len(back) and min(front) < min(back)):
             flip.append(face)
     bmesh.ops.reverse_faces(bm, faces=flip)
     bm.to_mesh(model.data)
@@ -251,7 +257,9 @@ def _bake(model, src, job: dict, translucent: bool):
         bpy.ops.object.bake(type=kind, margin=8, **extra)
         for slot, material in zip(src.material_slots, saved):
             slot.material = material
-        out.append(np.array(image.pixels[:], np.float32).reshape(size, size, 4))
+        pixels = np.empty(size * size * 4, np.float32)
+        image.pixels.foreach_get(pixels)  # no 16M-float Python list
+        out.append(pixels.reshape(size, size, 4))
     return out[0][..., :3], out[1][..., 0], out[2][..., 0] if translucent else None, images[0]
 
 
