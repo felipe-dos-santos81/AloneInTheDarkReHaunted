@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from PIL import Image
 
 import hd_compare  # tools/ is on sys.path (conftest.py)
@@ -6,11 +7,12 @@ import hd_compare  # tools/ is on sys.path (conftest.py)
 W, H = 640, 400  # two frame pixels per game pixel
 
 
-def write_frames(tmp_path, shift_px=0, lit_scale=1.0):
+def write_frames(tmp_path, shift_px=0, lit_scale=1.0, near_background=False):
     """A busy background; the classic body is a painted 80x120-pixel block, the
     unlit HD body the same block in one flat colour moved by shift_px frame
-    pixels, the lit one the classic block times lit_scale; the hidden frame has
-    no body."""
+    pixels (or, near_background, the background itself lifted by 8: a dark
+    suit on a dark wall), the lit one the classic block times lit_scale; the
+    hidden frame has no body."""
     rng = np.random.default_rng(0)
     background = (rng.random((H, W, 3)) * 80).astype(np.uint8)  # busy, but never the bodies' colours
     classic = background.copy()
@@ -18,6 +20,8 @@ def write_frames(tmp_path, shift_px=0, lit_scale=1.0):
     classic[100:220:6, 200:280] = (230, 90, 90)  # painted detail the swatch lacks
     unlit, lit = background.copy(), background.copy()
     unlit[100:220, 200 + shift_px:280 + shift_px] = (90, 200, 40)
+    if near_background:
+        unlit[100:220, 200:280] = background[100:220, 200:280] + 8
     lit[100:220, 200 + shift_px:280 + shift_px] = (classic[100:220, 200:280] * lit_scale).astype(np.uint8)
     for name, img in (("classic", classic), ("unlit", unlit), ("lit", lit), ("hidden", background)):
         Image.fromarray(img).save(tmp_path / f"hdcompare_{name}.png")
@@ -25,9 +29,10 @@ def write_frames(tmp_path, shift_px=0, lit_scale=1.0):
     return tmp_path
 
 
-def test_a_body_in_place_passes_whatever_its_colours(tmp_path):
+@pytest.mark.parametrize("near_background", [False, True])
+def test_a_body_in_place_passes_whatever_its_colours(tmp_path, near_background):
     lines = []
-    assert hd_compare.main([str(write_frames(tmp_path))], log=lines.append) == 0
+    assert hd_compare.main([str(write_frames(tmp_path, near_background=near_background))], log=lines.append) == 0
     assert lines[0] == "LISTBODY_011: box (100, 50, 139, 109), iou 1.000, brightness 1.00, ok"
     assert lines[-1] == "1 bodies, 0 failed"
 
