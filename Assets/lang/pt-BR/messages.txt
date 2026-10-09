@@ -3,43 +3,43 @@
 @5:Manip Debug
 @6:Manip Debug 2
 
-@10:You cannot carry anything else
-@11:Begin a new game
-@12:Resume a saved game
-@13:Return to DOS
+@10:Você não pode carregar mais nada
+@11:Começar um novo jogo
+@12:Continuar um jogo salvo
+@13:Voltar ao DOS
 
-@14:Select the items represented on page:
-@15:Wrong selection!
+@14:Selecione os objetos da página:
+@15:Seleção errada!
 
-@20:You Find
-@21:Leave
-@22:Take
-@23:Use
-@24:Eat/Drink
-@25:Read
-@26:Reload
-@27:Fight
-@28:Jump
-@29:Open/Search
-@30:Close
-@31:Push
-@32:Throw
-@33:Drop/Put
+@20:Você Encontra
+@21:Deixar
+@22:Pegar
+@23:Usar
+@24:Comer/Beber
+@25:Ler
+@26:Recarregar
+@27:Lutar
+@28:Pular
+@29:Abrir/Vasculhar
+@30:Fechar
+@31:Empurrar
+@32:Jogar
+@33:Largar/Pôr
 
-@40:The End
+@40:Fim
 
-@41:Music OFF
-@42:Music ON
-@43:Sound effects OFF
-@44:Sound effects ON
-@45:Save Game
-@46:Load a Saved Game
-@47:Quit
-@48:Return to Game
-@49:Details Level: Low
-@50:Details Level: High
-@51:Game Saved
-@52:Error! Game not saved
+@41:Música: Não
+@42:Música: Sim
+@43:Sons: Não
+@44:Sons: Sim
+@45:Salvar Jogo
+@46:Carregar Jogo
+@47:Sair
+@48:Voltar ao Jogo
+@49:Detalhes: Baixo
+@50:Detalhes: Alto
+@51:Jogo Salvo
+@52:Erro! Jogo não salvo
 
 @60:Debug Map
 @61:Obj Infos
@@ -53,189 +53,189 @@
 @69:Vars List
 @70:Move Objects
 
-@100:Nothing important!
-@101:It's locked!
-@102:Nothing here!
-@103:A Photograph of Jeremy with his niece!
-@104:There's a mechanism to trigger!
-@105:This room is in the dark!
-@106:You feel weak
-@107:There is no room
-@108:They seem to dislike this music
-@109:Too heavy
-@110:A Photograph of uncle Jeremy with me!
-@111:Nothing important in this bookcase!
-@112:Get out of here!
+@100:Nada importante!
+@101:Está trancado!
+@102:Nada aqui!
+@103:Uma foto de Jeremy com a sobrinha!
+@104:Há um mecanismo aqui!
+@105:Este cômodo está no escuro!
+@106:Você se sente sem forças
+@107:Não há espaço
+@108:Eles não gostam desta música
+@109:Pesado demais
+@110:Uma foto do tio Jeremy comigo!
+@111:Nada importante nesta estante!
+@112:Saia daqui!
 
-@200:Actions
-@201:An Oil Lamp
-@202:A Rifle
-@203:A Letter
-@204:An Old Indian Cover
-@205:A Book
-@206:An Oil Can
-@207:A Bow
-@208:An Old Cavalry Saber
-@209:A Key
-@210:A First Aid Case
-@211:A Flask
-@212:A Vase
-@213:A Key
-@214:A Small Mirror
-@215:A Small Mirror
-@216:Some Notes
-@217:A Poker
-@218:A First Aid Case
-@219:A Flask
-@220:A Jug
-@221:Some Bullets
-@222:A Very Heavy Statuette
-@223:A Key
-@224:A Book
-@225:A Notebook
-@226:A Dagger
-@227:A Dagger
-@228:A Dagger
-@229:A Talisman
-@230:A Parchment
-@231:A Parchment
-@232:A Parchment
-@233:A Box of Cartridges
-@234:A Saber Blade
-@235:A Matchbox
-@236:A Book
-@237:A Book
-@238:A Book
-@239:A Book
-@240:A Book
-@241:A Book
-@242:A Gramophone
-@243:A Key
-@244:A Record
-@245:An Arrow
-@246:A Biscuit Box
-@247:A Key
-@248:A Matchbox
-@249:A Pot of Soup
-@250:A Box of Shoes
-@251:A Revolver
-@252:A Lighter
-@253:A Record
-@254:A Record
-@255:A Knife
-@256:A Sword
-@257:A Key
-@258:A Block
-@259:A Gem
-@260:A Book
-@261:A Book
-@262:A Book
-@263:A Book
-@264:A Book
-@265:A Book
-@266:A Hook
+@200:Ações
+@201:Um Lampião
+@202:Um Rifle
+@203:Uma Carta
+@204:Uma Velha Manta Indígena
+@205:Um Livro
+@206:Uma Lata de Óleo
+@207:Um Arco
+@208:Um Velho Sabre de Cavalaria
+@209:Uma Chave
+@210:Um Kit Médico
+@211:Um Frasco
+@212:Um Vaso
+@213:Uma Chave
+@214:Um Espelhinho
+@215:Um Espelhinho
+@216:Anotações
+@217:Um Atiçador
+@218:Um Kit Médico
+@219:Um Frasco
+@220:Um Jarro
+@221:Umas Balas
+@222:Uma Estatueta Pesadíssima
+@223:Uma Chave
+@224:Um Livro
+@225:Um Caderno
+@226:Um Punhal
+@227:Um Punhal
+@228:Um Punhal
+@229:Um Talismã
+@230:Um Pergaminho
+@231:Um Pergaminho
+@232:Um Pergaminho
+@233:Uma Caixa de Cartuchos
+@234:Uma Lâmina de Sabre
+@235:Uma Caixa de Fósforos
+@236:Um Livro
+@237:Um Livro
+@238:Um Livro
+@239:Um Livro
+@240:Um Livro
+@241:Um Livro
+@242:Um Gramofone
+@243:Uma Chave
+@244:Um Disco
+@245:Uma Flecha
+@246:Uma Lata de Biscoitos
+@247:Uma Chave
+@248:Uma Caixa de Fósforos
+@249:Uma Panela de Sopa
+@250:Uma Caixa de Sapatos
+@251:Um Revólver
+@252:Um Isqueiro
+@253:Um Disco
+@254:Um Disco
+@255:Uma Faca
+@256:Uma Espada
+@257:Uma Chave
+@258:Um Calço
+@259:Uma Gema
+@260:Um Livro
+@261:Um Livro
+@262:Um Livro
+@263:Um Livro
+@264:Um Livro
+@265:Um Livro
+@266:Um Gancho
 
-@510:This lamp is off
-@511:You have no oil
-@512:The lamp is full
-@513:The lamp goes off
-@514:The lamp has no oil
-@515:The lamp is already lit
-@516:Ok, the lamp is on
-@517:There is already oil in the lamp
+@510:O lampião está apagado
+@511:Você não tem óleo
+@512:O lampião está cheio
+@513:O lampião se apaga
+@514:O lampião está sem óleo
+@515:O lampião já está aceso
+@516:Ok, o lampião está aceso
+@517:O lampião já tem óleo
 
-@520:The rifle is empty
-@521:You have no ammunition
-@522:Ok, the rifle's reloaded
-@523:The cartridges are wet
+@520:O rifle está vazio
+@521:Você não tem munição
+@522:Ok, rifle recarregado
+@523:Os cartuchos estão molhados
 
-@530:Jeremy's Letter
-@550:Extract from the Golden Fleece
-@560:You have no lamp
-@561:An empty oil can
+@530:Carta de Jeremy
+@550:Trecho do Velocino de Ouro
+@560:Você não tem lampião
+@561:Uma Lata de Óleo Vazia
 
-@570:You have no Arrow
-@580:A Broken Saber
-@581:You put the saber's handle into the coat of arms
+@570:Você não tem flecha
+@580:Um Sabre Quebrado
+@581:Você põe o cabo do sabre no brasão
 
-@590:You don't have the right key
-@591:The chest's key
+@590:Você não tem a chave certa
+@591:A Chave do Baú
 
-@600:An Empty first aid case
+@600:Um Kit Médico Vazio
 
-@610:You feel better!
-@611:An Empty Flask
+@610:Você se sente melhor!
+@611:Um Frasco Vazio
 
-@620:A Broken Vase
+@620:Um Vaso Quebrado
 
-@630:The Dresser's Key
+@630:A Chave da Cômoda
 
-@640:A Small Broken Mirror
+@640:Um Espelhinho Quebrado
 
-@650:A Small Broken Mirror
+@650:Um Espelhinho Quebrado
 
-@660:Howard Hartwood's Diary
+@660:Diário de Howard Hartwood
 
-@680:An Empty First Aid Case
+@680:Um Kit Médico Vazio
 
-@690:An Empty Flask
+@690:Um Frasco Vazio
 
-@700:Yukk! Some Stagnant Water
-@701:You fill the Jug
-@702:A Water Jug
-@703:You pour the Jug's Content on the Cigars
-@704:No Water
-@705:It's full of water
+@700:Eca! Água parada
+@701:Você enche o jarro
+@702:Um Jarro d'Água
+@703:Você despeja a água do jarro nos charutos
+@704:Sem água
+@705:Está cheio de água
 
-@710:You have no Gun
-@711:Ok, the Revolver is reloaded
+@710:Você não tem revólver
+@711:Ok, revólver recarregado
 
-@730:The key to Jeremy's study
+@730:A Chave do Gabinete de Jeremy
 
-@740:A False Book
-@741:It's a fake Book!
+@740:Um Livro Falso
+@741:É um livro falso!
 
-@750:Jeremy Hartwood's Notebook
+@750:Caderno de Jeremy Hartwood
 
-@800:Signs and Rituals
-@810:The Sacrificial Dagger
-@820:The Creatures of the Night
-@830:You have no Rifle!
-@840:You put the Saber Blade into the Coat of Arms
+@800:Sinais e Rituais
+@810:O Punhal do Sacrifício
+@820:As Criaturas da Noite
+@830:Você não tem rifle!
+@840:Você põe a lâmina do sabre no brasão
 
-@850:A wet Matchbox
-@860:Fragments of the Book of Abdul
+@850:Uma Caixa de Fósforos Molhada
+@860:Fragmentos do Livro de Abdul
 @870:De Vermis Mysteriis
-@880:Reflections on the Power of the Verb
-@890:Memories
-@900:Diary of a journey
-@910:Story of a Louisana Plantation
+@880:Reflexões sobre o Poder do Verbo
+@890:Memórias
+@900:Diário de Viagem
+@910:Uma Fazenda na Luisiana
 
-@930:The key to the Pirates' chest
+@930:A Chave do Baú dos Piratas
 
-@940:You have nothing to listen to it on
-@941:J. Strauss' Blue Danube
-@942:You're listening to the Blue Danube
-@950:An empty Box
+@940:Você não tem onde tocá-lo
+@941:O Danúbio Azul de J. Strauss
+@942:Você ouve o Danúbio Azul
+@950:Uma Lata Vazia
 
-@970:The key to the Cellar
+@970:A Chave do Porão
 
-@990:Yukk! Some human flesh
-@1000:An empty Shoe Box
-@1010:You have no Bullets!
-@1011:The Revolver is empty
+@990:Eca! Carne humana
+@1000:Uma Caixa de Sapatos Vazia
+@1010:Você não tem balas!
+@1011:O revólver está vazio
 
-@1030:Saint-Saëns' Dance of Death
-@1031:You're listening to the Dance of Death
-@1040:Chopin's Posthumous Opus 69 Nr 1
-@1041:You're listening to the Posthumous Opus 69 Nr 1
+@1030:Dança Macabra de Saint-Saëns
+@1031:Você ouve a Dança Macabra
+@1040:Opus Póstumo 69 n. 1 de Chopin
+@1041:Você ouve o Opus Póstumo 69 n. 1
 
-@1070:The Key to the Dance Hall
+@1070:A Chave do Salão de Baile
 
-@1100:A Pirate's Log book
+@1100:Diário de Bordo de um Pirata
 
-@1110:The Trial of Captain Pregzt
-@1120:The Sons of the Sun
-@1130:The Tale of Captain Norton
+@1110:O Julgamento do Capitão Pregzt
+@1120:Os Filhos do Sol
+@1130:A História do Capitão Norton
 @1140:Demonia Particularis
 @1150:Terra Incognita
