@@ -117,7 +117,7 @@ The source files in `FitdLib/` can be grouped into the following logical modules
 
 | File(s) | Responsibility |
 |---------|---------------|
-| `configRemaster.cpp` / `configRemaster.h` | `RemasterConfig` struct and `fitd_remaster.cfg` parsing |
+| `configRemaster.cpp` / `configRemaster.h` | `RemasterConfig` struct and `aitd_remaster.cfg` parsing |
 | `hdBackground.cpp` / `hdBackground.h` | HD background image loading (PNG/TGA via stb_image/bimg) |
 | `hdBackgroundRenderer.cpp` / `hdBackgroundRenderer.h` | Submitting HD backgrounds to the GPU |
 | `hdArchive.cpp` / `hdArchive.h` | HD asset archive access |
@@ -125,6 +125,12 @@ The source files in `FitdLib/` can be grouped into the following logical modules
 | `fontTTF.cpp` / `fontTTF.h` | TrueType font overlay via ImGui |
 | `imguiBGFX.cpp` / `imguiBGFX.h` | ImGui ↔ bgfx integration |
 | `updateChecker.cpp` / `updateChecker.h` | Online version/update check |
+
+### This fork's modules
+
+Mouse gameplay (`mouse/`), the HD character models (`models/`, `modelReplacement.*`),
+the combat assists (`assist/`) and the collision rules (`physics/`) are described,
+with their firm rules, in the project map of [AGENTS.md](../AGENTS.md).
 
 ### Input
 
@@ -191,7 +197,7 @@ main() / WinMain()
   └─ FitdMain()
        └─ initBgfxGlue()   — create SDL3 window, init bgfx
        └─ OpenProgram()     — load HQR resources, init subsystems
-       └─ loadRemasterConfig() — read fitd_remaster.cfg
+       └─ loadRemasterConfig() — read aitd_remaster.cfg
        └─ startGame()       — load initial floor/room
        └─ PlayWorld() loop  — main game loop
 ```
@@ -234,6 +240,7 @@ Shaders live in `FitdLib/shaders/` and are compiled via bgfx's `shaderc` into C 
 | `noise` / `selective_noise` | Noise/dither effects |
 | `ramp` | Gradient ramp shading |
 | `sphere` | Sphere-mapped lighting |
+| `model` | HD character models: an opaque pass, then a blended pass for translucent texels |
 | `brightpass` / `blur` / `composite` | Bloom post-processing chain |
 | `ssao` / `ssao_blur` | Screen-space ambient occlusion |
 
@@ -275,4 +282,4 @@ Runtime configuration is managed through `RemasterConfig` (defined in `configRem
 - `controls` — keyboard and gamepad key/button bindings (9 actions)
 - `masks` — HD depth mask dumping and loading
 
-Values are loaded from `aitd_remaster.cfg` at startup via `loadRemasterConfig()` and can be saved back with `saveRemasterConfig()`.
+Values are loaded from `aitd_remaster.cfg` at startup via `loadRemasterConfig()` and can be saved back with `saveRemasterConfig()`. Every key, with its default, is in [configuration.md](configuration.md).

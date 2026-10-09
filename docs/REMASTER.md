@@ -1,6 +1,6 @@
 # Alone In The Dark: Re-Haunted — Remaster Features
 
-This document covers all the enhancements added by the Re-Haunted fork on top of the original FITD engine.
+This document covers all the enhancements added by the Re-Haunted fork on top of the original FITD engine. Every `aitd_remaster.cfg` key, with its default, is in [configuration.md](configuration.md); mouse gameplay and the combat assists are in the [README](../README.md#mouse-left-button-only).
 
 ---
 
@@ -61,7 +61,7 @@ Toggle fullscreen at any time using:
 
 - **F11** key
 - **Alt + Enter**
-- **Double-click** the game window
+- **Double-click** empty space outside gameplay
 - **Display** option in the in-game system menu (Escape → Display: Windowed/Fullscreen)
 
 The fullscreen setting is persisted in `aitd_remaster.cfg` as `graphics.fullscreen`. When the game starts, it reads this setting and automatically enters fullscreen if enabled. The game window is also raised to the foreground at startup to ensure the console window does not cover it.
@@ -89,12 +89,18 @@ graphics.fullscreen = true   # Start in fullscreen mode
 - High-quality textured replacements for core 3D models via texture atlas system
 - Per-floor animation caching prevents incorrect model loading between game areas
 
+### HD Character Models
+- Refined, textured meshes replace all 42 classic bodies (`graphics.hdModels`, on by default)
+- Skinned to the original bones, so every animation plays unchanged; translucent parts (the ghost, the insect's wings, lamp glass) draw blended
+- Every build copies `Assets/models_hd` next to the game; a body without a model draws classic
+- Made with `make blender-models` and `make import-models`: see [model-contract.md](model-contract.md) and [hd-models-checklist.md](hd-models-checklist.md)
+
 ### Configuration
 
 ```ini
 graphics.hdBackgrounds = true     # Enable HD backgrounds
-graphics.backgroundScale = 2     # Upscale factor (2, 4, or 8)
-graphics.filtering = true        # Enable texture filtering
+graphics.backgroundScale = 2     # Size of the HD art, as a multiple of 320x200
+graphics.hdModels = true         # HD character models
 graphics.useArtwork = true       # Use replacement artwork assets
 
 masks.dump = false                # Dump generated masks to PNG for editing
@@ -174,7 +180,7 @@ font.size = 16                 # Font size in pixels (14–18 recommended)
 font.hideOriginal = true       # Hide original bitmap font when TTF is active
 ```
 
-Recommended fonts: **BLKCHCRY.TTF** (Black Chancery), **MORPHEUS.TTF**, or any gothic/horror TTF. See [TTF_FONT_README.md](TTF_FONT_README.md) for details.
+Recommended fonts: **BLKCHCRY.TTF** (Black Chancery), **MORPHEUS.TTF**, or any gothic/horror TTF.
 
 ---
 
@@ -229,9 +235,9 @@ Full support for CD voice-over during book, letter, and notebook reading in AITD
 
 ---
 
-## External Music (In Progress)
+## External Music (Not Used Yet)
 
-Play custom music tracks instead of the original ADLIB music:
+Meant to play custom music tracks instead of the original ADLIB music. The game reads and saves these keys, but nothing acts on them yet:
 
 ```ini
 music.external = false
@@ -255,6 +261,7 @@ controls.key.confirm = 40         # Enter
 controls.key.cancel = 41          # Escape
 controls.key.quickturnleft = 20   # Q
 controls.key.quickturnright = 8   # E
+controls.key.run = 225            # Left Shift
 
 # Gamepad (SDL_GamepadButton values)
 controls.pad.up = 11
@@ -266,6 +273,7 @@ controls.pad.confirm = 6          # Start
 controls.pad.cancel = 1           # B / Circle
 controls.pad.quickturnleft = 9    # LB / L1
 controls.pad.quickturnright = 10  # RB / R1
+controls.pad.run = 7              # L3
 ```
 
 ---
