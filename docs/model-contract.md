@@ -134,6 +134,8 @@ and need their own delivery.
 `make check-models` (a dry run) and `make import-models` align the mesh to
 the original, check the fit, derive skin weights from the original's bone
 groups and write `Assets/models_hd/body_<KEY>.hdm` (see "Import output").
+`make models-install` then copies `Assets/models_hd` and `Assets/atlases`
+into the macOS app bundle; the game draws them with `graphics.hdModels = true`.
 
 The make targets read the bodies and the palette from the game data.
 `tools/models.py import` without `--data` reads `palette.bin` and each

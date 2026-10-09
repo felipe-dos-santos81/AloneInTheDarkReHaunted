@@ -64,7 +64,7 @@ no screen capture needed:
    `TatouSource/build/macos-arm64/Fitd/Tatou.app/Contents/Resources/`):
    `make identity-models bodies=<every canonical key>` then
    `make import-models models_ai=data/models-identity models_hd=data/models-hd-identity`
-   and copy `data/models-hd-identity/*.hdm` into `models_hd/`.
+   and `make models-install models_hd=data/models-hd-identity`.
 2. In `aitd_remaster.cfg` (same folder) set `graphics.hdModels = true`,
    `debug.hdModelsCompare = true` and `debug.loadSaveOnStart = <n>` (the
    save to open: the intro, language menu and startup options are skipped).
