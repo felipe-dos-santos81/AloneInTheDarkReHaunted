@@ -17,7 +17,10 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from aitd_textures.files import png_bytes
+
 from ..body import PRIM_POLY, Body
+from ..gltf import ARRAY_BUFFER, UNSIGNED_INT, GlbBuilder
 from ..mesh import Mesh
 
 KIND_PALETTE, KIND_BODY, KIND_RAMP, KIND_OTHER = 0, 1, 2, 3
@@ -228,3 +231,44 @@ def levels(groups: int, triangles: int, edits: Edits) -> list[int]:
     """The subdivision level of each group: the budget's, unless edited."""
     base = budget_level(triangles)
     return [edits.subdivide.get(g, base) for g in range(groups)]
+
+
+AO_STRENGTH = 0.3
+
+
+def composite(colour: np.ndarray, ao: np.ndarray, strength: float = AO_STRENGTH) -> np.ndarray:
+    """Linear (H, W, 3) colour and (H, W) ambient occlusion, rows bottom-up
+    as Blender stores them -> (H, W, 3) uint8 sRGB, rows top-down."""
+    lit = np.asarray(colour, float) * (1.0 - strength * (1.0 - np.asarray(ao, float)[..., None]))
+    return (np.clip(linear_to_srgb(lit), 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8)[::-1]
+
+
+def model_glb(positions: np.ndarray, loop_vertex: np.ndarray, loop_uv: np.ndarray, png: bytes) -> bytes:
+    """The delivery: Blender's triangles (one loop per corner, three per
+    triangle) as an indexed glTF mesh, Z-up (x, y, z) -> Y-up (x, z, -y),
+    one vertex per (position, UV) pair, v flipped to glTF's top-left origin."""
+    loop_vertex = np.asarray(loop_vertex, np.int64)
+    loop_uv = np.asarray(loop_uv, float)
+    pairs = np.column_stack([loop_vertex, np.round(loop_uv * 1e6).astype(np.int64)])
+    unique, inverse = np.unique(pairs, axis=0, return_inverse=True)
+    inverse = inverse.reshape(-1)
+    first = np.zeros(len(unique), np.int64)
+    first[inverse[::-1]] = np.arange(len(inverse))[::-1]
+    p = np.asarray(positions, float)[loop_vertex[first]]
+    uv = loop_uv[first]
+    g = GlbBuilder()
+    material = g.textured_material(png, "image/png", "remaster")
+    g.single_mesh_scene({"attributes": {
+        "POSITION": g.accessor(np.column_stack([p[:, 0], p[:, 2], -p[:, 1]]), "VEC3", target=ARRAY_BUFFER, bounds=True),
+        "TEXCOORD_0": g.accessor(np.column_stack([uv[:, 0], 1.0 - uv[:, 1]]), "VEC2", target=ARRAY_BUFFER)},
+        "indices": g.accessor(inverse, "SCALAR", UNSIGNED_INT), "material": material})
+    return g.to_bytes()
+
+
+def finish_glb(work: pathlib.Path) -> tuple[bytes, int]:
+    """model.glb from the stage's outputs in `work`, and its triangle count."""
+    refined = np.load(work / "refined.npz")
+    colour = np.load(work / "color.npy")
+    ao = np.load(work / "ao.npy")
+    png = png_bytes(composite(colour, ao))
+    return model_glb(refined["positions"], refined["loop_vertex"], refined["loop_uv"], png), len(refined["loop_vertex"]) // 3
