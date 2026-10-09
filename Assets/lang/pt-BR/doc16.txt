@@ -1,38 +1,39 @@
 
 
-#CMemories
+#CMemórias
 
-#CBy
+#Cpor
 
 #CAlistair Boleskine
-#CPrinted in London
-#CA.Machen editor.
+#CImpresso em Londres
+#CA. Machen, editor.
 #C1833
-#PIt was during a conversation with G...
-that one first heard of the New England
-fishing village of I...
-The area was apparently the ideal place
-from which to witness unusual phenomena
-in space.
-The quality of the air, along with the
-conjunction of several favorable
-factors made one impatient to get
-started. Having gleaned what information
-one could from the British Museum, one
-set off with all haste.
-#POne's work on space and comets in
-particular had met with a warm response
-and one thought it judicious to include
-several original sketches of the
-phenomenon, sketches which one felt were
-sure to arouse a great deal of keen
-interest in the scientific circles of
-1834 ... One refers naturally to the
-passage of Halley's comet.
-#P#CEditor's note. Lord Boleskine's
-Memoirs end at this point. Who knows
-what extraordinary contributions he
-might still have made had he not
-succumbed, during his visit to New
-England, to dementia, followed by an
-early death in St. Andrew's Hospital?
+#PFoi durante uma conversa com G... que
+ouvimos falar pela primeira vez de uma
+aldeia de pescadores da Nova Inglaterra
+chamada I... Ao que parecia, a região
+era o lugar ideal para testemunhar
+fenômenos incomuns no espaço. A
+qualidade do ar, aliada à conjunção de
+diversos fatores favoráveis, deixou-nos
+impacientes por começar. Tendo colhido
+no Museu Britânico as informações que
+pudemos, partimos com toda a presteza.
+#PNossos trabalhos sobre o espaço, e
+sobre os cometas em particular, haviam
+encontrado calorosa acolhida, e julgamos
+judicioso incluir diversos esboços
+originais do fenômeno, esboços que,
+estávamos certos, haveriam de despertar
+vivíssimo interesse nos círculos
+científicos de 1834... Referimo-nos,
+naturalmente, à passagem do cometa de
+Halley.
+#P#CNota do editor.
+#TAs Memórias de Lord Boleskine terminam
+neste ponto. Quem sabe que contribuições
+extraordinárias ele ainda teria dado,
+não houvesse sucumbido, durante sua
+visita à Nova Inglaterra, à demência,
+seguida de morte prematura no Hospital
+St. Andrew's?

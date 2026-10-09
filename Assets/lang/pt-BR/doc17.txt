@@ -1,143 +1,146 @@
 
-#CThe Trial of Captain Pregzt
+#CO Julgamento do Capitão Pregzt
 
-#CAs reported by his faithful companion
-#CElishah Smith
-#Cknown amongst his fraternity by the
-#Cawful name of
+#CSegundo o relato de seu fiel
+#Ccompanheiro Elishah Smith,
+#Cconhecido em sua irmandade pela
+#Calcunha terrível de
 #CCapt'n Elie Hell.
 
-#P#CTranscribed from the log
-#Cfound aboard the wreck of the frigate
-#CAstarte by H. Hartwood.
-#P"By all the devils!" roared Pregzt,
-glaring at William, the judge. "Curse
-it, Will, it would take much more than
-every cannon in the blasted Navy to make
-me change my mind!
-You're the greatest blackguard that ever
-joined our fraternity. Am I not Pregzt,
-captain of the Astarte and bloodiest
-villain in all the seven seas?
-#PBloody Ezech, they call me.
-#TAnd you think I'll tell you where
-I hid my treasure?"
-#TThe tribunal of the corsair's fraternity
-murmured at this. Pregzt was indeed all
-he claimed. The judge, One-eyed William,
-slammed his fist on the table and
-silence was restored. "Shut your mouth,
-Pregzt.
-#PYou didn't pay the Fraternity
-its rightful share, and that means only
-one thing: you'll hang by the neck from
-a yard-arm, you scurvy cur.
-#P#THere's the rope, twisted by Satan
-himself!" "You threaten me, Will? Many
-a man better than yourself has lived to
-regret holding a cutlass in my face. You'll
-be begging for mercy, mark my words!"
-#P#TThat shook One-eyed William and no
-mistake. Danny waved his hook in the air
-and shouted, "Pregzt was always a
-loud-mouth! The law says we hang him!"
-The jurors took up the cry, "Hang him!"
-#P#TIt was Pregzt's turn to slam his fist on
-the table. He threw back his head and
-roared with laughter. "You fools. You
-want to kill what will never die? Try
-it!" Once more, the assembled corsairs
-murmured. There was unease in the air.
-They remembered what happened to Chuck
-the Gizzard-Slitter, the man who opened
-his mouth once too often...
-#P#TIt was night and a bitter wind whipped
-the New England coast. Snug inside the
-Dead Horse Inn, one of the Astarte's men
-was talking. His name was Chuck and his
-subject was black magic. He told stories
-of human sacrifices, voodoo rites and
-zombies.
-#P#THe told a tale of a time when their
-luck was down and they were holed
-up in a Florida swamp. Pregzt went
-missing. When he returned, he shouted
-"'Tis the Devil that guides us now, me
-hearties!"
-#P#TWhether that was true or not, the
-Astarte began taking loot after
-juicy loot. The favourite song of the
-Astarte's men, "Crash the bones", was
-replaced by a new one:
+#P#CTranscrito do diário de bordo
+#Cencontrado nos destroços da fragata
+#CAstarte por H. Hartwood.
+#P"Por todos os diabos!" rugiu Pregzt,
+fulminando com o olhar William, o juiz.
+"Raios, Will, nem todos os canhões dessa
+maldita Marinha me fariam mudar de
+ideia! És o maior patife que já entrou
+para a nossa irmandade. Não sou eu
+Pregzt, capitão do Astarte e o mais
+sanguinário celerado dos sete mares?
+#PEzech, o Sanguinário, é como me
+chamam.
+#TE pensas que vou dizer-te onde escondi
+meu tesouro?"
+#TO tribunal da irmandade dos corsários
+murmurou ao ouvir isso. Pregzt era, de
+fato, tudo o que dizia ser. O juiz,
+William Caolho, deu um murro na mesa, e
+o silêncio voltou. "Cala a boca, Pregzt.
+#PNão pagaste à Irmandade a parte que
+lhe cabe, e isso só quer dizer uma
+coisa: hás de balançar pelo pescoço na
+ponta de uma verga, cão sarnento.
+#P#TEis a corda, trançada pelo próprio
+Satanás!" "Tu me ameaças, Will? Muitos
+homens melhores do que tu viveram para
+se arrepender de me apontar um sabre à
+cara. Ainda hás de implorar por
+misericórdia, guarda bem o que te digo!"
+#P#TAquilo abalou William Caolho, não
+resta dúvida. Danny agitou o gancho no
+ar e gritou: "Pregzt sempre foi um
+fanfarrão! A lei manda enforcá-lo!" Os
+jurados repetiram o brado:
+"Enforquem-no!"
+#P#TFoi a vez de Pregzt esmurrar a mesa.
+Lançou a cabeça para trás e soltou uma
+gargalhada. "Tolos! Querem matar o que
+jamais há de morrer? Pois tentem!" Mais
+uma vez, os corsários reunidos
+murmuraram. Pairava no ar um mal-estar.
+Lembravam-se do que acontecera a Chuck,
+o Degolador, o homem que abriu a boca
+uma vez a mais...
+#P#TEra noite, e um vento cortante
+açoitava a costa da Nova Inglaterra. Bem
+abrigado na Estalagem do Cavalo Morto,
+um dos homens do Astarte falava.
+Chamava-se Chuck, e o assunto era magia
+negra. Contava histórias de sacrifícios
+humanos, ritos vodus e zumbis.
+#P#TContou de um tempo em que a sorte
+lhes faltara e eles se haviam entocado
+num pântano da Flórida. Pregzt
+desapareceu. Quando voltou, bradou:
+"Agora é o Diabo quem nos guia, meus
+valentes!"
+#P#TFosse ou não verdade, o Astarte
+passou a fazer presa após presa, cada
+qual mais suculenta. A canção predileta
+dos homens do Astarte, "Quebra os
+Ossos", foi substituída por uma nova:
 #P
-#CA skull! Go to port
-#CSaber! To starboard!
-#CPass over that will
-#CAnd with death you'll deal.
-#CIf you cut a rope,
-#CCut the right I hope,
-#COr then, I don't mind
-#CThe death you will find."
-#PThe next day, as you may have guessed,
-Chuck's body was found with a dagger
-plunged between his shoulder blades.
-Chuck's face was fixed in a ghastly
-grin ... Molten lead had been poured down
-his throat.
-#P#TWhatever way things happened next, and I
-don't have the details, Pregzt was with
-us again and we set sail for Florida.
-We anchored the frigate not far from New
+#C"Caveira! A bombordo!
+#CSabre! A estibordo!
+#CQuem não fizer assim
+#CCom a morte terá seu fim.
+#CSe a corda cortares,
+#CQue seja a da direita,
+#COu então, tanto faz,
+#CA morte te espreita."
+#PNo dia seguinte, como o leitor terá
+adivinhado, o corpo de Chuck foi
+encontrado com um punhal cravado entre
+as omoplatas. O rosto de Chuck estava
+congelado num sorriso medonho...
+Haviam-lhe despejado chumbo derretido
+pela garganta.
+#P#TComo quer que as coisas se tenham
+passado depois, e disso não conheço os
+pormenores, Pregzt estava outra vez
+entre nós e zarpamos rumo à Flórida.
+Ancoramos a fragata não longe de Nova
 Orleans.
-#P#TTaking a few trusted companions
-with him, Pregzt set off into the swamp.
-They carried large wooden chests with
-them. Two days later, we heard shots
-being fired and screams.
-#TPregzt arrived soon after that and
-claimed they'd been attacked by
-alligators. He alone managed
-to escape with his life.
-#P#THe went on to say that the time had
-come to share out the spoils of our many
-loots. I was given command of the Astarte,
-while Pregzt handed three chests over to
-the crew; the chests were full of gold
-and precious gemstones.
-The rum flowed that night and the stars
-shone bright.
-#P#TAll at once I noticed a tall man
-dressed in black. Pregzt introduced
-him to me: "Here's a hearty mate!
-You can call him Keith. Many a tale
-he could tell!" Pregzt laughed loudly
-and held up a roll of parchment...
-"And his hide-out; none-better!"
-#P#TThe parchment fell to the ground, partly
-unrolling. I noticed what seemed to be a
-map of underground tunnels, a veritable
-maze of caverns. Pregzt continued,
-"I'm giving up the pirate's life.
-The Astarte's in your hands now,
-my lad. She's a fine ship and my
-reputation goes with her. Should any
-man call me coward, then break his head
-for me.
-#PI'm leaving you only because
-I've found a treasure more precious than
-the purest of gold! Har har har!"
-#P#TKeith spoke to him then, "It is
-midnight. They are ready and we must
-go." The stranger turned his cold eyes
-on me and said in a soft, chilling
-voice, "Sometimes Pregzt talks too much.
-Forget what he just said, and maybe
-you'll live!"
-#PThe fellow's words froze
-the marrow in my bones and it was all I
-could do to mumble "I'll not breathe a
-word". The canoe slid away into the
-night. Their torches disappeared in the
-distance of the swamp. My snoring
-companions didn't hear the insidious
-rhythm of far-off drums.
+#P#TLevando consigo alguns companheiros
+de confiança, Pregzt embrenhou-se no
+pântano. Carregavam grandes baús de
+madeira. Dois dias depois, ouvimos tiros
+e gritos.
+#TPregzt chegou pouco depois e afirmou
+que haviam sido atacados por jacarés.
+Somente ele conseguira escapar com vida.
+#P#TDisse então que chegara a hora de
+repartir os despojos de nossos muitos
+saques. A mim coube o comando do
+Astarte, enquanto Pregzt entregava à
+tripulação três baús repletos de ouro e
+pedras preciosas. O rum correu solto
+naquela noite, e as estrelas brilhavam
+com intensidade.
+#P#TDe repente, reparei num homem alto,
+vestido de negro. Pregzt fez as
+apresentações: "Eis um camarada
+valoroso! Podes chamá-lo de Keith. Muita
+história ele teria para contar!" Pregzt
+riu alto e ergueu um rolo de
+pergaminho... "E que esconderijo ele
+tem; não há melhor!"
+#P#TO pergaminho caiu ao chão,
+desenrolando-se em parte. Notei o que
+parecia ser um mapa de túneis
+subterrâneos, um verdadeiro labirinto de
+cavernas. Pregzt prosseguiu: "Vou deixar
+a vida de pirata. O Astarte agora está
+em tuas mãos, rapaz. É um belo navio, e
+minha reputação vai com ele. Se algum
+homem me chamar de covarde, racha-lhe a
+cabeça por mim.
+#PSó te deixo porque encontrei um
+tesouro mais precioso que o mais puro
+ouro! Ah, ah, ah!"
+#P#TKeith falou-lhe então: "É
+meia-noite. Eles estão prontos, e
+precisamos ir." O estranho voltou para
+mim seus olhos frios e disse, com voz
+branda e gélida: "Às vezes Pregzt fala
+demais. Esqueça o que ele acabou de
+dizer, e talvez continue vivo!"
+#PAs palavras do sujeito gelaram-me o
+tutano dos ossos, e tudo o que consegui
+foi balbuciar: "Não direi uma só
+palavra." A canoa afastou-se na noite.
+As tochas desapareceram ao longe, no
+pântano. Meus companheiros, que
+roncavam, não ouviram o ritmo insidioso
+de tambores distantes.

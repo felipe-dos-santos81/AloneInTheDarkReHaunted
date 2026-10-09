@@ -3,55 +3,55 @@
 
 
 
-#CPublished by
+#CPublicado por
 #CI·Motion
 
-#CProduced by
+#CProduzido por
 #CInfogrames
 #P
 
 
 
 
-#CRealized & Directed by
+#CRealizado & Dirigido por
 
 #CFrédérick Raynal
 #P
 
-First Assistant
+Primeiro Assistente
 
 #T#T#TFranck De Girolami
 
-Production Designer
+Direção de Arte
 
 #T#T#TYaël Barroz
 #T#T#TJean-Marc Toroella
 
-3D Modeling & Animation
+Modelagem 3D & Animação
 
 #T#T#TDidier Chanfray
 #P
 
 
-Screen Play
+Roteiro
 
 #T#T#THubert Chardot
 #T#T#TFranck Manzetti
 
 
 
-Product Manager
+Gerente de Produto
 
 #T#T#TOlivier Robin
 #P
 
-Original Music & SFX
+Música Original & Efeitos Sonoros
 
 #T#T#TPhilippe Vachey
-#T#TMixed by Sequence Coda
+#T#TMixagem de Sequence Coda
 
 
-Best Boys
+Assistentes
 
 #T#T#TFrédérique Bourgin
 #T#T#TLionel Frappé
@@ -59,7 +59,7 @@ Best Boys
 #P
 
 
-Special Thanks To :
+Agradecimentos Especiais a :
 
 
 #T#T#TBruno Bonnell
@@ -76,5 +76,5 @@ Special Thanks To :
 #C©1992 I·Motion / Infogrames
 
 
-#CDistributed by
+#CDistribuído por
 #CInterplay
