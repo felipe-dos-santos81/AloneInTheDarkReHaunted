@@ -1,8 +1,5 @@
 # Contributing to AITDR
 
-> The original project is free and non-profit. Support it at
-> https://buymeacoffee.com/jakeysbakery
-
 [../AGENTS.md](../AGENTS.md) holds this fork's firm rules, project map and
 testing guidelines. Read it before you change code.
 

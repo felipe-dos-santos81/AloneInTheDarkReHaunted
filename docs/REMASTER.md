@@ -34,8 +34,8 @@ Controller settings in `aitd_remaster.cfg`:
 
 ```ini
 controller.enable = true          # Enable/disable controller support
-controller.deadzone = 0.15        # Stick deadzone (0.0–1.0)
-controller.sensitivity = 1.0      # Stick sensitivity (0.5–2.0)
+controller.deadzone = 0.15        # Stick deadzone (0.0–0.9)
+controller.sensitivity = 1.0      # Stick sensitivity (0.1–5.0)
 controller.invertY = false        # Invert Y-axis
 controller.analogMovement = true  # Enable analog stick movement
 ```
@@ -313,7 +313,6 @@ Edit `controlsMenu.cpp` to add new actions, or use the in-game Controls menu for
 
 **Original Game**: Alone in the Dark (Infogrames, 1992)  
 **Original FITD Engine**: yaz0r  
-**Re-Haunted Remaster**: Spacefarer Retro Remasters LLC  
 **Controller / Input**: SDL3 Gamepad API  
 **Audio**: SoLoud  
 **Rendering**: bgfx  
