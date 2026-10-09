@@ -17,6 +17,7 @@ extern void playMenuSound(const char* soundName);
 #include "anim2d.h"
 #include "fontTTF.h"
 #include "menuMouse.h"
+#include "uiTr.h"
 
 #include "hdBackground.h"
 #include "nativeLife.h"
@@ -27,6 +28,7 @@ extern void playMenuSound(const char* soundName);
 #include "track.h"
 #include "physics/collisionEscape.h"
 #include "assist/attackPace.h"
+#include "text/fontCompose.h"
 #include "lanternLighting.h"
 #include "modelReplacement.h"
 #include "menuMouse.h"
@@ -62,6 +64,10 @@ FILE* Open(const char* filename, const char* mode) {
 }
 
 static std::string g_versionString;
+
+// The game font as loaded, and the one extended for Portuguese (a-tilde, o-tilde)
+static char* s_originalFont = nullptr;
+static std::vector<unsigned char> s_portugueseFont;
 
 static void loadVersionString()
 {
@@ -494,6 +500,8 @@ void reloadLanguage(const char* langName)
 
     // Set the new language
     languageNameString = langName;
+    if (s_originalFont)
+        PtrFont = (char*)text::pickLanguageFont(languageNameString, s_originalFont, s_portugueseFont);
 
     // Reload text data using allocTextes (it will use the pre-set languageNameString)
     allocTextes();
@@ -556,6 +564,10 @@ void OpenProgram(void)
         break;
     case AITD1:
         PtrFont = CheckLoadMallocPak("ITD_RESS", 5);
+        s_originalFont = PtrFont;
+        s_portugueseFont = text::composeFont((const unsigned char*)PtrFont, getPakSize("ITD_RESS", 5));
+        if (s_portugueseFont.empty())
+            printf(MAIN_WARN "Could not extend the font for Portuguese: a-tilde and o-tilde will not draw" CON_RESET "\n");
         break;
     case TIMEGATE:
         PtrFont = CheckLoadMallocPak("ITD_RESS", 2);
@@ -5350,7 +5362,7 @@ int parseAllSaves(int arg)
                     for (int px = 183; px <= 286; px++)
                         logicalScreen[py * 320 + px] = 0;
                 SetFont(PtrFont, 4);
-                PrintFont(185, 70, logicalScreen, (u8*)"No Preview");
+                PrintFont(185, 70, logicalScreen, (u8*)trDos("No Preview"));
             }
         }
 

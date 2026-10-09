@@ -72,6 +72,8 @@ extern const unsigned char embdata_LISTSAMP_PAK[];
 extern const unsigned long long embdata_LISTSAMP_PAK_size;
 extern const unsigned char embdata_LISTTRAK_PAK[];
 extern const unsigned long long embdata_LISTTRAK_PAK_size;
+extern const unsigned char embdata_PORTUGUE_PAK[];
+extern const unsigned long long embdata_PORTUGUE_PAK_size;
 extern const unsigned char embdata_PRESENT_PAK[];
 extern const unsigned long long embdata_PRESENT_PAK_size;
 extern const unsigned char embdata_USA_PAK[];
@@ -125,6 +127,7 @@ static const EmbeddedFileEntry s_embeddedFiles[] = {
     { "LISTMUS.PAK", embdata_LISTMUS_PAK, embdata_LISTMUS_PAK_size },
     { "LISTSAMP.PAK", embdata_LISTSAMP_PAK, embdata_LISTSAMP_PAK_size },
     { "LISTTRAK.PAK", embdata_LISTTRAK_PAK, embdata_LISTTRAK_PAK_size },
+    { "PORTUGUE.PAK", embdata_PORTUGUE_PAK, embdata_PORTUGUE_PAK_size },
     { "PRESENT.PAK", embdata_PRESENT_PAK, embdata_PRESENT_PAK_size },
     { "USA.PAK", embdata_USA_PAK, embdata_USA_PAK_size },
     { "DEFINES.ITD", embdata_DEFINES_ITD, embdata_DEFINES_ITD_size },

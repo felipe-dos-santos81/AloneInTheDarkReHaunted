@@ -16,6 +16,7 @@
 #include "startupMenu.h"
 #include "asyncLoader.h"
 #include "menuMouse.h"
+#include "uiTr.h"
 
 // DEMO mapping
 /*
@@ -596,15 +597,7 @@ int ChoosePerso(void)
     clearTTFTextQueue();
 
     // Draw loading text centered on screen, translated per language
-    const char* loadingText = "Please Wait...";
-    if (languageNameString == "FRANCAIS")
-        loadingText = "Veuillez Patienter...";
-    else if (languageNameString == "ITALIANO")
-        loadingText = "Attendere Prego...";
-    else if (languageNameString == "ESPAGNOL")
-        loadingText = "Por Favor Espere...";
-    else if (languageNameString == "DEUTSCH")
-        loadingText = "Bitte Warten...";
+    const char* loadingText = trDos("Please Wait...");
 
     SetFont(PtrFont, 15);
     int textWidth = ExtGetSizeFont((u8*)loadingText);

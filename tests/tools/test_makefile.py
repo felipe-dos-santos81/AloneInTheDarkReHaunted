@@ -76,7 +76,7 @@ def test_help_lists_the_asset_targets():
     out = make_run("help")
     for target in ("hd-install", "tools-deps", "test-tools",
                    "export-models", "identity-models", "blender-models", "check-models", "import-models",
-                   "models-install"):
+                   "models-install", "lang-extract", "lang-pack"):
         assert target in out
 
 

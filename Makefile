@@ -72,6 +72,7 @@ require = @test -x "$(1)" || { echo "error: $(2) not found - $(3)"; exit 1; }
         test test-engine test-tools \
         hd-install hda-pack hda-unpack \
         export-models identity-models blender-models check-models import-models models-install \
+        lang-extract lang-pack \
         clean distclean rebuild
 
 help: ## List the targets
@@ -161,6 +162,14 @@ models-install: ## Copy the models and atlases where the game reads them [models
 	@test -d "$(GAME_DIR)" || { echo "error: no $(GAME_DIR) - $(if $(BUNDLE_RESOURCES),run 'make build-fitd' first,see the README's game data steps)"; exit 1; }
 	@$(CMAKE) "-DDESTINATION=$(GAME_DIR)" "-DMODELS=$(abspath $(models_hd))" "-DATLASES=$(abspath $(atlases))" \
 		-P $(SRC_DIR)/cmake/copy_hd_models.cmake
+
+##@ Translation
+
+lang-extract: ## Write the English and French text as UTF-8 files into data/lang [gamedata=DIR]
+	$(PYTHON) tools/lang.py extract --data "$(gamedata)"
+
+lang-pack: ## Check Assets/lang/pt-BR and pack it into the game [gamedata=DIR]
+	$(PYTHON) tools/lang.py pack --data "$(gamedata)"
 
 ##@ Clean
 

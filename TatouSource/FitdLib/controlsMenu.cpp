@@ -13,6 +13,7 @@
 #include "fontTTF.h"
 #include "input.h"
 #include "menuMouse.h"
+#include "uiTr.h"
 #include <cstring>
 
 // Helper function to play menu navigation sounds (defined in systemMenu.cpp)
@@ -245,12 +246,12 @@ static void drawControlRow(int y, KeyAction action, bool selected, bool remappin
 
 	// Action name
 	const char* actionName = getActionName(action);
-	drawTextLeft(leftCol, y, actionName, selected ? CONTROLS_SELECT_COUL : CONTROLS_LABEL_COUL);
+	drawTextLeft(leftCol, y, trDos(actionName), selected ? CONTROLS_SELECT_COUL : CONTROLS_LABEL_COUL);
 
 	// Keyboard binding
 	if (selected && remapping && !remapGamepad)
 	{
-		drawTextLeft(midCol, y, "Press Key...", CONTROLS_SELECT_COUL);
+		drawTextLeft(midCol, y, trDos("Press Key..."), CONTROLS_SELECT_COUL);
 	}
 	else
 	{
@@ -262,7 +263,7 @@ static void drawControlRow(int y, KeyAction action, bool selected, bool remappin
 	{
 		if (selected && remapping && remapGamepad)
 		{
-			drawTextLeft(rightCol, y, "Press...", CONTROLS_SELECT_COUL);
+			drawTextLeft(rightCol, y, trDos("Press..."), CONTROLS_SELECT_COUL);
 		}
 		else
 		{
@@ -319,15 +320,7 @@ void processControlsMenu(bool hdMode)
 
 		// Title (translated)
 		{
-			const char* titleText = "Controls";
-			if (languageNameString == "FRANCAIS")
-				titleText = "Commandes";
-			else if (languageNameString == "ITALIANO")
-				titleText = "Comandi";
-			else if (languageNameString == "ESPAGNOL")
-				titleText = "Controles";
-			else if (languageNameString == "DEUTSCH")
-				titleText = "Steuerung";
+			const char* titleText = trDos("Controls");
 			drawText(160, topY, titleText, CONTROLS_SELECT_COUL);
 		}
 		topY += 12;
@@ -345,34 +338,22 @@ void processControlsMenu(bool hdMode)
 			}
 			else
 			{
-				const char* connText = "Controller Connected";
-				if (languageNameString == "FRANCAIS") connText = "Manette Connect" "\xE9" "e";
-				else if (languageNameString == "ITALIANO") connText = "Controller Connesso";
-				else if (languageNameString == "ESPAGNOL") connText = "Mando Conectado";
-				else if (languageNameString == "DEUTSCH") connText = "Controller Verbunden";
+				const char* connText = trDos("Controller Connected");
 				drawText(160, topY, connText, CONTROLS_VALUE_COUL);
 			}
 		}
 		else
 		{
-			const char* noCtrl = "No Controller";
-			if (languageNameString == "FRANCAIS") noCtrl = "Pas de Manette";
-			else if (languageNameString == "ITALIANO") noCtrl = "Nessun Controller";
-			else if (languageNameString == "ESPAGNOL") noCtrl = "Sin Mando";
-			else if (languageNameString == "DEUTSCH") noCtrl = "Kein Controller";
+			const char* noCtrl = trDos("No Controller");
 			drawText(160, topY, noCtrl, CONTROLS_MENU_COUL);
 		}
 		topY += 11;
 
 		// Column headers (translated)
 		{
-			const char* hdrAction = "Action";
-			const char* hdrKey = "Key";
-			const char* hdrButton = "Button";
-			if (languageNameString == "FRANCAIS") { hdrAction = "Action"; hdrKey = "Touche"; hdrButton = "Bouton"; }
-			else if (languageNameString == "ITALIANO") { hdrAction = "Azione"; hdrKey = "Tasto"; hdrButton = "Pulsante"; }
-			else if (languageNameString == "ESPAGNOL") { hdrAction = "Acci" "\xF3" "n"; hdrKey = "Tecla"; hdrButton = "Bot" "\xF3" "n"; }
-			else if (languageNameString == "DEUTSCH") { hdrAction = "Aktion"; hdrKey = "Taste"; hdrButton = "Knopf"; }
+			const char* hdrAction = trDos("Action");
+			const char* hdrKey = trDos("Key");
+			const char* hdrButton = trDos("Button");
 			drawTextLeft(WindowX1 + 4, topY, hdrAction, CONTROLS_LABEL_COUL);
 			drawTextLeft(140, topY, hdrKey, CONTROLS_LABEL_COUL);
 			if (g_controllerState.connected)
@@ -392,11 +373,7 @@ void processControlsMenu(bool hdMode)
 		int backY = topY + ACTION_COUNT * 11 + 2;
 		{
 			bool selected = (currentEntry == backEntry);
-			const char* backText = "Back";
-			if (languageNameString == "FRANCAIS") backText = "Retour";
-			else if (languageNameString == "ITALIANO") backText = "Indietro";
-			else if (languageNameString == "ESPAGNOL") backText = "Volver";
-			else if (languageNameString == "DEUTSCH") backText = "Zur" "\xFC" "ck";
+			const char* backText = trDos("Back");
 			drawText(160, backY, backText, selected ? CONTROLS_SELECT_COUL : CONTROLS_MENU_COUL);
 		}
 
@@ -404,11 +381,7 @@ void processControlsMenu(bool hdMode)
 		int defaultsY = backY + 11;
 		{
 			bool selected = (currentEntry == defaultsEntry);
-			const char* defText = "Defaults";
-			if (languageNameString == "FRANCAIS") defText = "Par D\xE9aut";
-			else if (languageNameString == "ITALIANO") defText = "Predefiniti";
-			else if (languageNameString == "ESPAGNOL") defText = "Predeterminado";
-			else if (languageNameString == "DEUTSCH") defText = "Standard";
+			const char* defText = trDos("Defaults");
 			drawText(160, defaultsY, defText, selected ? CONTROLS_SELECT_COUL : CONTROLS_MENU_COUL);
 		}
 

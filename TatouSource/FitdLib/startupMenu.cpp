@@ -31,6 +31,7 @@ static const LanguageEntry s_allLanguages[] =
     { "ITALIANO", "Italiano" },
     { "ESPAGNOL", "Espa\xA4" "ol"  },
     { "DEUTSCH",  "Deutsch"  },
+    { "PORTUGUE", "Portugu\x88s" },
 };
 static const int s_allLanguagesCount = sizeof(s_allLanguages) / sizeof(s_allLanguages[0]);
 
@@ -114,13 +115,20 @@ static int detectAvailableLanguages(int* availableLanguages, int maxCount)
     return count;
 }
 
+// Top of the list. The flags are painted into the HD background beside the
+// original five rows, so those stay put and further languages go below them.
+static int languageListTop(int availableCount)
+{
+    const int centred = availableCount < 5 ? availableCount : 5;
+    return 100 - centred * 16 / 2;
+}
+
 static void DrawLanguageMenu(int* availableLanguages, int availableCount, int selectedEntry)
 {
-    if (detailLevel == 0)
-        AffBigCadre(160, 100, 320, availableCount * 16 + 32);
+    int currentY = languageListTop(availableCount);
 
-    int totalHeight = availableCount * 16;
-    int currentY = 100 - totalHeight / 2;
+    if (detailLevel == 0)
+        AffBigCadre(160, currentY + availableCount * 8, 320, availableCount * 16 + 32);
 
     for (int i = 0; i < availableCount; i++)
     {
@@ -209,7 +217,7 @@ void LanguageSelectionMenu(void)
         {
             static MenuHoverAnchor s_langHover;
             ImVec2 gm = menuGetGameMouse();
-            int startY = 100 - (availableCount * 16) / 2;
+            int startY = languageListTop(availableCount);
             if (menuMouseMoved(s_langHover, JoyD || key))
             {
                 int hit = menuMouseHitList(gm.x, gm.y, 8, 311, startY, 16, availableCount);

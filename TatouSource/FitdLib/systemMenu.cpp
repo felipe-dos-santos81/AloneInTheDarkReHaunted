@@ -16,6 +16,7 @@
 #include "bgfxGlue.h"
 #include "lanternLighting.h"
 #include "menuMouse.h"
+#include "uiTr.h"
 void SetLevelDestPal(palette_t& inPalette, palette_t& outPalette, int coef);
 
 // Helper function
@@ -215,15 +216,7 @@ void AffOptionList(int selectedStringNumber, bool hdPreview)
     // Fullscreen option (no string table entry, draw manually)
     {
         int y = WindowY1 + ((WindowY2 - WindowY1) / 2) - (NB_OPTIONS * SIZE_FONT) / 2 + (6 * SIZE_FONT);
-        const char* fsText = gIsFullscreen ? "Display: Fullscreen" : "Display: Windowed";
-        if (languageNameString == "FRANCAIS")
-            fsText = gIsFullscreen ? "Affichage: Plein \x82" "cran" : "Affichage: Fen\x88" "tr\x82";
-        else if (languageNameString == "ITALIANO")
-            fsText = gIsFullscreen ? "Schermo: Intero" : "Schermo: Finestra";
-        else if (languageNameString == "ESPAGNOL")
-            fsText = gIsFullscreen ? "Pantalla: Completa" : "Pantalla: Ventana";
-        else if (languageNameString == "DEUTSCH")
-            fsText = gIsFullscreen ? "Anzeige: Vollbild" : "Anzeige: Fenster";
+        const char* fsText = trDos(gIsFullscreen ? "Display: Fullscreen" : "Display: Windowed");
 
         u8* fsPtr = (u8*)fsText;
 
@@ -270,15 +263,7 @@ void AffOptionList(int selectedStringNumber, bool hdPreview)
     // Controls option (no string table entry, draw manually)
     {
         int y = WindowY1 + ((WindowY2 - WindowY1) / 2) - (NB_OPTIONS * SIZE_FONT) / 2 + (7 * SIZE_FONT);
-        const char* controlsText = "Controls";
-        if (languageNameString == "FRANCAIS")
-            controlsText = "Commandes";
-        else if (languageNameString == "ITALIANO")
-            controlsText = "Comandi";
-        else if (languageNameString == "ESPAGNOL")
-            controlsText = "Controles";
-        else if (languageNameString == "DEUTSCH")
-            controlsText = "Steuerung";
+        const char* controlsText = trDos("Controls");
 
         u8* textPtr = (u8*)controlsText;
 
@@ -325,15 +310,7 @@ void AffOptionList(int selectedStringNumber, bool hdPreview)
     // Hints toggle option (no string table entry, draw manually)
     {
         int y = WindowY1 + ((WindowY2 - WindowY1) / 2) - (NB_OPTIONS * SIZE_FONT) / 2 + (8 * SIZE_FONT);
-        const char* hintsText = g_remasterConfig.graphics.enableHints ? "Hints: On" : "Hints: Off";
-        if (languageNameString == "FRANCAIS")
-            hintsText = g_remasterConfig.graphics.enableHints ? "Indices: Activ\x82" : "Indices: D\x82sactiv\x82";
-        else if (languageNameString == "ITALIANO")
-            hintsText = g_remasterConfig.graphics.enableHints ? "Suggerimenti: On" : "Suggerimenti: Off";
-        else if (languageNameString == "ESPAGNOL")
-            hintsText = g_remasterConfig.graphics.enableHints ? "Pistas: On" : "Pistas: Off";
-        else if (languageNameString == "DEUTSCH")
-            hintsText = g_remasterConfig.graphics.enableHints ? "Hinweise: An" : "Hinweise: Aus";
+        const char* hintsText = trDos(g_remasterConfig.graphics.enableHints ? "Hints: On" : "Hints: Off");
 
         u8* textPtr = (u8*)hintsText;
 
@@ -833,15 +810,7 @@ void processMapScreen(void)
 		// Draw title text
 		{
 			int titleY = WindowY1 + 4;
-			const char* titleText = "Map";
-			if (languageNameString == "FRANCAIS")
-				titleText = "Carte";
-			else if (languageNameString == "ITALIANO")
-				titleText = "Mappa";
-			else if (languageNameString == "ESPAGNOL")
-				titleText = "Mapa";
-			else if (languageNameString == "DEUTSCH")
-				titleText = "Karte";
+			const char* titleText = trDos("Map");
 
 			u8* textPtr = (u8*)titleText;
 

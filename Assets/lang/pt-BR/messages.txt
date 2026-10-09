@@ -1,0 +1,241 @@
+@1:Alone in the Dark
+@2:©1992 I·Motion/Infogrames
+@5:Manip Debug
+@6:Manip Debug 2
+
+@10:Você não pode carregar mais nada
+@11:Começar um novo jogo
+@12:Continuar um jogo salvo
+@13:Voltar ao DOS
+
+@14:Selecione os objetos da página:
+@15:Seleção errada!
+
+@20:Você Encontra
+@21:Deixar
+@22:Pegar
+@23:Usar
+@24:Comer/Beber
+@25:Ler
+@26:Recarregar
+@27:Lutar
+@28:Pular
+@29:Abrir/Vasculhar
+@30:Fechar
+@31:Empurrar
+@32:Lançar
+@33:Largar/Pôr
+
+@40:Fim
+
+@41:Música: Não
+@42:Música: Sim
+@43:Sons: Não
+@44:Sons: Sim
+@45:Salvar Jogo
+@46:Carregar Jogo
+@47:Sair
+@48:Voltar ao Jogo
+@49:Detalhes: Baixo
+@50:Detalhes: Alto
+@51:Jogo Salvo
+@52:Erro! Jogo não salvo
+
+@60:Debug Map
+@61:Obj Infos
+@62:Life Trace (mtl)
+@63:Obj ZV
+@64:World ZVs
+@65:Frame Speed
+@66:Active List
+@67:System Infos
+@68:World Infos
+@69:Vars List
+@70:Move Objects
+
+@100:Nada importante!
+@101:Está trancado!
+@102:Nada aqui!
+@103:Uma foto de Jeremy com a sobrinha!
+@104:Há um mecanismo aqui!
+@105:Este cômodo está no escuro!
+@106:Você se sente sem forças
+@107:Não há espaço
+@108:Eles não gostam desta música
+@109:Pesado demais
+@110:Uma foto do tio Jeremy comigo!
+@111:Nada importante nesta estante!
+@112:Saia daqui!
+
+@200:Ações
+@201:Um Lampião
+@202:Um Rifle
+@203:Uma Carta
+@204:Uma Velha Manta Indígena
+@205:Um Livro
+@206:Uma Lata de Óleo
+@207:Um Arco
+@208:Um Velho Sabre de Cavalaria
+@209:Uma Chave
+@210:Um Kit Médico
+@211:Um Frasco
+@212:Um Vaso
+@213:Uma Chave
+@214:Um Espelhinho
+@215:Um Espelhinho
+@216:Anotações
+@217:Um Atiçador
+@218:Um Kit Médico
+@219:Um Frasco
+@220:Um Jarro
+@221:Balas
+@222:Uma Estatueta Pesadíssima
+@223:Uma Chave
+@224:Um Livro
+@225:Um Caderno
+@226:Um Punhal
+@227:Um Punhal
+@228:Um Punhal
+@229:Um Talismã
+@230:Um Pergaminho
+@231:Um Pergaminho
+@232:Um Pergaminho
+@233:Uma Caixa de Cartuchos
+@234:Uma Lâmina de Sabre
+@235:Uma Caixa de Fósforos
+@236:Um Livro
+@237:Um Livro
+@238:Um Livro
+@239:Um Livro
+@240:Um Livro
+@241:Um Livro
+@242:Um Gramofone
+@243:Uma Chave
+@244:Um Disco
+@245:Uma Flecha
+@246:Uma Lata de Biscoitos
+@247:Uma Chave
+@248:Uma Caixa de Fósforos
+@249:Uma Panela de Sopa
+@250:Uma Caixa de Sapatos
+@251:Um Revólver
+@252:Um Isqueiro
+@253:Um Disco
+@254:Um Disco
+@255:Uma Faca
+@256:Uma Espada
+@257:Uma Chave
+@258:Um Calço
+@259:Uma Pedra Preciosa
+@260:Um Livro
+@261:Um Livro
+@262:Um Livro
+@263:Um Livro
+@264:Um Livro
+@265:Um Livro
+@266:Um Gancho
+
+@510:O lampião está apagado
+@511:Você não tem óleo
+@512:O lampião está cheio
+@513:O lampião se apaga
+@514:O lampião está sem óleo
+@515:O lampião já está aceso
+@516:Ok, o lampião está aceso
+@517:O lampião já tem óleo
+
+@520:O rifle está descarregado
+@521:Você não tem munição
+@522:Ok, rifle recarregado
+@523:Os cartuchos estão molhados
+
+@530:Carta de Jeremy
+@550:Trecho do Velocino de Ouro
+@560:Você não tem lampião
+@561:Uma Lata de Óleo Vazia
+
+@570:Você não tem flecha
+@580:Um Sabre Quebrado
+@581:Você põe o cabo do sabre no brasão
+
+@590:Você não tem a chave certa
+@591:A Chave do Baú
+
+@600:Um Kit Médico Vazio
+
+@610:Você se sente melhor!
+@611:Um Frasco Vazio
+
+@620:Um Vaso Quebrado
+
+@630:A Chave da Cômoda
+
+@640:Um Espelhinho Quebrado
+
+@650:Um Espelhinho Quebrado
+
+@660:Diário de Howard Hartwood
+
+@680:Um Kit Médico Vazio
+
+@690:Um Frasco Vazio
+
+@700:Eca! Água parada
+@701:Você enche o jarro
+@702:Um Jarro d'Água
+@703:Você despeja a água do jarro nos charutos
+@704:Sem água
+@705:Está cheio de água
+
+@710:Você não tem revólver
+@711:Ok, revólver recarregado
+
+@730:A Chave do Escritório de Jeremy
+
+@740:Um Livro Falso
+@741:É um livro falso!
+
+@750:Caderno de Jeremy Hartwood
+
+@800:Sinais e Rituais
+@810:O Punhal do Sacrifício
+@820:As Criaturas da Noite
+@830:Você não tem rifle!
+@840:Você põe a lâmina do sabre no brasão
+
+@850:Uma Caixa de Fósforos Molhada
+@860:Fragmentos do Livro de Abdul
+@870:De Vermis Mysteriis
+@880:Reflexões sobre o Poder do Verbo
+@890:Memórias
+@900:Diário de Viagem
+@910:Uma Fazenda na Luisiana
+
+@930:A Chave do Baú dos Piratas
+
+@940:Você não tem onde tocá-lo
+@941:O Danúbio Azul de J. Strauss
+@942:Você está ouvindo o Danúbio Azul
+@950:Uma Lata Vazia
+
+@970:A Chave do Porão
+
+@990:Eca! Carne humana
+@1000:Uma Caixa de Sapatos Vazia
+@1010:Você não tem balas!
+@1011:O revólver está descarregado
+
+@1030:Dança Macabra de Saint-Saëns
+@1031:Você está ouvindo a Dança Macabra
+@1040:Opus Póstumo 69 n. 1 de Chopin
+@1041:Você está ouvindo o Opus Póstumo 69 n. 1
+
+@1070:A Chave do Salão de Baile
+
+@1100:Diário de Bordo de um Pirata
+
+@1110:O Julgamento do Capitão Pregzt
+@1120:Os Filhos do Sol
+@1130:A História do Capitão Norton
+@1140:Demonia Particularis
+@1150:Terra Incognita

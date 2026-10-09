@@ -75,6 +75,7 @@ const std::vector<std::string> languageNameTable =
     "ITALIANO",
     "ESPAGNOL",
     "DEUTSCH",
+    "PORTUGUE",
 };
 
 std::string languageNameString;

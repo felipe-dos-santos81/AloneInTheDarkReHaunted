@@ -64,6 +64,23 @@ Each effect has its own switch and settings under `postprocessing.*`:
 - **Blurred menus** (`graphics.blurredMenu`): a blurred, see-through system
   menu instead of opaque frames.
 
+## Languages
+
+English, French, Italian, Spanish, German and Brazilian Portuguese. Pick one
+in the language menu; **Português** is listed below the five original
+languages so the flags painted in the menu art stay aligned (it has no flag).
+
+- Portuguese plays the English CD voice-over, as Italian, Spanish and German do.
+- The bitmap font has no ã, õ or accented capitals: ã and õ are composed from
+  a/o and the tilde of ñ, and À Á Â Ã Ê Í Ó Ô Õ Ú draw as the plain capital.
+  TrueType text (`font.enableTTF`) draws them all.
+- The remaster menus (system, controls, "Please Wait...", F1) are translated
+  too, in French, Italian, Spanish, German and Portuguese.
+- The text is in `Assets/lang/pt-BR`; `make lang-pack` checks it and writes the
+  copy compiled into the game, and `make lang-extract` writes the English and
+  French text as UTF-8 for reference. In-game sign-off:
+  [translation-checklist.md](translation-checklist.md).
+
 ## Maps and hints
 
 - **Maps:** press **Tab** (gamepad **Select**) in the system menu for the
