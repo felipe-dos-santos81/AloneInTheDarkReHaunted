@@ -17,7 +17,7 @@ const PlainCapital kPlainCapitals[10] = {
 
 namespace {
 
-struct Layout { int align, height, stride, table; };
+struct Layout { int align, height, stride, table; bool wordStride; };
 
 bool readLayout(const unsigned char* f, size_t size, Layout* l)
 {
@@ -25,7 +25,9 @@ bool readLayout(const unsigned char* f, size_t size, Layout* l)
         return false;
     l->align = f[0];
     l->height = f[2];
-    l->stride = f[3];
+    // Like font.cpp SetFont: the stride is byte 3, or the little-endian s16 at byte 4 when byte 3 is 0.
+    l->wordStride = f[3] == 0;
+    l->stride = l->wordStride ? f[4] | (f[5] << 8) : f[3];
     l->table = (f[6] << 8) | f[7];
     // The strip runs from byte 8 to the table, which holds a u16 per code from align.
     return l->stride != 0 && l->height != 0 && l->table == 8 + l->height * l->stride
@@ -76,14 +78,22 @@ std::vector<unsigned char> composeFont(const unsigned char* font, size_t size)
         added += entryAt(src, in, g.base) >> 12;
     Layout out = in;
     out.stride = in.stride + (added + 7) / 8;
-    if (out.stride > 255)
+    // Glyph entries hold a 12-bit starting bit: the new glyphs must end within bit 4096.
+    if (in.stride * 8 + added > 4096)
         return {};
+    // Keep the header form of the font; a byte stride that outgrows 255 moves to the s16.
+    out.wordStride = in.wordStride || out.stride > 255;
     out.table = 8 + out.height * out.stride;
 
     // Header, the strip re-strided row by row, then the code table.
     std::vector<unsigned char> dst(out.table + (size - in.table), 0);
     std::memcpy(dst.data(), src.data(), 8);
-    dst[3] = (unsigned char)out.stride;
+    dst[3] = out.wordStride ? 0 : (unsigned char)out.stride;
+    if (out.wordStride)
+    {
+        dst[4] = (unsigned char)(out.stride & 0xFF);
+        dst[5] = (unsigned char)(out.stride >> 8);
+    }
     dst[6] = (unsigned char)(out.table >> 8);
     dst[7] = (unsigned char)(out.table & 0xFF);
     for (int r = 0; r < in.height; r++)

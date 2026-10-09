@@ -26,7 +26,8 @@ extern const PlainCapital kPlainCapitals[10];
 // A copy of `font` (ITD_RESS entry 5, the layout font.cpp SetFont reads) with
 // kComposed appended to the glyph strip and kPlainCapitals pointing at their
 // plain capital; every other code is unchanged. Empty when the font is
-// malformed or the widened stride would not fit its 8-bit header byte.
+// malformed or the new glyphs would pass the 12-bit starting bit of a code
+// entry. The header keeps its form (stride in byte 3, or in the s16 at byte 4).
 std::vector<unsigned char> composeFont(const unsigned char* font, size_t size);
 
 // The font to draw `lang` with: the composed copy for Portuguese when there is one.
