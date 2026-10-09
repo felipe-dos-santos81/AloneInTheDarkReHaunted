@@ -11,11 +11,14 @@ in-repo generator"). It runs outside Blender, before and after it:
 Blender itself only refines geometry and bakes (stage.py)."""
 from __future__ import annotations
 
+import json
 import pathlib
+from dataclasses import dataclass, field
 
 import numpy as np
 
 from ..body import PRIM_POLY, Body
+from ..mesh import Mesh
 
 KIND_PALETTE, KIND_BODY, KIND_RAMP, KIND_OTHER = 0, 1, 2, 3
 KIND_NAMES = ("palette", "body", "ramp", "other")
@@ -115,3 +118,113 @@ def budget_level(triangles: int, target: int = TRIANGLE_TARGET) -> int:
     while level < MAX_LEVEL and triangles * 6 * 4 ** level <= target:
         level += 1
     return level
+
+
+PROJECTIONS = ("front", "back", "blend", "palette")
+EDIT_FIELDS = {"subdivide", "crease", "projection", "skip"}
+
+
+class EditError(ValueError):
+    pass
+
+
+@dataclass
+class Edits:
+    subdivide: dict[int, int] = field(default_factory=dict)
+    crease: set[int] = field(default_factory=set)
+    projection: dict[int, str] = field(default_factory=dict)
+    skip: str | None = None
+
+
+def _group(name, groups: int) -> int:
+    if not (isinstance(name, str) and len(name) == 3 and name[0] == "g" and name[1:].isascii()
+            and name[1:].isdigit() and int(name[1:]) < groups):
+        raise EditError(f"{name!r} is not a group of this body (g00..g{groups - 1:02d})")
+    return int(name[1:])
+
+
+def _section(doc: dict, name: str, kind: type, file: str):
+    value = doc.get(name, kind())
+    if not isinstance(value, kind):
+        raise EditError(f"{file}: {name} must be a JSON {'object' if kind is dict else 'list'}")
+    return value
+
+
+def read_edits(path: pathlib.Path, groups: int) -> Edits:
+    """A body's edit file; no file means no edits. Any unknown field or bad
+    value raises EditError."""
+    if not path.is_file():
+        return Edits()
+    try:
+        doc = json.loads(path.read_text())
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise EditError(f"{path.name}: {exc}")
+    if not isinstance(doc, dict):
+        raise EditError(f"{path.name}: not a JSON object")
+    unknown = set(doc) - EDIT_FIELDS
+    if unknown:
+        raise EditError(f"{path.name}: unknown field {', '.join(sorted(unknown))}")
+    edits = Edits()
+    for name, level in _section(doc, "subdivide", dict, path.name).items():
+        if not isinstance(level, int) or isinstance(level, bool) or not 0 <= level <= MAX_LEVEL:
+            raise EditError(f"{path.name}: subdivide {name} must be an integer 0..{MAX_LEVEL}")
+        edits.subdivide[_group(name, groups)] = level
+    edits.crease = {_group(name, groups) for name in _section(doc, "crease", list, path.name)}
+    for name, how in _section(doc, "projection", dict, path.name).items():
+        if not isinstance(how, str) or how not in PROJECTIONS:
+            raise EditError(f"{path.name}: projection {name} must be one of {', '.join(PROJECTIONS)}")
+        edits.projection[_group(name, groups)] = how
+    if "skip" in doc:
+        reason = doc["skip"].get("reason") if isinstance(doc["skip"], dict) else None
+        if not isinstance(reason, str) or not reason.strip():
+            raise EditError(f"{path.name}: skip needs a non-empty reason")
+        edits.skip = reason
+    return edits
+
+
+def corner_arrays(body: Body, mesh: Mesh, paths: dict, edits: Edits) -> dict[str, np.ndarray]:
+    """Per triangle of `mesh` (build_mesh's order, which original.glb keeps):
+    engine UVs front and back (3T, 2), front weight (T,), atlas kind (T,),
+    group (T,) and linear palette colour (T, 3)."""
+    rest = engine_rest_vertices(body)
+    pmin, prange = projection(rest)
+    count = mesh.triangle_count
+    uv_front, uv_back = np.zeros((3 * count, 2)), np.zeros((3 * count, 2))
+    weight, kind = np.ones(count), np.zeros(count, np.int64)
+    t = 0
+    for pi, prim in enumerate(body.primitives):
+        n = int(np.count_nonzero(mesh.prim_index == pi))
+        k = kind_of(prim.type, prim.material, paths)
+        if prim.type == PRIM_POLY and len(prim.points) >= 3:
+            ids = prim.points
+            w = front_weight(rest[ids[0]], rest[ids[1]], rest[ids[2]])
+            for j in range(1, len(ids) - 1):
+                corners = rest[[ids[0], ids[j], ids[j + 1]], :2]
+                a, b = corner_uv(corners, pmin, prange, True), corner_uv(corners, pmin, prange, False)
+                if k == KIND_RAMP:
+                    a, b = mirror_uv(a), mirror_uv(b)
+                uv_front[3 * t:3 * t + 3], uv_back[3 * t:3 * t + 3] = a, b
+                weight[t], kind[t] = w, k
+                t += 1
+        else:
+            t += n
+    if t != count:
+        raise ValueError(f"{t} triangles placed, the mesh has {count}")
+    group = triangle_groups(mesh.groups.reshape(-1, 3))
+    for g, how in edits.projection.items():
+        mine = group == g
+        if how == "front":
+            weight[mine] = 1.0
+        elif how == "back":
+            weight[mine] = 0.0
+        elif how == "palette":
+            kind[mine] = KIND_PALETTE
+    colour = srgb_to_linear(mesh.colors.reshape(-1, 3, 3)[:, 0])
+    return {"uv_front": uv_front, "uv_back": uv_back, "w_front": weight, "kind": kind,
+            "tri_group": group, "palette": colour}
+
+
+def levels(groups: int, triangles: int, edits: Edits) -> list[int]:
+    """The subdivision level of each group: the budget's, unless edited."""
+    base = budget_level(triangles)
+    return [edits.subdivide.get(g, base) for g in range(groups)]
