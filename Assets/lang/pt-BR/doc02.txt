@@ -1,35 +1,36 @@
-#CFragment
-#Cof the Myth of
-#Cthe Golden Fleece
+#CFragmento
+#Cdo Mito do
+#CVelocino de Ouro
 
 #C*
 
-#CTranslation:
+#CTradução:
 #CEdouard de Vielban
-#CHesperides Publications
+#CEdições Hespérides
 #C*
-#PThen Perseus came across Ichios, who
-had been turned into stone. He spoke to
-his companions and said, "Beware of the
-Medusa. He who looks into their eyes is
-doomed to the same fate as that which
-befell poor Ichios and will never more
-set eyes on Seriphos."
-"Must we go blindfolded?" asked Ymelops.
-"Take up your bronze shields and polish
-them until they flash in the sun,"
-answered Perseus. "Fill your hearts with
-courage.
-#PMay Artemis guide us as though
-we were an arrow from her quiver."
-#PBut Ymelops was not satisfied. "Why do
-that, Perseus? Is three inches of
-sharpened metal not enough to destroy
-these accursed creatures?" Then Perseus
-drew his sword, which shone and
-glittered in the sun, and with it he
-dazzled Ymelops.
-"Now what can you see?" The companions
-of Zeus' son laughed. "Let us set to
-work, so that our shields may shine like
-mirrors."
+#PEntão Perseu deparou com Ichios, que
+fora transformado em pedra. Falou a seus
+companheiros e disse: "Guardai-vos da
+Medusa. Aquele que a fitar nos olhos
+está condenado à mesma sorte que coube
+ao pobre Ichios, e jamais tornará a ver
+Serifos."
+"Devemos seguir de olhos vendados?",
+perguntou Ymelops.
+"Tomai vossos escudos de bronze e
+poli-os até que faísquem ao sol",
+respondeu Perseu. "Enchei de coragem
+vossos corações.
+#PQue Ártemis nos guie como se fôssemos
+uma flecha de sua aljava."
+#PMas Ymelops não se deu por satisfeito.
+"Para quê, Perseu? Três polegadas de
+metal afiado não bastam para destruir
+essas criaturas malditas?" Então Perseu
+desembainhou a espada, que reluzia e
+cintilava ao sol, e com ela ofuscou
+Ymelops.
+"E agora, que vês?" Os companheiros do
+filho de Zeus riram. "Mãos à obra, para
+que nossos escudos brilhem como
+espelhos."
