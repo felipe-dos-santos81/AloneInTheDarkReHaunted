@@ -23,7 +23,10 @@ Guidance for anyone (human or agent) changing this repository.
   `tools/aitd_models/hdm.py`, and both read
   `TatouSource/tests/engine/fixtures/tiny.hdm`), `skinnedBody.*` (bone
   matrices and screen box of a replacement), `replacementGate.h` (when a
-  body draws as its replacement), `mipChain.*` and `modelLight.*`. Their
+  body draws as its replacement), `mipChain.*` (mip levels that keep each
+  texel's alpha class: hole, translucent or opaque; the same 128/253 limits
+  are in `hdm.py` and `model_ps.sc`, and `tests/tools/test_models_hdm.py`
+  checks they agree) and `modelLight.*`. Their
   engine adapter is `modelReplacement.*` (loads `models_hd/*.hdm`, draws in
   `AffObjet` instead of the classic primitives, behind `graphics.hdModels`);
   `hdCompare.*` is its developer check (`debug.hdModelsCompare`, scored by
@@ -47,7 +50,8 @@ Guidance for anyone (human or agent) changing this repository.
   blender-models`: Blender refines the original bodies and bakes the
   hand-made `Assets/atlases` onto them; its `stage.py` runs inside Blender
   and imports only `bpy`, `bmesh`, `mathutils` and numpy).
-- `docs/` — contracts and checklists (`docs/mouse-gameplay-checklist.md`).
+- `docs/` — contracts and checklists (`docs/mouse-gameplay-checklist.md`);
+  `docs/screenshots/` holds the README's original-vs-HD pairs.
 - `graphify-out/` (any depth) — generated knowledge graph (`/graphify`);
   git-ignored, never commit it.
 

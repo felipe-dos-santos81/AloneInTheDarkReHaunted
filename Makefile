@@ -101,7 +101,7 @@ build-fitd: configure ## Build the game only
 build-tools: configure ## Build the .hda archive tools only
 	$(CMAKE_BUILD) --target build_hda_archive unpack_hda_archive
 
-run: build-fitd ## Build the game and play from the game data folder [data=DIR, default data/aitd1]
+run: build-fitd ## Build the game and play from data/aitd1 [data=DIR]
 	$(call require,$(BINARY),binary,did the build fail?)
 	cd "$(data)" && "$(abspath $(BINARY))"
 
@@ -152,7 +152,7 @@ check-models: ## Check the deliveries without importing [models_ai=DIR bodies=KE
 import-models: ## Check and pack the deliveries into Assets/models_hd [models_ai=DIR models_hd=DIR bodies=KEY,...]
 	$(MODEL_IMPORT)
 
-# The bundle's models_hd mirrors models_hd (a stale .hdm would still draw); atlases are added, never removed.
+# The bundle's models_hd mirrors Assets/models_hd (a stale .hdm would still draw); atlases are only added.
 models-install: ## Copy Assets/models_hd and Assets/atlases into the app bundle [models_hd=DIR atlases=DIR]
 	@ls "$(models_hd)"/*.hdm > /dev/null 2>&1 || { echo "error: no .hdm in $(models_hd) - run 'make import-models'"; exit 1; }
 	@if [ -n "$(BUNDLE_RESOURCES)" ] && [ -d "$(BUNDLE_RESOURCES)" ]; then \
