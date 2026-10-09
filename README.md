@@ -164,7 +164,7 @@ make tools-deps       # once: the Python venv for the tools
 make export-models    # original bodies -> data/models
 make blender-models   # refine them in Blender -> data/models-ai
 make import-models    # check them and pack them into Assets/models_hd
-make models-install   # copy the models and atlases into the app
+make build-fitd       # the macOS app build copies the models and atlases in
 ```
 
 `make check-models` runs the checks without importing. The format is in

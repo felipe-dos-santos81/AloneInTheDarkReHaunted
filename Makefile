@@ -152,13 +152,13 @@ check-models: ## Check the deliveries without importing [models_ai=DIR bodies=KE
 import-models: ## Check and pack the deliveries into Assets/models_hd [models_ai=DIR models_hd=DIR bodies=KEY,...]
 	$(MODEL_IMPORT)
 
-# The bundle's models_hd mirrors Assets/models_hd (a stale .hdm would still draw); atlases are only added.
-models-install: ## Copy Assets/models_hd and Assets/atlases into the app bundle [models_hd=DIR atlases=DIR]
+# Every macOS build of the game copies Assets/models_hd and Assets/atlases in; this
+# installs other folders (the next build puts Assets/models_hd back).
+models-install: ## Copy the models and atlases into the app bundle [models_hd=DIR atlases=DIR]
 	@ls "$(models_hd)"/*.hdm > /dev/null 2>&1 || { echo "error: no .hdm in $(models_hd) - run 'make import-models'"; exit 1; }
 	@if [ -n "$(BUNDLE_RESOURCES)" ] && [ -d "$(BUNDLE_RESOURCES)" ]; then \
-		rsync -a --delete --include '*.hdm' --exclude '*' "$(models_hd)/" "$(BUNDLE_RESOURCES)/models_hd/" && \
-		rsync -a --exclude Backups "$(atlases)/" "$(BUNDLE_RESOURCES)/atlases/" && \
-		echo "installed $(models_hd) and $(atlases) -> $(BUNDLE_RESOURCES)/"; \
+		$(CMAKE) "-DDESTINATION=$(BUNDLE_RESOURCES)" "-DMODELS=$(abspath $(models_hd))" "-DATLASES=$(abspath $(atlases))" \
+			-P $(SRC_DIR)/cmake/copy_hd_models.cmake; \
 	else \
 		echo "note: no built app bundle found; run 'make build-fitd' first"; \
 	fi
