@@ -145,18 +145,10 @@ Controllers are hot-pluggable, and you can rebind their buttons in the
 
 ## Configuration
 
-**F1** opens the options dialog, and the dialog also shows at startup.
-Settings are saved in `aitd_remaster.cfg` next to the game data:
-
-| Section | Keys |
-|---------|------|
-| Graphics | `graphics.hdBackgrounds`, `graphics.hdModels`, `graphics.backgroundScale`, `graphics.filtering`, `graphics.fullscreen` |
-| Post-processing | `postprocessing.bloom`, `.filmGrain`, `.ssao`, `.vignette`, `.ssgi`, `.lightProbes` |
-| Controls | `controls.key.*`, `controls.pad.*`, `controls.mouseGameplay` (default on), `controls.autoCounterAttack` (hit back once after an enemy's blow, default off), `controls.enemyAttackPace` (`0` normal, `1` slower, `2` much slower) |
-| Controller | `controller.enable`, `controller.deadzone`, `controller.sensitivity`, `controller.invertY` |
-| Music / font | `music.external`, `music.folder`, `font.enableTTF`, `font.path`, `font.size` |
-| Game data | `gamedata.steamless`: `true` disables automatic installation and the Steam overlay |
-| Debug | `debug.mouseNavOverlay` draws the mouse walk grid and prints `MTRACE` lines (what each click resolved to and why) |
+**F1** opens the options dialog, which also shows at startup. Settings are
+saved in `aitd_remaster.cfg` next to the game data; every key, with its default,
+is in [docs/configuration.md](docs/configuration.md). HD backgrounds are off and
+HD character models on by default (`graphics.hdBackgrounds`, `graphics.hdModels`).
 
 [REMASTER.md](REMASTER.md) documents the remaster features in detail.
 
