@@ -34,7 +34,14 @@ set(ASSIST_CORE_SOURCES
 )
 
 # Engine-free text sources compiled into the tests.
-set(TEXT_CORE_SOURCES "${TEXT_DIR}/fontCompose.cpp")
+set(TEXT_CORE_SOURCES
+    "${TEXT_DIR}/fontCompose.cpp"
+    "${TEXT_DIR}/uiText.cpp"
+)
+# uiText.cpp holds literal UTF-8; MSVC would read it in the system code page.
+if(MSVC)
+    set_source_files_properties("${CMAKE_SOURCE_DIR}/FitdLib/text/uiText.cpp" PROPERTIES COMPILE_OPTIONS "/utf-8")
+endif()
 
 file(GLOB ENGINE_TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cpp")
 

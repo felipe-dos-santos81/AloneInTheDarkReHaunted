@@ -164,6 +164,11 @@ endif()
 
 add_library (FitdLib ${SOURCES})
 
+# uiText.cpp holds literal UTF-8; MSVC would read it in the system code page.
+if(MSVC)
+    set_source_files_properties("${CMAKE_SOURCE_DIR}/FitdLib/text/uiText.cpp" PROPERTIES COMPILE_OPTIONS "/utf-8")
+endif()
+
 
 
 #set( CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /DBX_CONFIG_DEBUG=1")
