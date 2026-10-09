@@ -103,7 +103,8 @@ Measured results:
   0.89–0.97, brightness 0.94–1.17.
 - Smooth shading and softened facets (2026-10-09), saves 0–6, lit rooms:
   IoU 0.89–0.97, brightness 0.91–1.14 (the same saves with the previous
-  models: 0.93–1.17; every body 0.01–0.03 darker).
+  models: 0.93–1.17; every body 0.01–0.03 darker, because softening log
+  brightness lowers a texture's mean brightness by about 2 %).
 
 ## Rows
 
