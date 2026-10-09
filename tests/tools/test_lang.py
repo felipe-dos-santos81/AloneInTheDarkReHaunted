@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
 import pathlib
+import re
 import struct
 import subprocess
 import sys
@@ -107,3 +108,12 @@ def test_pack_cli_writes_the_embedded_source_and_fails_on_problems(tmp_path):
     (src / "messages.txt").write_text("@1:abc\n@9:x\n", encoding="utf-8")
     bad = run()
     assert bad.returncode == 1 and "extra @9" in bad.stdout
+
+
+def test_composed_codes_match_the_engine():
+    src = (ROOT / "TatouSource/FitdLib/text/fontCompose.cpp").read_text()
+    composed = {int(c, 16): (b, int(d, 16)) for c, b, d in
+                re.findall(r"\{ 0x([0-9A-F]{2}), '(\w)', 0x([0-9A-F]{2}) \}", src)}
+    capitals = {int(c, 16): p for c, p in re.findall(r"\{ 0x([0-9A-F]{2}), '(\w)' \}", src)}
+    assert {c: (ord(b), d) for c, (b, d) in composed.items()} == lang.COMPOSED
+    assert {c: ord(p) for c, p in capitals.items()} == lang.PLAIN_CAPITALS
