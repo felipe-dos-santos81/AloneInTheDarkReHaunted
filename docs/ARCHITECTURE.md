@@ -6,7 +6,7 @@ Where the code lives and how the main parts fit together. Build steps are in
 
 ## Overview
 
-FITD reimplements the engine of *Alone in the Dark* 1–3, *Jack in the Dark*
+[FITD](https://github.com/yaz0r/FITD) reimplements the engine of *Alone in the Dark* 1–3, *Jack in the Dark*
 and *Time Gate*. A thin executable (`Fitd`) calls into a static library
 (`FitdLib`) that holds all engine logic. `FitdLib` is C++20; the executable,
 tools and tests are C++17. Rendering, windowing, audio and input use
