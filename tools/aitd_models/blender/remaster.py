@@ -246,7 +246,9 @@ def composite(colour: np.ndarray, ao: np.ndarray, strength: float = AO_STRENGTH)
 def model_glb(positions: np.ndarray, loop_vertex: np.ndarray, loop_uv: np.ndarray, png: bytes) -> bytes:
     """The delivery: Blender's triangles (one loop per corner, three per
     triangle) as an indexed glTF mesh, Z-up (x, y, z) -> Y-up (x, z, -y),
-    one vertex per (position, UV) pair, v flipped to glTF's top-left origin."""
+    one vertex per (position, UV) pair, v flipped to glTF's top-left origin.
+    NORMAL is area-weighted per Blender vertex, so the pieces a UV seam splits
+    shade as one surface; a zero-area vertex's normal stays zero."""
     loop_vertex = np.asarray(loop_vertex, np.int64)
     loop_uv = np.asarray(loop_uv, float)
     pairs = np.column_stack([loop_vertex, np.round(loop_uv * 1e6).astype(np.int64)])
@@ -254,12 +256,22 @@ def model_glb(positions: np.ndarray, loop_vertex: np.ndarray, loop_uv: np.ndarra
     inverse = inverse.reshape(-1)
     first = np.zeros(len(unique), np.int64)
     first[inverse[::-1]] = np.arange(len(inverse))[::-1]
-    p = np.asarray(positions, float)[loop_vertex[first]]
+    gltf = np.column_stack([positions[:, 0], positions[:, 2], -positions[:, 1]]).astype(float)
+    corners = gltf[loop_vertex].reshape(-1, 3, 3)
+    face = np.cross(corners[:, 1] - corners[:, 0], corners[:, 2] - corners[:, 0])
+    smooth = np.zeros_like(gltf)
+    for k in range(3):
+        np.add.at(smooth, loop_vertex.reshape(-1, 3)[:, k], face)
+    length = np.linalg.norm(smooth, axis=1, keepdims=True)
+    smooth = np.divide(smooth, length, out=np.zeros_like(smooth), where=length > 0)
+    p = gltf[loop_vertex[first]]
+    n = smooth[loop_vertex[first]]
     uv = loop_uv[first]
     g = GlbBuilder()
     material = g.textured_material(png, "image/png", "remaster")
     g.single_mesh_scene({"attributes": {
-        "POSITION": g.accessor(np.column_stack([p[:, 0], p[:, 2], -p[:, 1]]), "VEC3", target=ARRAY_BUFFER, bounds=True),
+        "POSITION": g.accessor(p, "VEC3", target=ARRAY_BUFFER, bounds=True),
+        "NORMAL": g.accessor(n, "VEC3", target=ARRAY_BUFFER),
         "TEXCOORD_0": g.accessor(np.column_stack([uv[:, 0], 1.0 - uv[:, 1]]), "VEC2", target=ARRAY_BUFFER)},
         "indices": g.accessor(inverse, "SCALAR", UNSIGNED_INT), "material": material})
     return g.to_bytes()
