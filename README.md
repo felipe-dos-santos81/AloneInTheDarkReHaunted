@@ -23,24 +23,29 @@ focused on *Alone in the Dark 1*. It adds:
 
 *Original project © 2026 Infogrames.*
 
-## Original Upscaled vs HD
+## Original, Upscaled, HD
 
-Seven saved games: the original graphics upscaled on the left; HD
-backgrounds, HD character models and post effects on the right.
+Seven saved games, three times each:
 
-![Save 0: original graphics upscaled, then HD](docs/screenshots/save0-original-vs-hd.jpg)
+- **Original:** every enhancement off: the original backgrounds and character
+  bodies, no post effects.
+- **Upscaled:** the upscaled HD backgrounds and depth masks, with the original
+  character bodies and no post effects.
+- **HD:** everything on: HD backgrounds, HD character models and post effects.
 
-![Save 1: original graphics upscaled, then HD](docs/screenshots/save1-original-vs-hd.jpg)
+![Save 0: original, upscaled, then HD](docs/screenshots/save0-original-upscaled-hd.jpg)
 
-![Save 2: original graphics upscaled, then HD](docs/screenshots/save2-original-vs-hd.jpg)
+![Save 1: original, upscaled, then HD](docs/screenshots/save1-original-upscaled-hd.jpg)
 
-![Save 3: original graphics upscaled, then HD](docs/screenshots/save3-original-vs-hd.jpg)
+![Save 2: original, upscaled, then HD](docs/screenshots/save2-original-upscaled-hd.jpg)
 
-![Save 4: original graphics upscaled, then HD](docs/screenshots/save4-original-vs-hd.jpg)
+![Save 3: original, upscaled, then HD](docs/screenshots/save3-original-upscaled-hd.jpg)
 
-![Save 5: original graphics upscaled, then HD](docs/screenshots/save5-original-vs-hd.jpg)
+![Save 4: original, upscaled, then HD](docs/screenshots/save4-original-upscaled-hd.jpg)
 
-![Save 6: original graphics upscaled, then HD](docs/screenshots/save6-original-vs-hd.jpg)
+![Save 5: original, upscaled, then HD](docs/screenshots/save5-original-upscaled-hd.jpg)
+
+![Save 6: original, upscaled, then HD](docs/screenshots/save6-original-upscaled-hd.jpg)
 
 ## Game data
 

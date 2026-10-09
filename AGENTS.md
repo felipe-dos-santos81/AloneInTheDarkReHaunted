@@ -69,7 +69,7 @@ Guidance for anyone (human or agent) changing this repository.
 - `docs/` — the guides (`BUILDING.md`, `ARCHITECTURE.md`, `REMASTER.md`,
   `CONTRIBUTING.md`), contracts, checklists (`docs/mouse-gameplay-checklist.md`)
   and the `aitd_remaster.cfg` manual (`docs/configuration.md`: a new key goes there);
-  `docs/screenshots/` holds the README's original-vs-HD pairs.
+  `docs/screenshots/` holds the README's original, upscaled and HD screenshots.
 - `graphify-out/` (any depth) — generated knowledge graph (`/graphify`);
   git-ignored, never commit it.
 
