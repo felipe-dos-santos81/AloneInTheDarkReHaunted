@@ -8,13 +8,17 @@ defaults below.
 The file has one `key = value` per line, and `#` starts a comment. Booleans
 are `true` or `false`, and strings are quoted. Unknown keys are ignored.
 
+`config.version` is the file's format. A file older than version 2 had
+`graphics.hdModels` saved off because that was the old default, so loading it
+turns HD models on once; the next save writes version 2.
+
 ## Graphics
 
 | Key | Default | Meaning |
 |---|---|---|
 | `graphics.hdBackgrounds` | `false` | Draw the HD camera views from `backgrounds_hd.hda` (`make hd-install`) |
 | `graphics.backgroundScale` | `2` | Size of the HD art, as a multiple of 320x200 (1–4). The shipped art is 4 |
-| `graphics.hdModels` | `true` | Draw the HD character models from `models_hd/` (`make models-install`). A body without a model draws classic |
+| `graphics.hdModels` | `true` | Draw the HD character models from `models_hd/` next to the game data; the macOS app build copies them in. A body without a model draws classic, and a missing folder logs one line |
 | `graphics.msaa` | `4` | Anti-aliasing for 3D models: 0, 2, 4, 8 or 16 |
 | `graphics.renderer` | `auto` | `auto`, `d3d11`, `d3d12`, `opengl`, `vulkan` or `metal` |
 | `graphics.fullscreen` | `false` | Start in fullscreen (**F11** toggles it) |

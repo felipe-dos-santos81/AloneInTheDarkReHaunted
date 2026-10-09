@@ -9,6 +9,7 @@
 #include <bgfx/bgfx.h>
 
 #include <cstdio>
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -253,7 +254,16 @@ void load(ModelReplacement& r, const std::string& key, const sBody* body)
     const std::string path = std::string(homePath) + "models_hd/body_" + key + ".hdm";
     std::vector<uint8_t> bytes;
     if (!readFile(path, &bytes))
+    {
+        static bool s_folderChecked = false; // a missing folder is a packaging mistake: say so once
+        if (!s_folderChecked && !std::filesystem::is_directory(std::string(homePath) + "models_hd"))
+        {
+            printf(HDM_WARN "graphics.hdModels is on but there is no models_hd/ folder: every body draws classic" CON_RESET "\n");
+            fflush(stdout);
+        }
+        s_folderChecked = true;
         return; // no replacement for this body: draw classic, quietly
+    }
     ++s_loads;
     std::string why;
     models::HdmMesh mesh;

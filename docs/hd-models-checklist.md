@@ -65,8 +65,9 @@ no screen capture needed:
    `make identity-models bodies=<every canonical key>` then
    `make import-models models_ai=data/models-identity models_hd=data/models-hd-identity`
    and `make models-install models_hd=data/models-hd-identity`. The bundle's
-   `models_hd/` then holds only the identity models; a plain `make models-install`
-   puts the real ones back.
+   `models_hd/` then holds only the identity models, until the next build of
+   the game (or a plain `make models-install`) puts the real ones back: start
+   the app directly, not with `make run`.
 2. In `aitd_remaster.cfg` (same folder) set `graphics.hdModels = true`,
    `debug.hdModelsCompare = true` and `debug.loadSaveOnStart = <n>` (the
    save to open: the intro, language menu and startup options are skipped).
