@@ -11,7 +11,7 @@ data comes from is in [README → Game data](../README.md#game-data).
 | **CMake** | 3.25+ | The CMake presets need it; CI uses the same presets |
 | **C++20 compiler** | | MSVC, GCC or Clang. `FitdLib` builds as C++20, the rest as C++17 |
 
-The third-party libraries (bgfx, SDL3, SoLoud, ImGui, zlib, doctest) are
+The third-party libraries (bgfx, [SDL3](https://github.com/libsdl-org/SDL), SoLoud, ImGui, zlib, doctest) are
 vendored in `TatouSource/ThirdParty/`, so a plain clone is enough:
 
 ```bash

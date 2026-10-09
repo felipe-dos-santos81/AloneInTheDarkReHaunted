@@ -267,7 +267,7 @@ All are vendored under `TatouSource/ThirdParty/`.
 | Library | Purpose | Path |
 |---------|---------|------|
 | **bgfx** (+ bimg, bx) | Rendering (D3D11/12, Vulkan, Metal, OpenGL) | `bgfx.cmake` |
-| **SDL3** | Windowing, input, gamepad, platform layer | `SDL` |
+| **[SDL3](https://github.com/libsdl-org/SDL)** | Windowing, input, gamepad, platform layer | `SDL` |
 | **SoLoud** | Audio mixing and playback | `soloud.cmake` |
 | **Dear ImGui** | Debug UI, TTF text | `imgui` |
 | **zlib** | Decompression | `zlib` |

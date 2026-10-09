@@ -54,7 +54,7 @@ The values after each switch are its own keys (`postprocessing.bloomThreshold = 
 | `controls.mouseGameplay` | `true` | Play with the mouse's left button ([README](../README.md#mouse-left-button-only)) |
 | `controls.autoCounterAttack` | `false` | Hit back once after an enemy's blow (AITD1) |
 | `controls.enemyAttackPace` | `0` | Enemy attacks: `0` normal, `1` slower, `2` much slower (AITD1) |
-| `controls.key.*` | arrows, Space, Enter, Escape, Q, E, Left Shift | Keys for `up`, `down`, `left`, `right`, `action`, `confirm`, `cancel`, `quickturnleft`, `quickturnright`, `run`, as SDL scancodes |
+| `controls.key.*` | arrows, Space, Enter, Escape, Q, E, Left Shift | Keys for `up`, `down`, `left`, `right`, `action`, `confirm`, `cancel`, `quickturnleft`, `quickturnright`, `run`, as [SDL](https://github.com/libsdl-org/SDL) scancodes |
 | `controls.pad.*` | D-pad, A, Start, B, LB, RB, L3 | The same actions on a gamepad, as SDL gamepad buttons |
 
 Rebind them in **Controls** in the system menu rather than by hand.

@@ -7,7 +7,7 @@ gameplay and the combat assists are in the
 
 ## Controllers
 
-Xbox, PlayStation, Switch Pro and any other SDL3 gamepad. Controllers are
+Xbox, PlayStation, Switch Pro and any other [SDL3](https://github.com/libsdl-org/SDL) gamepad. Controllers are
 hot-pluggable, and every button can be rebound in the **Controls** menu.
 
 - **Move:** left stick (analog) or D-pad. A stick reads as a direction past 0.3.

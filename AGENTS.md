@@ -6,7 +6,7 @@ Guidance for anyone (human or agent) changing this repository.
 
 - `TatouSource/` — the CMake project: the Tatou engine (a [FITD](https://github.com/yaz0r/FITD) fork) for
   Alone in the Dark. `FitdLib/` is the engine library, `Fitd/` the executable,
-  `ThirdParty/` vendored code (SDL3, bgfx, ImGui, SoLoud, zlib, doctest).
+  `ThirdParty/` vendored code ([SDL3](https://github.com/libsdl-org/SDL), bgfx, ImGui, SoLoud, zlib, doctest).
 - `TatouSource/FitdLib/mouse/` — left-button mouse gameplay. Files named in
   "Mouse rules" below as engine-free include only standard headers and are
   unit-tested in `TatouSource/tests/engine/`. The engine adapter is
