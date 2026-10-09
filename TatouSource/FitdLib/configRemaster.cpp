@@ -18,7 +18,7 @@ RemasterConfig g_remasterConfig;
 
 // 2: graphics.hdModels became on by default. A file from before has it saved
 // off only because that was the old default, so loading one turns it on once.
-static const int kConfigVersion = 2;
+static const int kConfigVersion = 3;
 
 void initDefaultRemasterConfig()
 {
@@ -128,7 +128,7 @@ void initDefaultRemasterConfig()
     g_remasterConfig.sequences.loadEnabled = true;   // Load HD replacement sequence frames if available
 
     // Background dumping defaults
-    g_remasterConfig.backgrounds.dumpEnabled = true;  // Auto-dump every original PAK background to PNG once on launch
+    g_remasterConfig.backgrounds.dumpEnabled = false; // Dump every original PAK background to PNG on launch
 
     // Game data defaults
     g_remasterConfig.gameData.steamless = false;   // Allow automatic file copying/installation by default
@@ -410,6 +410,14 @@ void loadRemasterConfig()
         static bool s_told = false; // the config is loaded more than once at startup
         if (!s_told)
             printf(CFG_TAG "graphics.hdModels is now on by default; turned it on (F1 turns it off again)\n");
+        s_told = true;
+    }
+    if (version < 3 && g_remasterConfig.backgrounds.dumpEnabled)
+    {
+        g_remasterConfig.backgrounds.dumpEnabled = false;
+        static bool s_told = false;
+        if (!s_told)
+            printf(CFG_TAG "backgrounds.dump is now off by default; turned it off (F1 turns it on again)\n");
         s_told = true;
     }
 

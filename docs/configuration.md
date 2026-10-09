@@ -8,9 +8,10 @@ defaults below.
 The file has one `key = value` per line, and `#` starts a comment. Booleans
 are `true` or `false`, and strings are quoted. Unknown keys are ignored.
 
-`config.version` is the file's format. A file older than version 2 had
-`graphics.hdModels` saved off because that was the old default, so loading it
-turns HD models on once; the next save writes version 2.
+`config.version` is the file's format. Older files saved the old defaults, so
+loading one changes them once: before version 2 it turns `graphics.hdModels`
+on, before version 3 it turns `backgrounds.dump` off. The next save writes the
+current version.
 
 ## Graphics
 
@@ -91,7 +92,7 @@ Rebind them in **Controls** in the system menu rather than by hand.
 | `masks.load` | `true` | Load the hand-edited HD depth masks |
 | `sequences.load` | `true` | Load HD replacement frames for the full-screen sequences |
 | `masks.dump`, `sequences.dump` | `false` | Write the generated masks or the decoded sequence frames to PNG |
-| `backgrounds.dump` | `true` | Write every original background to `backgrounds_dump/` at each launch. Set it to `false` unless you need the originals |
+| `backgrounds.dump` | `false` | Write every original background to `backgrounds_dump/` at each launch |
 
 ## Debug
 
