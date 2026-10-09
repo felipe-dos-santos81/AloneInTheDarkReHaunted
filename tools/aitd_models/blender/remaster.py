@@ -264,10 +264,11 @@ def _box(x: np.ndarray, r: int) -> np.ndarray:
 def soften(colour: np.ndarray, radius: int, eps: float = SOFTEN_EPS) -> np.ndarray:
     """Linear (H, W, 3) colour with its low-contrast brightness steps evened
     out and its high-contrast ones kept: a guided filter (He, Sun and Tang)
-    of log brightness guided by itself, over `radius`-texel windows; eps is
-    the variance below which a window counts as flat. Only brightness moves,
-    never hue. Texels with no channel above 0 are the bake's empty
-    background: they neither change nor count."""
+    of log brightness guided by itself, over the texels within `radius`; eps
+    is the variance below which a window counts as flat. Only brightness
+    moves, never hue, and the texture keeps its mean brightness. Texels with
+    no channel above 0 are the bake's empty background: they neither change
+    nor count."""
     colour = np.asarray(colour, float)
     covered = colour.max(axis=-1) > 0
     weight = covered.astype(float)
@@ -278,7 +279,10 @@ def soften(colour: np.ndarray, radius: int, eps: float = SOFTEN_EPS) -> np.ndarr
     a = var / (var + eps)
     b = mean - a * mean
     smooth = _box(a * weight, radius) / count * lum + _box(b * weight, radius) / count
-    return np.where(covered[..., None], colour * np.exp(smooth - lum)[..., None], colour)
+    out = np.where(covered[..., None], colour * np.exp(smooth - lum)[..., None], colour)
+    if covered.any():  # smoothing log brightness lowers the plain mean (about 2 %): give the texture its own back
+        out[covered] *= (colour @ LUMA)[covered].mean() / (out @ LUMA)[covered].mean()
+    return out / np.maximum(out.max(axis=-1, keepdims=True), 1.0)  # past full brightness: scaled whole, hue kept
 
 
 def composite(colour: np.ndarray, ao: np.ndarray, strength: float = AO_STRENGTH,
@@ -311,9 +315,10 @@ def model_glb(positions: np.ndarray, round_positions: np.ndarray, loop_vertex: n
     inverse = inverse.reshape(-1)
     first = np.zeros(len(unique), np.int64)
     first[inverse[::-1]] = np.arange(len(inverse))[::-1]
-    gltf = np.column_stack([positions[:, 0], positions[:, 2], -positions[:, 1]]).astype(float)
-    shape = np.column_stack([round_positions[:, 0], round_positions[:, 2], -round_positions[:, 1]]).astype(float)
-    corners = shape[loop_vertex].reshape(-1, 3, 3)
+    def y_up(p: np.ndarray) -> np.ndarray:
+        return np.column_stack([p[:, 0], p[:, 2], -p[:, 1]]).astype(float)
+    gltf = y_up(positions)
+    corners = y_up(round_positions)[loop_vertex].reshape(-1, 3, 3)
     face = np.cross(corners[:, 1] - corners[:, 0], corners[:, 2] - corners[:, 0])
     smooth = np.zeros_like(gltf)
     for k in range(3):
