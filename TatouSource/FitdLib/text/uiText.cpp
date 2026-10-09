@@ -21,7 +21,14 @@ const UiRow kUiRows[] = {
     { "Hints: On", "Indices: Activé", "Suggerimenti: On", "Pistas: On", "Hinweise: An", "Dicas: Sim" },
     { "Hints: Off", "Indices: Désactivé", "Suggerimenti: Off", "Pistas: Off", "Hinweise: Aus", "Dicas: Não" },
     { "Map", "Carte", "Mappa", "Mapa", "Karte", "Mapa" },
-    // Task 6 adds the controlsMenu rows; Task 7 the remasterOptions rows.
+    { "Controller Connected", "Manette Connectée", "Controller Connesso", "Mando Conectado", "Controller Verbunden", "Controle Conectado" },
+    { "No Controller", "Pas de Manette", "Nessun Controller", "Sin Mando", "Kein Controller", "Sem Controle" },
+    { "Action", "Action", "Azione", "Acción", "Aktion", "Ação" },
+    { "Key", "Touche", "Tasto", "Tecla", "Taste", "Tecla" },
+    { "Button", "Bouton", "Pulsante", "Botón", "Knopf", "Botão" },
+    { "Back", "Retour", "Indietro", "Volver", "Zurück", "Voltar" },
+    { "Defaults", "Par Défaut", "Predefiniti", "Predeterminado", "Standard", "Padrão" },
+    // Task 7 adds the remasterOptions rows.
 };
 const size_t kUiRowCount = sizeof(kUiRows) / sizeof(kUiRows[0]);
 
