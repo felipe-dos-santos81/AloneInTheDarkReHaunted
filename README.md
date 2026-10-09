@@ -89,7 +89,9 @@ make run         # build the game and play from data/aitd1
 Run `TatouSource\build\vs2022.bat` (or `vs2026.bat`) and open the generated
 solution. Set **Fitd** as the startup project, and set its working directory
 (Project → Properties → Debugging) to your game data folder. Then press **F5**.
-The executable is `Tatou.exe`.
+The executable is `Tatou.exe`. The build copies the HD models next to it; a
+different working directory needs `Assets/models_hd` and `Assets/atlases` copied
+in as `models_hd/` and `atlases/` (`make models-install data=DIR` does it).
 
 [BUILDING.md](BUILDING.md) has the full instructions for every platform.
 
@@ -164,7 +166,7 @@ make tools-deps       # once: the Python venv for the tools
 make export-models    # original bodies -> data/models
 make blender-models   # refine them in Blender -> data/models-ai
 make import-models    # check them and pack them into Assets/models_hd
-make build-fitd       # the macOS app build copies the models and atlases in
+make run              # the build and run copy the models and atlases next to the game
 ```
 
 `make check-models` runs the checks without importing. The format is in

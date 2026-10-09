@@ -62,6 +62,12 @@ BINARY      = $(call built,Fitd/Tatou Fitd/Tatou.app/Contents/MacOS/Tatou Fitd/$
 HDA_TOOL    = $(call built,tools/build_hda_archive tools/$(BUILD_TYPE)/build_hda_archive.exe)
 UNPACK_TOOL = $(call built,tools/unpack_hda_archive tools/$(BUILD_TYPE)/unpack_hda_archive.exe)
 HD_ARCHIVE  = $(SRC_DIR)/backgrounds_hd.hda
+# Where the game reads its files: the app bundle on macOS, the data folder elsewhere.
+GAME_FILES  = $(or $(BUNDLE_RESOURCES),$(data))
+
+# $(call copy_hd_models,DIR): mirror $(models_hd) and add $(atlases) into DIR.
+copy_hd_models = $(CMAKE) "-DDESTINATION=$(1)" "-DMODELS=$(abspath $(models_hd))" "-DATLASES=$(abspath $(atlases))" \
+                 -P "$(abspath $(SRC_DIR))/cmake/copy_hd_models.cmake"
 
 # $(call require,FILE,NAME,HINT): stop with a hint unless FILE is executable.
 require = @test -x "$(1)" || { echo "error: $(2) not found - $(3)"; exit 1; }
@@ -103,7 +109,7 @@ build-tools: configure ## Build the .hda archive tools only
 
 run: build-fitd ## Build the game and play from data/aitd1 [data=DIR]
 	$(call require,$(BINARY),binary,did the build fail?)
-	cd "$(data)" && "$(abspath $(BINARY))"
+	cd "$(data)" && $(if $(BUNDLE_RESOURCES),,$(call copy_hd_models,.) && )"$(abspath $(BINARY))"
 
 ##@ Test
 
@@ -152,16 +158,13 @@ check-models: ## Check the deliveries without importing [models_ai=DIR bodies=KE
 import-models: ## Check and pack the deliveries into Assets/models_hd [models_ai=DIR models_hd=DIR bodies=KEY,...]
 	$(MODEL_IMPORT)
 
-# Every macOS build of the game copies Assets/models_hd and Assets/atlases in; this
-# installs other folders (the next build puts Assets/models_hd back).
-models-install: ## Copy the models and atlases into the app bundle [models_hd=DIR atlases=DIR]
+# Every build of the game copies Assets/models_hd and Assets/atlases next to it, and
+# `make run` into the data folder; this installs other folders (the next build or run
+# puts Assets/models_hd back).
+models-install: ## Copy the models and atlases where the game reads them [models_hd=DIR atlases=DIR data=DIR]
 	@ls "$(models_hd)"/*.hdm > /dev/null 2>&1 || { echo "error: no .hdm in $(models_hd) - run 'make import-models'"; exit 1; }
-	@if [ -n "$(BUNDLE_RESOURCES)" ] && [ -d "$(BUNDLE_RESOURCES)" ]; then \
-		$(CMAKE) "-DDESTINATION=$(BUNDLE_RESOURCES)" "-DMODELS=$(abspath $(models_hd))" "-DATLASES=$(abspath $(atlases))" \
-			-P $(SRC_DIR)/cmake/copy_hd_models.cmake; \
-	else \
-		echo "note: no built app bundle found; run 'make build-fitd' first"; \
-	fi
+	@test -d "$(GAME_FILES)" || { echo "error: no $(GAME_FILES) - $(if $(BUNDLE_RESOURCES),run 'make build-fitd' first,see the README's game data steps)"; exit 1; }
+	@$(call copy_hd_models,$(GAME_FILES))
 
 ##@ Clean
 
