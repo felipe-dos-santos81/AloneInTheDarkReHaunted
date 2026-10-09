@@ -1,34 +1,38 @@
-# FITD Architecture Guide
+# Architecture
 
-This document describes the high-level architecture of the FITD (Free In The Dark / Re-Haunted) codebase. It is intended for new contributors who want to understand where things live and how the major subsystems interact.
-
----
+Where the code lives and how the main parts fit together. Build steps are in
+[BUILDING.md](BUILDING.md); this fork's own modules and their rules are in
+[AGENTS.md](../AGENTS.md).
 
 ## Overview
 
-FITD is a **C++17** reimplementation of the engine used by the *Alone in the Dark* trilogy (1992–1995). The code is organised as a thin executable (`Fitd`) that calls into a large static library (`FitdLib`) containing all engine logic. Rendering, windowing, audio, and input are delegated to third-party libraries pulled in via Git submodules.
+FITD reimplements the engine of *Alone in the Dark* 1–3, *Jack in the Dark*
+and *Time Gate*. A thin executable (`Fitd`) calls into a static library
+(`FitdLib`) that holds all engine logic. `FitdLib` is C++20; the executable,
+tools and tests are C++17. Rendering, windowing, audio and input use
+third-party libraries vendored in `TatouSource/ThirdParty/`.
 
 ```
-┌─────────────────────────────────────────────────┐
-│                    Fitd (EXE)                   │
-│        WinMain / main  →  FitdInit / FitdMain   │
-└──────────────────────┬──────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│                    Fitd (EXE)                    │
+│        WinMain / main  →  FitdInit / FitdMain    │
+└──────────────────────┬───────────────────────────┘
                        │
-┌──────────────────────▼──────────────────────────┐
-│                  FitdLib (Static Lib)            │
+┌──────────────────────▼───────────────────────────┐
+│                FitdLib (static lib)              │
 │                                                  │
-│  ┌──────────┐ ┌────────┐ ┌───────┐ ┌─────────┐ │
-│  │Game Logic│ │Renderer│ │ Audio │ │  Input  │ │
-│  │(Life,    │ │(bgfx,  │ │(SoLoud│ │(SDL3,   │ │
-│  │ rooms,   │ │ shaders│ │ ADLIB)│ │ gamepad)│ │
-│  │ objects) │ │ ImGui) │ │       │ │         │ │
-│  └──────────┘ └────────┘ └───────┘ └─────────┘ │
+│  ┌──────────┐ ┌────────┐ ┌────────┐ ┌─────────┐  │
+│  │Game logic│ │Renderer│ │ Audio  │ │  Input  │  │
+│  │(Life,    │ │(bgfx,  │ │(SoLoud,│ │(SDL3,   │  │
+│  │ rooms,   │ │ shaders│ │ AdLib) │ │ gamepad)│  │
+│  │ objects) │ │ ImGui) │ │        │ │         │  │
+│  └──────────┘ └────────┘ └────────┘ └─────────┘  │
 │                                                  │
-│  ┌──────────┐ ┌────────┐ ┌───────────────────┐ │
-│  │ Resource │ │ Config │ │ Remaster Features │ │
-│  │ (HQR/PAK│ │        │ │ (HD bg, TTF font, │ │
-│  │  zlib)   │ │        │ │  post-processing) │ │
-│  └──────────┘ └────────┘ └───────────────────┘ │
+│  ┌──────────┐ ┌────────┐ ┌───────────────────┐   │
+│  │ Resource │ │ Config │ │ Remaster features │   │
+│  │(HQR/PAK, │ │        │ │ (HD bg, TTF font, │   │
+│  │  zlib)   │ │        │ │  post-processing) │   │
+│  └──────────┘ └────────┘ └───────────────────┘   │
 └──────────────────────────────────────────────────┘
          │            │             │
     ┌────▼───┐   ┌────▼───┐   ┌────▼────┐
@@ -38,248 +42,242 @@ FITD is a **C++17** reimplementation of the engine used by the *Alone in the Dar
     └────────┘   └────────┘   └─────────┘
 ```
 
----
-
-## CMake Build Targets
+## CMake targets
 
 | Target | Type | Description |
 |--------|------|-------------|
-| `Fitd` | Executable | Entry point; links to `FitdLib` and all third-party libraries. Output binary: `Tatou.exe` |
-| `FitdLib` | Static library | All engine code (~140 `.cpp` / `.h` files) |
-| `bgfx` | Static library | Cross-platform GPU rendering (submodule: `ThirdParty/bgfx.cmake`) |
-| `SDL3-static` | Static library | Windowing, input, platform abstraction (submodule: `ThirdParty/SDL`) |
-| `soloud` | Static library | Audio mixing and playback (submodule: `ThirdParty/soloud.cmake`) |
-| `zlibstatic` | Static library | Decompression for HQR/PAK archives (submodule: `ThirdParty/zlib`) |
+| `Fitd` | Executable | Entry point (`Fitd/fitd.cpp`). Output: `Tatou.exe`, `Tatou` on Linux, `Tatou.app` on macOS |
+| `FitdLib` | Static library | All engine code, plus the ImGui sources |
+| `hd_models` | Custom | Copies `Assets/models_hd` next to the executable on every `Fitd` build |
+| `engine_tests` | Executable | doctest suite for the engine-free modules (`tests/engine/`) |
+| `build_hda_archive`, `unpack_hda_archive` | Executables | Pack and unpack `.hda` archives (`tools/`) |
+| `DOSBoxStub` | Executable (Windows) | Replaces the Steam/GOG `DOSBox.exe` so the store launches `Tatou.exe` |
+| `bgfx` (+ `bimg`, `bx`) | Static libraries | GPU rendering (`ThirdParty/bgfx.cmake`) |
+| `SDL3-static` | Static library | Windowing, input, platform layer (`ThirdParty/SDL`) |
+| `soloud` | Static library | Audio mixing and playback (`ThirdParty/soloud.cmake`) |
+| `zlibstatic` | Static library | Decompression (`ThirdParty/zlib`) |
 
-ImGui sources are compiled directly into `FitdLib` (no separate target).
+Paths are relative to `TatouSource/`.
 
----
+## FitdLib module map
 
-## FitdLib Module Map
+The main files in `TatouSource/FitdLib/`, by area. Not every file is listed.
 
-The source files in `FitdLib/` can be grouped into the following logical modules:
-
-### Core Engine
-
-| File(s) | Responsibility |
-|---------|---------------|
-| `main.cpp` / `main.h` | Engine initialisation, camera, collision detection, scene orchestration |
-| `mainLoop.cpp` / `mainLoop.h` | Primary game loop (`PlayWorld`) — processes one tick of game logic |
-| `vars.cpp` / `vars.h` | Global variables, game-type enum (`AITD1`, `JACK`, `AITD2`, `AITD3`, `TIMEGATE`), core data structures |
-| `common.h` / `config.h` | Shared includes, base type definitions |
-| `baseTypes.h` / `endianess.h` | Portable integer types (`s16`, `u32`, etc.) and byte-order helpers |
-| `version.h` / `version.cpp` | Build version string |
-| `gameTime.cpp` / `gameTime.h` | Frame timing and game clock |
-
-### Game Logic & Scripting
+### Core engine
 
 | File(s) | Responsibility |
 |---------|---------------|
-| `life.cpp` / `life.h` | **Life script interpreter** — the original game's scripting VM. Executes *Life* macros (`LM_DO_MOVE`, `LM_HIT`, `LM_CAMERA`, …) |
-| `lifeMacroTable.cpp` | Life macro opcode table |
+| `main.cpp` / `main.h` | Startup (`FitdMain`, `OpenProgram`, `detectGame`), camera, collision, scene control |
+| `mainLoop.cpp` / `mainLoop.h` | The game loop (`PlayWorld`) |
+| `vars.cpp` / `vars.h` | Globals, the game-type enum (`AITD1`, `JACK`, `AITD2`, `AITD3`, `TIMEGATE`), core data structures |
+| `common.h` / `config.h` | Shared includes and base definitions |
+| `baseTypes.h` / `endianess.h` | Integer types (`s16`, `u32`, …) and byte-order helpers |
+| `version.cpp` / `version.h` | Version string |
+| `gameTime.cpp` / `gameTime.h` | Game timing and clock |
+
+### Game logic and scripting
+
+| File(s) | Responsibility |
+|---------|---------------|
+| `life.cpp` / `life.h` | Interpreter for the original *Life* scripts (`LM_DO_MOVE`, `LM_HIT`, `LM_CAMERA`, …) |
+| `lifeMacroTable.cpp` | Life opcode table |
 | `evalVar.cpp` / `evalVar.h` | Script variable evaluation |
-| `AITD1.cpp` / `AITD2.cpp` / `AITD3.cpp` / `JACK.cpp` | Game-specific logic and quirk handling |
-| `AITD1_Tatou.cpp` | AITD1 title-screen and menu flow |
-| `anim.cpp` / `anim.h` | Skeletal animation processing |
+| `AITD1.cpp` / `AITD2.cpp` / `AITD3.cpp` / `JACK.cpp` | Per-game startup and logic |
+| `AITD1_Tatou.cpp` | AITD1 status screen and inventory display |
+| `anim.cpp` / `anim.h` | Body animation |
 | `anim2d.cpp` / `anim2d.h` | 2D sprite animation |
-| `animAction.cpp` / `animAction.h` | Animation-triggered actions (sounds, hits, etc.) |
-| `object.cpp` / `object.h` | Game object creation (`InitObjet`) |
-| `actorList.cpp` / `actorList.h` | Active actor sorting and management |
-| `track.cpp` / `track.h` | Path/track following for actor movement |
+| `animAction.cpp` / `animAction.h` | Actions triggered by animations (hits, sounds) |
+| `object.cpp` / `object.h` | Object creation (`InitObjet`) |
+| `actorList.cpp` / `actorList.h` | Actor sorting for draw order |
+| `track.cpp` / `track.h` | Actor movement along tracks |
 
-### World & Rooms
+### World and rooms
 
 | File(s) | Responsibility |
 |---------|---------------|
-| `room.cpp` / `room.h` | Room data structures: collision hulls (`hardColStruct`), scene zones (`sceZoneStruct`), camera zones |
-| `floor.cpp` / `floor.h` | Floor/stage loading (`LoadEtage`) |
-| `zv.cpp` / `zv.h` | ZV (zone de vie / bounding volume) calculations |
+| `room.cpp` / `room.h` | Room data: collision boxes (`hardColStruct`), scene zones (`sceZoneStruct`), camera zones |
+| `floor.cpp` / `floor.h` | Floor loading (`LoadEtage`) |
+| `zv.cpp` / `zv.h` | ZV (bounding volume) calculations |
 
 ### Rendering
 
 | File(s) | Responsibility |
 |---------|---------------|
-| `renderer.cpp` / `renderer.h` | High-level 3D object rendering, point transformation, shadow drawing |
-| `rendererBGFX.cpp` | bgfx-specific render submission |
-| `bgfxGlue.cpp` / `bgfxGlue.h` | bgfx/SDL3 window initialisation, frame begin/end |
-| `screen.cpp` / `screen.h` | Screen/framebuffer management |
-| `videoMode.cpp` / `videoMode.h` | Resolution and display mode handling |
+| `renderer.cpp` / `renderer.h` | 3D object rendering, point transformation, shadows |
+| `rendererBGFX.cpp` | bgfx draw submission |
+| `bgfxGlue.cpp` / `bgfxGlue.h` | bgfx setup, `StartFrame` / `EndFrame` |
+| `screen.cpp` / `screen.h` | Screen buffers |
+| `videoMode.cpp` / `videoMode.h` | Display mode settings |
 | `polys.cpp` | Polygon rasterisation |
-| `lines.cpp` | Line drawing primitives |
-| `sprite.cpp` / `sprite.h` | 2D sprite rendering |
-| `palette.cpp` / `palette.h` | VGA palette management |
-| `font.cpp` / `font.h` | Original bitmap font rendering |
+| `lines.cpp` | Line drawing |
+| `sprite.cpp` / `sprite.h` | 2D sprites |
+| `palette.cpp` / `palette.h` | VGA palette |
+| `font.cpp` / `font.h` | Original bitmap font |
 | `debugFont.cpp` / `debugFont.h` | Debug overlay text |
-| `sequence.cpp` / `sequence.h` | Full-motion video / cutscene playback |
-| `shaders/` | bgfx shader programs (vertex/fragment/varying definitions) |
+| `sequence.cpp` / `sequence.h` | FMV cutscene player |
+| `shaders/` | bgfx shader sources (see [Shader programs](#shader-programs)) |
 
-### Remaster Enhancements
+### Remaster features
 
 | File(s) | Responsibility |
 |---------|---------------|
-| `configRemaster.cpp` / `configRemaster.h` | `RemasterConfig` struct and `aitd_remaster.cfg` parsing |
-| `hdBackground.cpp` / `hdBackground.h` | HD background image loading (PNG/TGA via stb_image/bimg) |
-| `hdBackgroundRenderer.cpp` / `hdBackgroundRenderer.h` | Submitting HD backgrounds to the GPU |
-| `hdArchive.cpp` / `hdArchive.h` | HD asset archive access |
-| `postProcessing.cpp` / `postProcessing.h` | Bloom, film grain, SSAO post-processing pipeline |
-| `fontTTF.cpp` / `fontTTF.h` | TrueType font overlay via ImGui |
-| `imguiBGFX.cpp` / `imguiBGFX.h` | ImGui ↔ bgfx integration |
-| `updateChecker.cpp` / `updateChecker.h` | Online version/update check |
+| `configRemaster.cpp` / `configRemaster.h` | `RemasterConfig` and `aitd_remaster.cfg` reading and writing |
+| `hdBackground.cpp` / `hdBackground.h` | HD background loading (stb_image) |
+| `hdBackgroundRenderer.cpp` / `hdBackgroundRenderer.h` | HD background drawing |
+| `hdArchive.cpp` / `hdArchive.h` | `.hda` archive reader |
+| `postProcessing.cpp` / `postProcessing.h` | Bloom, film grain, SSAO, SSGI |
+| `fontTTF.cpp` / `fontTTF.h` | TrueType text through ImGui |
+| `imguiBGFX.cpp` / `imguiBGFX.h` | ImGui on bgfx |
+| `updateChecker.cpp` / `updateChecker.h` | Checks GitHub Releases for a newer version (Windows) |
 
 ### This fork's modules
 
-Mouse gameplay (`mouse/`), the HD character models (`models/`, `modelReplacement.*`),
-the combat assists (`assist/`) and the collision rules (`physics/`) are described,
-with their firm rules, in the project map of [AGENTS.md](../AGENTS.md).
+Mouse gameplay (`mouse/`), the HD character models (`models/`,
+`modelReplacement.*`), the combat assists (`assist/`) and the collision rules
+(`physics/`) are described, with their rules, in [AGENTS.md](../AGENTS.md).
 
 ### Input
 
 | File(s) | Responsibility |
 |---------|---------------|
-| `input.cpp` / `input.h` | SDL3 keyboard and gamepad polling, controller hotplug |
-| `controlsMenu.cpp` / `controlsMenu.h` | In-game controls/key-binding menu |
+| `input.cpp` / `input.h` | Keyboard, mouse and gamepad through SDL3 (`readKeyboard`, `updateController`) |
+| `controlsMenu.cpp` / `controlsMenu.h` | Key-binding menu |
 
 ### Audio
 
 | File(s) | Responsibility |
 |---------|---------------|
-| `music.cpp` / `music.h` | Music playback orchestration, ADLIB/external track switching |
-| `osystemAL.cpp` / `osystemAL.h` | ADLIB OPL2 emulation layer |
-| `osystemAL_adlib.cpp` | ADLIB music driver |
-| `osystemAL_mp3.cpp` / `osystemAL_mp3.h` | External MP3 music support |
-| `fmopl.cpp` / `fmopl.h` | FM OPL emulator (Yamaha OPL2 chip) |
-| `vocDecoder.cpp` / `vocDecoder.h` | Creative VOC audio format decoder |
+| `music.cpp` / `music.h` | Music control and track switching |
+| `osystemAL.cpp` / `osystemAL.h` | Sound effect and music output |
+| `osystemAL_adlib.cpp` | AdLib music through OPL emulation |
+| `osystemAL_mp3.cpp` / `osystemAL_mp3.h` | MP3 playback |
+| `fmopl.cpp` / `fmopl.h` | Yamaha OPL2 emulator |
+| `vocDecoder.cpp` / `vocDecoder.h` | Creative VOC decoder |
 
-### Resource / File I/O
+### Resources and files
 
 | File(s) | Responsibility |
 |---------|---------------|
-| `hqr.cpp` / `hqr.h` | HQR archive reader (the original game's resource container format) |
+| `hqr.cpp` / `hqr.h` | HQR resource containers and their memory |
 | `pak.cpp` / `pak.h` | PAK archive reader |
-| `fileAccess.cpp` / `fileAccess.h` | Cross-platform file access helpers |
-| `unpack.cpp` / `unpack.h` | Custom decompression routines |
-| `resourceGC.cpp` / `resourceGC.h` | Resource garbage collection / cache management |
-| `save.cpp` / `save.h` | Save/load game state |
+| `fileAccess.cpp` / `fileAccess.h` | File loading helpers |
+| `unpack.cpp` / `unpack.h` | Decompression |
+| `resourceGC.cpp` / `resourceGC.h` | Deferred freeing of HD background assets |
+| `save.cpp` / `save.h` | Save and load |
+| `embedded/` | The AITD1 and Jack in the Dark data files as C++ arrays (`getEmbeddedFile`), used when a file is not on disk |
 
-### Menus & UI
+### Menus and UI
 
 | File(s) | Responsibility |
 |---------|---------------|
-| `startupMenu.cpp` / `startupMenu.h` | Game selection / startup menu |
-| `systemMenu.cpp` / `systemMenu.h` | In-game system/pause menu |
-| `inventory.cpp` / `inventory.h` | Inventory management and display |
-| `tatou.cpp` / `tatou.h` | Title screen and intro sequence |
-| `aitdBox.cpp` / `aitdBox.h` | UI dialog boxes |
-| `debugger.cpp` / `debugger.h` | Debug overlay / inspector |
+| `startupMenu.cpp` / `startupMenu.h` | Title screen and startup menu |
+| `systemMenu.cpp` / `systemMenu.h` | In-game system menu |
+| `inventory.cpp` / `inventory.h` | Inventory |
+| `tatou.cpp` / `tatou.h` | Status screen, inventory UI, character sheet |
+| `aitdBox.cpp` / `aitdBox.h` | Dialog boxes and frames |
+| `debugger.cpp` / `debugger.h` | Debug views and wireframes |
 | `consoleLog.h` | Console logging macros |
 
-### Platform Abstraction
+### Platform
 
 | File(s) | Responsibility |
 |---------|---------------|
-| `osystem.h` | Base OS system type definitions |
-| `osystemSDL.cpp` | SDL3 platform backend |
-| `exceptionHandler.cpp` / `exceptionHandler.h` | Crash/exception handling |
+| `osystem.h` | OS layer declarations |
+| `osystemSDL.cpp` | SDL3 backend: `FitdInit`, window, main-thread loop |
+| `exceptionHandler.cpp` / `exceptionHandler.h` | Crash handling |
 
-### Embedded Data
+## Data flow
 
-The `embedded/` subdirectory contains C++ arrays with embedded game data (camera definitions, language packs, floor layouts, textures) compiled directly into the binary. These are generated from original PAK files and allow the engine to function when certain original data files are missing or need overriding.
+### Startup
 
----
-
-## Key Data Flow
-
-### Startup Sequence
+Two threads run the game; [AGENTS.md → Threads](../AGENTS.md#threads) explains
+how they hand over.
 
 ```
-main() / WinMain()
-  └─ FitdInit()         — parse args, detect game type
-  └─ FitdMain()
-       └─ initBgfxGlue()   — create SDL3 window, init bgfx
-       └─ OpenProgram()     — load HQR resources, init subsystems
-       └─ loadRemasterConfig() — read aitd_remaster.cfg
-       └─ startGame()       — load initial floor/room
-       └─ PlayWorld() loop  — main game loop
+main() / WinMain()                     Fitd/fitd.cpp
+  └─ FitdInit()                        osystemSDL.cpp, main thread
+       ├─ loadRemasterConfig()         read aitd_remaster.cfg
+       ├─ SDL_CreateWindow()
+       ├─ detectGame()                 set g_gameId from the data files
+       ├─ start the game thread ──────► FitdMain()                main.cpp
+       │                                 ├─ initBgfxGlue()
+       │                                 ├─ OpenProgram()         load resources, start subsystems
+       │                                 └─ startAITD1() / startJACK() / startAITD2() / startAITD3()
+       │                                      └─ startGame() → PlayWorld() loop
+       └─ loop: readKeyboard(), bgfx::renderFrame()
 ```
 
-### Main Loop (one tick of `PlayWorld`)
+### One tick of `PlayWorld`
 
-1. **Input** — `readKeyboard()` / `updateController()` poll SDL3 events
-2. **Scripting** — Life scripts are evaluated for all active actors
-3. **Animation** — Skeletal and 2D animations advance
-4. **Physics / Collision** — ZV intersection tests, actor-world and actor-actor
-5. **Camera** — Camera zone evaluation, potential camera switch
-6. **Render** — `StartFrame()` → background → 3D objects → sprites → UI overlay → post-processing → `EndFrame()`
-7. **Audio** — `callMusicUpdate()` updates the audio stream
+1. **Input**: `process_events()` takes the input the main thread read.
+2. **Animation and collision**: `GereAnim()`.
+3. **Scripts**: `processLife()` for each active actor.
+4. **Camera**: switch to `NewNumCamera` when a camera change is due.
+5. **2D animation**: `handleAnim2d()`.
+6. **Render**: `AllRedraw()`.
 
-### Rendering Pipeline
+Music runs outside the tick: the audio stream callback calls
+`callMusicUpdate()`.
+
+### Rendering
 
 ```
 StartFrame()
-  ├─ Clear framebuffer
-  ├─ Draw background (original or HD)
-  ├─ Draw 3D actors (AffObjet → transform → submit to bgfx)
-  ├─ Draw 2D sprites, text, UI overlays
-  ├─ ImGui pass (TTF fonts, debug UI)
-  ├─ Post-processing (bloom → film grain → SSAO → composite)
+  ├─ background (original or HD)
+  ├─ 3D actors (AffObjet → transform → bgfx)
+  ├─ 2D sprites, text, UI
+  ├─ ImGui (TTF text, debug UI)
+  ├─ post-processing
   └─ EndFrame() → bgfx::frame()
 ```
 
----
+## Shader programs
 
-## Shader Programs
+Shaders live in `FitdLib/shaders/`. At build time bgfx's `shaderc` compiles
+them into headers under `shaders/generated/`. A program pairs a vertex shader
+(`*_vs.sc`) and a fragment shader (`*_ps.sc`) with a varying definition
+(`*.varying.def.sc`); several programs share a vertex shader.
 
-Shaders live in `FitdLib/shaders/` and are compiled via bgfx's `shaderc` into C headers at build time. Each shader program consists of a vertex shader (`*_vs.sc`), a fragment shader (`*_ps.sc`), and a varying definition (`*.varying.def.sc`).
-
-| Program | Purpose |
-|---------|---------|
+| Program (fragment shader) | Purpose |
+|---------------------------|---------|
 | `ui` | 2D UI quads |
-| `background` / `hdBackground` | Camera background rendering |
+| `background` / `hdBackground` | Camera backgrounds |
 | `maskBackground` / `maskHDBackground` | Depth-masked background overlays |
-| `flat` | Flat-shaded 3D geometry |
-| `noise` / `selective_noise` | Noise/dither effects |
+| `flat` / `textured` | Flat and textured 3D polygons |
+| `noise` | Noise and dither effects |
 | `ramp` | Gradient ramp shading |
 | `sphere` | Sphere-mapped lighting |
-| `model` | HD character models: an opaque pass, then a blended pass for translucent texels |
-| `brightpass` / `blur` / `composite` | Bloom post-processing chain |
+| `model` | HD character models (`skinned_vs`): an opaque pass, then a blended pass for translucent texels |
+| `particle` | Particles (blood, dust) |
+| `lantern_bloom` / `lantern_shadow` | Lantern glow and shadows |
+| `brightpass` / `blur` / `composite` | Bloom chain |
 | `ssao` / `ssao_blur` | Screen-space ambient occlusion |
+| `ssgi` / `ssgi_blur` | Screen-space global illumination |
 
----
+## Game-specific code
 
-## Game-Specific Code
+`AITD1.cpp`, `AITD2.cpp`, `AITD3.cpp` and `JACK.cpp` hold each game's startup,
+special cases and version differences. `detectGame()` sets `g_gameId`
+(`gameTypeEnum` in `vars.h`), and the engine branches on it.
 
-Each supported game has a dedicated source file (`AITD1.cpp`, `AITD2.cpp`, `AITD3.cpp`, `JACK.cpp`) containing game-specific:
+## Third-party libraries
 
-- Initialisation and teardown
-- Special-case logic (e.g., AITD1's intro cinematic flow in `AITD1_Tatou.cpp`)
-- Workarounds for differences between game versions
+All are vendored under `TatouSource/ThirdParty/`.
 
-The active game is identified at runtime by the `g_gameId` global (`gameTypeEnum` in `vars.h`), and dispatched to the appropriate handlers.
+| Library | Purpose | Path |
+|---------|---------|------|
+| **bgfx** (+ bimg, bx) | Rendering (D3D11/12, Vulkan, Metal, OpenGL) | `bgfx.cmake` |
+| **SDL3** | Windowing, input, gamepad, platform layer | `SDL` |
+| **SoLoud** | Audio mixing and playback | `soloud.cmake` |
+| **Dear ImGui** | Debug UI, TTF text | `imgui` |
+| **zlib** | Decompression | `zlib` |
+| **doctest** | Engine unit tests | `doctest` |
 
----
+## Configuration
 
-## Third-Party Libraries
-
-| Library | Version | Purpose | Submodule Path |
-|---------|---------|---------|---------------|
-| **bgfx** (+ bimg, bx) | Latest | Cross-platform rendering (D3D11/12, Vulkan, Metal, OpenGL) | `ThirdParty/bgfx.cmake` |
-| **SDL3** | Latest | Windowing, input, gamepad, platform abstraction | `ThirdParty/SDL` |
-| **SoLoud** | Latest | Audio mixing, WAV/MP3/OGG playback | `ThirdParty/soloud.cmake` |
-| **Dear ImGui** | Latest | Immediate-mode debug UI, TTF font rendering | `ThirdParty/imgui` |
-| **zlib** | Latest | Decompression for HQR/PAK resource archives | `ThirdParty/zlib` |
-
----
-
-## Configuration System
-
-Runtime configuration is managed through `RemasterConfig` (defined in `configRemaster.h`). The struct contains nested sub-structs for each feature area:
-
-- `controller` — deadzone, sensitivity, Y-inversion, analog movement toggle
-- `graphics` — HD backgrounds, filtering, blurred menus, fullscreen, hints, artwork
-- `postProcessing` — bloom, film grain, SSAO, vignette, SSGI, light probes
-- `music` — external music enable and folder path
-- `font` — TTF enable, font path, size, original text visibility
-- `controls` — keyboard and gamepad key/button bindings (9 actions)
-- `masks` — HD depth mask dumping and loading
-
-Values are loaded from `aitd_remaster.cfg` at startup via `loadRemasterConfig()` and can be saved back with `saveRemasterConfig()`. Every key, with its default, is in [configuration.md](configuration.md).
+`RemasterConfig` (`configRemaster.h`) holds the settings in one sub-struct per
+area: `ui`, `controller`, `graphics`, `postProcessing`, `animation`, `music`,
+`font`, `controls`, `masks`, `sequences`, `backgrounds`, `gameData` and
+`debug`. `loadRemasterConfig()` reads `aitd_remaster.cfg` at startup and
+`saveRemasterConfig()` writes it back. Every key, with its default, is in
+[configuration.md](configuration.md).

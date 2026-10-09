@@ -1,87 +1,47 @@
 # Contributing to AITDR
 
-Thank you for your interest in contributing to ALONE IN THE DARK REHAUNTED! This guide covers everything you need to get started.
-> This is a Free, Non-profit passion project but takes us a lot of coffee to get it done! Donate to us at https://buymeacoffee.com/jakeysbakery
----
+> The original project is free and non-profit. Support it at
+> https://buymeacoffee.com/jakeysbakery
 
-## Getting Started
+[../AGENTS.md](../AGENTS.md) holds this fork's firm rules, project map and
+testing guidelines. Read it before you change code.
 
-1. **Fork** the repository and clone your fork with submodules:
+## Getting started
 
-   ```bash
-   git clone --recurse-submodules https://github.com/<you>/AloneInTheDarkRehaunted.git
-   ```
-
-2. **Build** the project — see [BUILDING.md](BUILDING.md) for platform-specific instructions.
-
-3. **Obtain game data** — you need original game files from Steam or GOG (AITD1 is the easiest to start with); see [README → Game data](../README.md#game-data).
-
-4. **Read the architecture guide** — [ARCHITECTURE.md](ARCHITECTURE.md) gives a full overview of the code modules and data flow.
-
----
-
-## Development Workflow
-
-1. Create a feature branch from `main`:
+1. Fork the repository and clone your fork:
 
    ```bash
-   git checkout -b feature/my-change
+   git clone https://github.com/<you>/AloneInTheDarkReHaunted.git
    ```
 
-2. Make your changes, keeping commits small and focused.
+2. Build it: [BUILDING.md](BUILDING.md).
+3. Get the game data from Steam, GOG or the CD:
+   [README → Game data](../README.md#game-data).
+4. Learn the code modules and data flow: [ARCHITECTURE.md](ARCHITECTURE.md).
 
-3. Run `make test` (engine and tool tests), then build and run the game to verify nothing is broken. [AGENTS.md](../AGENTS.md) lists this fork's firm rules and its testing guidelines.
+## Workflow
 
-4. Push your branch and open a **Pull Request** against `main`.
+1. Branch from `main` (`git checkout -b feature/my-change`).
+2. Keep commits small and focused.
+3. Run `make test`, then build and play to check nothing broke.
+4. Open a pull request against `main`.
 
----
+## Coding standards
 
-## Coding Standards
-
-### Language & Compiler
-
-- **C++17** (`CMAKE_CXX_STANDARD 17` is enforced by CMake).
-- The project must build cleanly with MSVC (VS2022+), GCC, and Clang.
-
-### Formatting
-
-The project includes an `.editorconfig` file. Key rules:
-
-| Setting | Value |
-|---------|-------|
-| Indent style | Spaces |
-| Indent size | 4 |
-| Tab width | 4 |
-
-Please configure your editor to respect `.editorconfig` — most modern editors (VS, VS Code, CLion, etc.) support it out of the box.
-
-### Naming Conventions
-
-The codebase is a reverse-engineered reimplementation, so naming is a mix of original French identifiers and English additions. Follow these guidelines for **new** code:
-
-- **Functions**: `camelCase` (e.g., `loadRemasterConfig`, `updateController`)
-- **Types / Structs / Classes**: `PascalCase` (e.g., `RemasterConfig`, `PostProcessing`)
-- **Global variables**: prefix with `g_` (e.g., `g_gameId`, `g_controllerState`)
-- **Constants / Enums**: `ALL_CAPS` or `PascalCase` enum values (follow surrounding context)
-- **File names**: `camelCase.cpp` / `camelCase.h` for new files
-
-For code that directly reimplements original engine functions, **keep the original naming** (e.g., `AffObjet`, `GereDec`, `LoadEtage`) to maintain traceability to the reverse-engineered source.
-
-### Header Guards
-
-Use `#pragma once` for new headers, or traditional include guards matching the existing style:
-
-```cpp
-#ifndef _MY_HEADER_H_
-#define _MY_HEADER_H_
-// ...
-#endif
-```
-
-### Comments
-
-- Add comments to explain *why*, not *what*.
-- Use the existing copyright/author header block style for new files:
+- **C++17** for the project; the engine library (`FitdLib`) compiles as C++20.
+  The code must build with MSVC (VS2022+), GCC and Clang.
+- **Formatting:** `TatouSource/.editorconfig` sets 4-space indents for C, C++
+  and CMake files. Let your editor apply it.
+- **Naming in new code:** functions `camelCase` (`loadRemasterConfig`), types
+  `PascalCase` (`RemasterConfig`, `PostProcessing`), globals `g_` prefix
+  (`g_gameId`, `g_controllerState`), constants and enums as the surrounding
+  code does, files `camelCase.cpp` / `camelCase.h`. Code that reimplements an
+  original engine function keeps the original French name (`AffObjet`,
+  `GereDec`, `LoadEtage`) so it traces back to the original.
+- **Headers:** `#pragma once`, or include guards in the existing
+  `#ifndef _MY_HEADER_H_` style.
+- **Comments** explain *why*, not *what*. New files start with the header
+  block:
 
   ```cpp
   ///////////////////////////////////////////////////////////////////////////////
@@ -90,36 +50,29 @@ Use `#pragma once` for new headers, or traditional include guards matching the e
   ///////////////////////////////////////////////////////////////////////////////
   ```
 
-### Error Handling
+- **Errors:** the code does not use exceptions. Return error codes or `bool`,
+  and check resource pointers from HQR/PAK loading for `nullptr`.
 
-- Prefer returning error codes or `bool` over throwing exceptions (the existing codebase does not use exceptions).
-- Use `nullptr` checks when dealing with resource pointers from HQR/PAK loading.
+## Where help is needed
 
----
+- **AITD2 / AITD3:** many Life macros and features are missing. AITD2 work
+  happens in
+  [a separate fork](https://github.com/spacefarergames/AloneInTheDarkJackIsBackAgain/).
+- **Time Gate: Knight's Chase:** very early; most engine extensions are missing.
+- **Graphics:** polygon rendering, palette and depth-mask bugs.
+- **Playtesting** and bug reports.
 
-## Areas Where Help Is Needed
+## Reporting bugs
 
-| Area | Description |
-|------|-------------|
-| **AITD2 / AITD3 completability** | These games have many unimplemented Life macros and missing features |
-| **Graphics correctness** | Polygon rendering, palette handling, and depth-masking issues |
-| **Time Gate: Knight's Chase** | Very early; most engine extensions are unimplemented |
-| **Testing** | Any playtesting and bug reports are valuable |
+Include:
 
----
-
-## Reporting Bugs
-
-When filing an issue, please include:
-
-1. Which game you were playing (AITD1, AITD2, AITD3, Jack, Time Gate)
-2. Where in the game the issue occurs (floor, room, or scene description)
-3. Expected vs. actual behaviour
-4. Build configuration (OS, compiler, Debug/Release)
-5. Screenshots or short video if it's a visual issue
-
----
+1. The game (AITD1, AITD2, AITD3, Jack, Time Gate).
+2. Where it happens (floor, room or scene).
+3. Expected and actual behaviour.
+4. OS, compiler and build type (Debug/Release).
+5. A screenshot or short video for visual bugs.
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the **GNU General Public License v2** — the same license as the rest of the project.
+Contributions are licensed under the **GNU General Public License v2**, like
+the rest of the project.
