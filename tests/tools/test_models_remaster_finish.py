@@ -1,5 +1,5 @@
 import numpy as np
-from aitd_models.blender.remaster import composite, linear_to_srgb, model_glb
+from aitd_models.blender.remaster import LUMA, composite, linear_to_srgb, model_glb, soften
 from aitd_models.delivery import read_delivery
 from aitd_models.hdm import TRANSLUCENT_ALPHA
 from model_helpers import TINY_PNG
@@ -38,3 +38,21 @@ def test_model_glb_round_trips_through_the_delivery_reader():
     assert np.allclose(delivery.normals[seam[0]], delivery.normals[seam[1]])
     # v flipped: Blender's (0.5, 1) is glTF's (0.5, 0)
     assert any(np.allclose(row, [0.5, 0.0]) for row in delivery.uv)
+
+
+def test_soften_evens_out_painted_facets_and_keeps_strong_detail():
+    cloth = np.array([0.08, 0.2, 0.09])
+    image = np.tile(cloth, (64, 64, 1))
+    image[:32, 32:] *= np.exp(0.2)              # a painted facet: a low-contrast brightness step
+    image[44:52, 44:52] *= np.exp(-2.0)         # a button: ten times the contrast, as wide as the radius
+    image[:, :4] = 0.0                          # the bake's empty background
+    out = soften(image, 8)
+    brightness = np.log(np.maximum(out @ LUMA, 1e-12))
+    assert brightness[16, 34] - brightness[16, 29] < 0.35 * 0.2   # measured 0.058
+    assert brightness[48, 40] - brightness[48, 48] > 0.6 * 2.0    # measured 1.33
+    assert np.allclose(out / out.sum(axis=-1, keepdims=True)[..., :1].clip(1e-12),
+                       image / image.sum(axis=-1, keepdims=True)[..., :1].clip(1e-12))  # hue kept
+    assert not out[:, :4].any()                 # the background stays empty
+    flat = np.tile(cloth, (16, 16, 1))
+    flat[:, :4] = 0.0
+    assert np.allclose(soften(flat, 8), flat)   # and never darkens the texels beside it
