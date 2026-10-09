@@ -1,5 +1,3 @@
-![BCO b91ab279-5d06-4e0e-9661-41d0371e3ac4(1)](https://github.com/user-attachments/assets/867772e8-ada8-41a1-a9f6-46f80fda76be)
-
 # Alone In The Dark: Re-Haunted
 
 **A faithful remaster of the original 1992 survival horror classic.**
@@ -198,17 +196,6 @@ make build-fitd       # the build copies the models next to the game
 | Alone in the Dark 2 | In progress, as [a separate fork](https://github.com/spacefarergames/AloneInTheDarkJackIsBackAgain/) |
 | Alone in the Dark 3 | Planned |
 
-## More screenshots and videos
-
-![573227923-7d49eb5a-8d31-4474-a939-ff9876fdc9df](https://github.com/user-attachments/assets/63ea6028-5b75-4003-9db5-a0e3c9040d87)
-
-![573228488-b0206b5f-8026-46d0-89a6-b5dc6b7ba73e](https://github.com/user-attachments/assets/e7fa702a-6d17-4ce2-afc4-573c3be5340e)
-
-<img width="1400" height="876" alt="Jack in the Dark" src="https://github.com/user-attachments/assets/9aa0dba7-30ee-4671-b2e5-9c40caa48872" />
-
-- [Gameplay video](https://www.youtube.com/watch?v=fzi_xK2Jifw)
-- [Lamp dynamic lighting](https://www.youtube.com/watch?v=0yaWv7vF3bA)
-
 ## Repository layout
 
 ```
@@ -238,9 +225,3 @@ unchanged. Run `make test` before sending a change.
 
 GNU General Public License v2. See [LICENSE](LICENSE). The original game data
 is not included.
-
-## Steam assets
-
-![573480799-62b94c3b-7fd4-4b7d-8f81-f504382f798d](https://github.com/user-attachments/assets/e01731c3-5f6a-42a8-9330-227242e1d919)
-
-<img width="1536" height="1024" alt="Logo" src="https://github.com/user-attachments/assets/9277959d-af64-4c71-9bae-70007b945838" />
