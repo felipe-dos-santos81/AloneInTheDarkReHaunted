@@ -11,7 +11,8 @@ Little-endian, no padding:
                u32 indices, the texture bytes, u32 CRC-32 of everything before
 
 Positions and normals are engine space in the rest pose (y down, facing -z);
-joints are bone groups. TatouSource/FitdLib/models/hdmMesh.cpp reads it and
+joints are bone groups. Texture alpha: below 128 a hole, 128-252 translucent
+(the engine's transparent material, a blended pass), from 253 opaque. TatouSource/FitdLib/models/hdmMesh.cpp reads it and
 rejects exactly what `read_hdm` rejects."""
 from __future__ import annotations
 

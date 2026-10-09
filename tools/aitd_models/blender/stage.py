@@ -6,7 +6,8 @@
 or, through MCP for Blender's execute_blender_code, `stage.run(WORK_DIR,
 keep=True)`, which works in a new scene of its own and leaves it open for a
 look. WORK_DIR holds job.json and corners.npz from remaster.py; the stage
-writes refined.npz, color.npy and ao.npy there. It imports only Blender's
+writes refined.npz, color.npy, ao.npy and, for a body with transparent
+triangles, mask.npy there. It imports only Blender's
 own modules and numpy."""
 import json
 import pathlib
@@ -51,6 +52,8 @@ def _source(job: dict, corners) -> bpy.types.Object:
         uv = corners[f"uv_{name}"]
         me.uv_layers.new(name=name).data.foreach_set("uv", np.column_stack([uv[:, 0], 1.0 - uv[:, 1]]).ravel())
     me.attributes.new("w_front", "FLOAT", "CORNER").data.foreach_set("value", np.repeat(corners["w_front"], 3))
+    me.attributes.new("transparent", "FLOAT", "CORNER").data.foreach_set(
+        "value", np.repeat(corners["transparent"], 3).astype(np.float32))
     rgba = np.column_stack([np.repeat(corners["palette"], 3, axis=0), np.ones(3 * count)]).astype(np.float32)
     me.attributes.new("pal", "FLOAT_COLOR", "CORNER").data.foreach_set("color", rgba.ravel())
     me.materials.clear()  # the import's own glTF material would shift every index
@@ -188,10 +191,25 @@ def _refined(src: bpy.types.Object, corners, job: dict) -> bpy.types.Object:
     return model
 
 
-def _bake(model, src, job: dict):
+def _mask_material() -> bpy.types.Material:
+    """Emission of the source's "transparent" attribute: 1 on the engine's
+    transparent material 2, else 0."""
+    mat = bpy.data.materials.new("transparent")
+    nt = mat.node_tree
+    nt.nodes.clear()
+    out, emit, attr = (nt.nodes.new(t) for t in ("ShaderNodeOutputMaterial", "ShaderNodeEmission", "ShaderNodeAttribute"))
+    attr.attribute_name = "transparent"
+    nt.links.new(attr.outputs["Fac"], emit.inputs["Color"])
+    nt.links.new(emit.outputs[0], out.inputs["Surface"])
+    return mat
+
+
+def _bake(model, src, job: dict, translucent: bool):
     """The source's emission onto the model (selected to active), then the
-    model's own ambient occlusion: linear float images, rows bottom-up.
-    Returns both arrays and the emission image."""
+    model's own ambient occlusion and, for a body with transparent
+    triangles, the source's transparency mask: linear float images, rows
+    bottom-up. Returns the colour, AO and mask (or None) arrays and the
+    emission image."""
     scene = bpy.context.scene
     scene.render.engine = "CYCLES"
     scene.cycles.device = "CPU"
@@ -201,8 +219,11 @@ def _bake(model, src, job: dict):
     model.data.materials.clear()
     model.data.materials.append(target)
     out, images = [], []
-    for kind, samples, from_source in (("EMIT", job["samples_emit"], True), ("AO", job["samples_ao"], False)):
-        image = bpy.data.images.new(kind, size, size, alpha=False, float_buffer=True)
+    passes = [("EMIT", "EMIT", job["samples_emit"], True), ("AO", "AO", job["samples_ao"], False)]
+    if translucent:
+        passes.append(("MASK", "EMIT", job["samples_emit"], True))
+    for name, kind, samples, from_source in passes:
+        image = bpy.data.images.new(name, size, size, alpha=False, float_buffer=True)
         node.image = image
         images.append(image)
         target.node_tree.nodes.active = node
@@ -214,9 +235,16 @@ def _bake(model, src, job: dict):
         model.select_set(True)
         bpy.context.view_layer.objects.active = model
         extra = {"use_selected_to_active": True, "cage_extrusion": job["cage"], "max_ray_distance": job["ray"]} if from_source else {}
+        saved = [slot.material for slot in src.material_slots]
+        if name == "MASK":
+            mask = _mask_material()
+            for slot in src.material_slots:
+                slot.material = mask
         bpy.ops.object.bake(type=kind, margin=8, **extra)
+        for slot, material in zip(src.material_slots, saved):
+            slot.material = material
         out.append(np.array(image.pixels[:], np.float32).reshape(size, size, 4))
-    return out[0][..., :3], out[1][..., 0], images[0]
+    return out[0][..., :3], out[1][..., 0], out[2][..., 0] if translucent else None, images[0]
 
 
 def _show(model, src, image) -> None:
@@ -243,7 +271,7 @@ def run(work, keep: bool = False) -> None:
         bpy.ops.wm.read_factory_settings(use_empty=True)
     src = _source(job, corners)
     model = _refined(src, corners, job)
-    colour, ao, emission = _bake(model, src, job)
+    colour, ao, mask, emission = _bake(model, src, job, bool(corners["transparent"].any()))
     me = model.data
     world = np.array(model.matrix_world)
     co = np.zeros(len(me.vertices) * 3, np.float32)
@@ -256,6 +284,8 @@ def run(work, keep: bool = False) -> None:
     np.savez(work / "refined.npz", positions=co, loop_vertex=loop_vertex, loop_uv=loop_uv.reshape(-1, 2))
     np.save(work / "color.npy", colour.astype(np.float16))
     np.save(work / "ao.npy", ao.astype(np.float16))
+    if mask is not None:
+        np.save(work / "mask.npy", mask.astype(np.float16))
     if keep:
         _show(model, src, emission)
     else:

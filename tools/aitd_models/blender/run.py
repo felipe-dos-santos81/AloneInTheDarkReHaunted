@@ -110,12 +110,12 @@ def run_bodies(records: list[BodyRecord], models: pathlib.Path, out: pathlib.Pat
                 runs.append(BodyRun(record.key, "skipped", edits.skip))
                 log(f"skipped {record.key}: {edits.skip}")
                 continue
-            for stale in ("refined.npz", "color.npy", "ao.npy"):
+            for stale in ("refined.npz", "color.npy", "ao.npy", "mask.npy"):
                 (body_work / stale).unlink(missing_ok=True)
             stage(body_work)
             glb, triangles = finish_glb(body_work)
             atomic_write_bytes(delivery, glb)
-            for bake in ("color.npy", "ao.npy"):
+            for bake in ("color.npy", "ao.npy", "mask.npy"):
                 (body_work / bake).unlink(missing_ok=True)
             run = BodyRun(record.key, "delivered", "", triangles, texture_source(record.key, paths),
                           time.monotonic() - start)

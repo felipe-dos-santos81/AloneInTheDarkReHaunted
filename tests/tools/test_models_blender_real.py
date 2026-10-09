@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
+from aitd_models.blender.remaster import TRANSLUCENT_ALPHA
 from aitd_models.blender.run import blender_stage, run_bodies
 from aitd_models.export import export_models
 from aitd_models.gltf import read_glb
@@ -55,7 +56,11 @@ def test_carnby_passes_the_gate(gate):
     # the bake itself: a black, flat or unpainted texture would pass every check above
     glb = read_glb(delivery.read_bytes())
     view = glb.doc["bufferViews"][glb.doc["images"][0]["bufferView"]]
-    pixels = np.asarray(Image.open(io.BytesIO(glb.bin[view["byteOffset"]:view["byteOffset"] + view["byteLength"]])).convert("RGB"))
+    image = Image.open(io.BytesIO(glb.bin[view["byteOffset"]:view["byteOffset"] + view["byteLength"]]))
+    pixels = np.asarray(image.convert("RGB"))
+    # his lamp's 4 glass polygons are the transparent material: translucent texels, a sliver of the texture
+    translucent = (np.asarray(image.convert("RGBA"))[..., 3] == TRANSLUCENT_ALPHA).mean()
+    assert 0 < translucent < 0.05
     assert len(np.unique(pixels.reshape(-1, 3), axis=0)) > DISTINCT
     mean = pixels.reshape(-1, 3).mean(axis=0)
     assert mean[1] > GREEN * (mean[0] + mean[2]) / 2

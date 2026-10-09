@@ -1,6 +1,6 @@
 import numpy as np
 
-from aitd_models.blender.remaster import composite, linear_to_srgb, model_glb
+from aitd_models.blender.remaster import TRANSLUCENT_ALPHA, composite, linear_to_srgb, model_glb
 from aitd_models.delivery import read_delivery
 from model_helpers import TINY_PNG
 
@@ -10,6 +10,9 @@ def test_composite_darkens_by_ao_and_flips_rows():
     ao = np.array([[0.0], [1.0]])  # Blender row 0 is the bottom
     out = composite(colour, ao)
     assert out[:, 0, 0].tolist() == [255, round(255 * float(linear_to_srgb(np.array([0.7]))[0]))]
+    # a transparency mask becomes alpha: translucent (the engine's material 2) where it is set
+    out = composite(colour, ao, mask=np.array([[1.0], [0.0]]))
+    assert out.shape == (2, 1, 4) and out[:, 0, 3].tolist() == [255, TRANSLUCENT_ALPHA]
 
 
 def test_model_glb_round_trips_through_the_delivery_reader():

@@ -42,3 +42,15 @@ TEST_CASE("mip chain: a 1x1 texture is its own only level")
     CHECK(levels == 1);
     CHECK(chain == std::vector<uint8_t>{ 1, 2, 3, 4 });
 }
+
+TEST_CASE("translucent texels: alpha 128..252 is translucent, below a hole, above opaque")
+{
+    const struct { uint8_t alpha; bool translucent; } rows[] = {
+        { 255, false }, { 253, false }, { 252, true }, { 128, true }, { 127, false }, { 0, false } };
+    for (const auto& row : rows)
+    {
+        CAPTURE(row.alpha);
+        const uint8_t texels[8] = { 9, 9, 9, 255, 9, 9, 9, row.alpha }; // 2x1: an opaque texel and the row's
+        CHECK(hasTranslucentTexels(texels, 2, 1) == row.translucent);
+    }
+}

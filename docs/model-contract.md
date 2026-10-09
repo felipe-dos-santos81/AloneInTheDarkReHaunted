@@ -125,6 +125,7 @@ data/models-ai/bodies/<KEY>/model.glb
 | Orientation | Y up, facing +Z, like `original.glb`; any scale and offset |
 | Triangles | 50,000 at most (import warns above 30,000) |
 | Texture | One base-colour PNG or JPEG, 4096 px at most per side (2048 recommended) |
+| Alpha | Optional. Below 128 a hole; 128–252 translucent, drawn blended at 50 % like the engine's transparent material 2; from 253 opaque |
 | Extensions | None required: no Draco, meshopt or KTX2 |
 
 Deliver only for canonical keys, the folders under `bodies/`. Import copies
@@ -233,10 +234,12 @@ Per body (`tools/aitd_models/blender/`):
    stays as it is: the engine stretches it, and subdivided it would tear
    past the import's stretch check. Every group, unless an edit sets it, takes the highest level
    whose predicted count, the spanning triangles plus 6·4^(L−1) for each
-   other one, stays within 30,000. The stage then unwraps the result and
-   bakes the textured original onto it, plus its ambient occlusion.
-3. `remaster.py` composites the bakes into one 2048 px PNG and writes
-   `model.glb`.
+   other one, stays within 30,000. The originals mostly face inward, so the
+   stage turns every face to whichever side sees out of the body. It then
+   unwraps the result and bakes the textured original onto it, its ambient
+   occlusion and, for a body with transparent polygons, a mask of them.
+3. `remaster.py` composites the bakes into one 2048 px PNG, the mask as
+   alpha 128, and writes `model.glb`.
 
 Working files go to `data/models-blender/<KEY>/`; `data/models-ai/run.md`
 lists every body: delivered (triangles, texture source, seconds), failed

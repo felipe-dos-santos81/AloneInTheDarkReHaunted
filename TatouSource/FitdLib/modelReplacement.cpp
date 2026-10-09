@@ -61,6 +61,7 @@ struct ModelReplacement
     bgfx::IndexBufferHandle ib = BGFX_INVALID_HANDLE;
     bgfx::TextureHandle texture = BGFX_INVALID_HANDLE;
     uint32_t textureFlags = 0;
+    bool translucent = false; // some texels are the transparent material: a second, blended pass
 };
 
 namespace
@@ -179,6 +180,7 @@ bool upload(ModelReplacement& r, const models::HdmMesh& mesh, std::string* why)
         *why = std::string("texture does not decode: ") + stbi_failure_reason();
         return false;
     }
+    r.translucent = models::hasTranslucentTexels(rgba, w, h);
     const bool swatch = w <= models::kSwatchSide && h <= models::kSwatchSide;
     if (swatch)
     {
@@ -323,19 +325,27 @@ bool drawModelReplacement(ModelReplacement* r, sBody* pBody, int x, int y, int z
     float matrices[models::kMaxPoseGroups][16];
     for (size_t g = 0; g < groups; ++g)
         models::columnMajor(bones[g], matrices[g]);
-    bgfx::setTransform(matrices, (uint16_t)groups);
     const float proj[4] = { p.px, p.py, p.pz, p.pw };
-    bgfx::setUniform(uniform("u_camProj", bgfx::UniformType::Vec4), proj);
-    const float tint[4] = { g_fadeLevel, g_roomIsDark ? kDarkRoomBrightness : 1.0f, 0.0f,
-                            hdCompareUnlit() ? 1.0f : 0.0f };
-    bgfx::setUniform(uniform("u_tint", bgfx::UniformType::Vec4), tint);
-    setLightUniforms(cam);
-    bgfx::setTexture(0, uniform("s_albedo", bgfx::UniformType::Sampler), r->texture, r->textureFlags);
-    bgfx::setVertexBuffer(0, r->vb);
-    bgfx::setIndexBuffer(r->ib);
-    bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LEQUAL |
-                   BGFX_STATE_MSAA);
-    bgfx::submit(gameViewId, modelProgram());
+    // The opaque texels, then (as the classic path draws the transparent material:
+    // blended, writing no depth, back faces culled; the stage faces every triangle
+    // outward) the translucent ones. bgfx consumes the state per submit.
+    for (int pass = 0; pass < (r->translucent ? 2 : 1); ++pass)
+    {
+        bgfx::setTransform(matrices, (uint16_t)groups);
+        bgfx::setUniform(uniform("u_camProj", bgfx::UniformType::Vec4), proj);
+        const float tint[4] = { g_fadeLevel, g_roomIsDark ? kDarkRoomBrightness : 1.0f, (float)pass,
+                                hdCompareUnlit() ? 1.0f : 0.0f };
+        bgfx::setUniform(uniform("u_tint", bgfx::UniformType::Vec4), tint);
+        setLightUniforms(cam);
+        bgfx::setTexture(0, uniform("s_albedo", bgfx::UniformType::Sampler), r->texture, r->textureFlags);
+        bgfx::setVertexBuffer(0, r->vb);
+        bgfx::setIndexBuffer(r->ib);
+        bgfx::setState(pass == 0 ? BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z |
+                                       BGFX_STATE_DEPTH_TEST_LEQUAL | BGFX_STATE_MSAA
+                                 : BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_LEQUAL |
+                                       BGFX_STATE_MSAA | BGFX_STATE_BLEND_ALPHA | BGFX_STATE_CULL_CW);
+        bgfx::submit(gameViewId, modelProgram());
+    }
     return true;
 }
 
