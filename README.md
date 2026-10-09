@@ -89,9 +89,8 @@ make run         # build the game and play from data/aitd1
 Run `TatouSource\build\vs2022.bat` (or `vs2026.bat`) and open the generated
 solution. Set **Fitd** as the startup project, and set its working directory
 (Project → Properties → Debugging) to your game data folder. Then press **F5**.
-The executable is `Tatou.exe`. The build copies the HD models next to it; a
-different working directory needs `Assets/models_hd` and `Assets/atlases` copied
-in as `models_hd/` and `atlases/` (`make models-install data=DIR` does it).
+The executable is `Tatou.exe`. The build copies the HD models next to it, and
+the game finds them there.
 
 [BUILDING.md](BUILDING.md) has the full instructions for every platform.
 

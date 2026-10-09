@@ -136,7 +136,8 @@ the original, check the fit, derive skin weights from the original's bone
 groups and write `Assets/models_hd/body_<KEY>.hdm` (see "Import output").
 Every build of the game copies `Assets/models_hd` and `Assets/atlases` next to
 it (into the app bundle on macOS), and `make run` copies them into the data
-folder elsewhere (`make models-install` copies other folders); the game
+folder elsewhere (`make models-install` copies other folders). The game reads
+`models_hd/` from the folder it starts in, or else next to the executable, and
 draws them with `graphics.hdModels = true`, the default.
 
 The make targets read the bodies and the palette from the game data.

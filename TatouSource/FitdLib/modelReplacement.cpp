@@ -6,6 +6,7 @@
 #include "common.h"
 #include "modelReplacement.h"
 
+#include <SDL3/SDL_filesystem.h>
 #include <bgfx/bgfx.h>
 
 #include <cstdio>
@@ -249,14 +250,28 @@ void destroy(ModelReplacement& r)
     r.texture = BGFX_INVALID_HANDLE;
 }
 
+// models_hd/ in the folder the game starts in, else next to the executable, where
+// every build copies it (a Windows working directory set to the game data).
+const std::string& modelsDir()
+{
+    static const std::string dir = [] {
+        const std::string here = std::string(homePath) + "models_hd/";
+        const char* exe = SDL_GetBasePath();
+        if (std::filesystem::is_directory(here) || !exe)
+            return here;
+        return std::string(exe) + "models_hd/";
+    }();
+    return dir;
+}
+
 void load(ModelReplacement& r, const std::string& key, const sBody* body)
 {
-    const std::string path = std::string(homePath) + "models_hd/body_" + key + ".hdm";
+    const std::string path = modelsDir() + "body_" + key + ".hdm";
     std::vector<uint8_t> bytes;
     if (!readFile(path, &bytes))
     {
         static bool s_folderChecked = false; // a missing folder is a packaging mistake: say so once
-        if (!s_folderChecked && !std::filesystem::is_directory(std::string(homePath) + "models_hd"))
+        if (!s_folderChecked && !std::filesystem::is_directory(modelsDir()))
         {
             printf(HDM_WARN "graphics.hdModels is on but there is no models_hd/ folder: every body draws classic" CON_RESET "\n");
             fflush(stdout);
