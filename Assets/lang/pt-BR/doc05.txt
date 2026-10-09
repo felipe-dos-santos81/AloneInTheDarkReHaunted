@@ -5,7 +5,7 @@
 #CLope de Vega
 #Csobre suas assombrosas viagens
 #Cà terra dos astecas.
-#P#T"Santo Cristo!", bradou o capitão
+#P#T"Santo Cristo!" bradou o capitão
 Cortez, atônito diante do estranho rito
 que presenciávamos. Encontramos os
 selvagens seminus. Atiravam uns aos
@@ -56,7 +56,7 @@ sacerdote pagão riu cruelmente. A boca
 da estátua fendeu-se num esgar mortal,
 mostrando dentes afiados como pontas de
 punhal.
-#PO capitão Cortez bradou: "Ao ataque!".
+#PO capitão Cortez bradou: "Ao ataque!"
 Mas foi em vão; estávamos pregados ao
 chão.
 #P#TApesar de nossos esforços, não
