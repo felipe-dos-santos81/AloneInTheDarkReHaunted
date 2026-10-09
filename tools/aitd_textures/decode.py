@@ -1,14 +1,11 @@
 # SPDX-License-Identifier: GPL-2.0-only
-"""Decode AITD1 palettes and 320x200 indexed images; locate the game data."""
+"""Decode AITD1 palettes; locate the game data."""
 from __future__ import annotations
 
 import pathlib
 
 import numpy as np
 
-SCREEN_WIDTH = 320
-SCREEN_HEIGHT = 200
-SCREEN_PIXELS = SCREEN_WIDTH * SCREEN_HEIGHT  # 64000, an engine invariant
 PALETTE_BYTES = 768
 PALETTE_PAK = "ITD_RESS"  # the game palette: this PAK's entry 3
 PALETTE_ENTRY = 3
@@ -41,11 +38,3 @@ def decode_palette(raw: bytes) -> np.ndarray:
         pal = (pal.astype(np.uint16) * 4).astype(np.uint8)
     return pal
 
-
-def decode_image(raw: bytes, palette: np.ndarray, offset: int = 0) -> np.ndarray:
-    """64000 palette indices starting at `offset` -> (200, 320, 3) uint8 RGB."""
-    needed = offset + SCREEN_PIXELS
-    if len(raw) < needed:
-        raise ValueError(f"image needs {needed} bytes ({SCREEN_PIXELS} pixels at offset {offset}), got {len(raw)}")
-    indices = np.frombuffer(raw, dtype=np.uint8, count=SCREEN_PIXELS, offset=offset)
-    return palette[indices.reshape(SCREEN_HEIGHT, SCREEN_WIDTH)]

@@ -82,7 +82,7 @@ help: ## List the targets
 deps: ## Install the build dependencies for this platform
 	@$(SRC_DIR)/install_deps.sh
 
-tools-deps: ## Create tools/.venv for the texture and model tools
+tools-deps: ## Create tools/.venv for the model tools
 	python3 -m venv tools/.venv
 	tools/.venv/bin/pip install -q -r tools/requirements-dev.txt
 
@@ -112,7 +112,7 @@ test-engine: configure ## Engine unit tests (doctest)
 	$(CMAKE_BUILD) --target engine_tests
 	cd "$(BUILD_DIR)" && ctest -C "$(BUILD_TYPE)" --output-on-failure -R engine_tests
 
-test-tools: ## Texture and model tool tests (pytest)
+test-tools: ## Model tool tests (pytest)
 	$(PYTHON) -m pytest tests/tools -q
 
 ##@ HD backgrounds
