@@ -1,7 +1,8 @@
 # Building
 
-How to build the Tatou engine (a [FITD](https://github.com/yaz0r/FITD) fork) on each platform. Where the game
-data comes from is in [README → Game data](../README.md#game-data).
+How to build the Tatou engine (a [FITD](https://github.com/yaz0r/FITD) fork)
+on each platform. Where the game data comes from is in
+[README → Game data](../README.md#game-data).
 
 ## Prerequisites
 
@@ -11,8 +12,9 @@ data comes from is in [README → Game data](../README.md#game-data).
 | **CMake** | 3.25+ | The CMake presets need it; CI uses the same presets |
 | **C++20 compiler** | | MSVC, GCC or Clang. `FitdLib` builds as C++20, the rest as C++17 |
 
-The third-party libraries (bgfx, [SDL3](https://github.com/libsdl-org/SDL), SoLoud, ImGui, zlib, doctest) are
-vendored in `TatouSource/ThirdParty/`, so a plain clone is enough:
+The third-party libraries (bgfx, [SDL3](https://github.com/libsdl-org/SDL),
+SoLoud, ImGui, zlib, doctest) are vendored in `TatouSource/ThirdParty/`, so a
+plain clone is enough:
 
 ```bash
 git clone https://github.com/felipe-dos-santos81/alone-in-the-dark-re-haunted-v2.git
@@ -163,8 +165,9 @@ git checkout -- TatouSource/FitdLib/shaders/generated/metal
 ## Embedded game data
 
 Every build compiles the AITD1 and Jack in the Dark data files (PAK, ITD)
-from `TatouSource/FitdLib/embedded/` into the binary. The engine uses them when a
-file is missing from its working directory.
+from `TatouSource/FitdLib/embedded/` into the binary. The engine uses them when
+a file is missing from its working directory. Brazilian Portuguese is embedded
+the same way (`make lang-pack`).
 
 ## Build configurations
 

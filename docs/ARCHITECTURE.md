@@ -6,8 +6,8 @@ Where the code lives and how the main parts fit together. Build steps are in
 
 ## Overview
 
-[FITD](https://github.com/yaz0r/FITD) reimplements the engine of *Alone in the Dark* 1–3, *Jack in the Dark*
-and *Time Gate*. A thin executable (`Fitd`) calls into a static library
+[FITD](https://github.com/yaz0r/FITD) reimplements the engine of *Alone in the
+Dark* 1–3, *Jack in the Dark* and *Time Gate*. A thin executable (`Fitd`) calls into a static library
 (`FitdLib`) that holds all engine logic. `FitdLib` is C++20; the executable,
 tools and tests are C++17. Rendering, windowing, audio and input use
 third-party libraries vendored in `TatouSource/ThirdParty/`.
@@ -133,8 +133,10 @@ The main files in `TatouSource/FitdLib/`, by area. Not every file is listed.
 ### This fork's modules
 
 Mouse gameplay (`mouse/`), the HD character models (`models/`,
-`modelReplacement.*`), the combat assists (`assist/`) and the collision rules
-(`physics/`) are described, with their rules, in [AGENTS.md](../AGENTS.md).
+`modelReplacement.*`), the combat assists (`assist/`), the collision rules
+(`physics/`) and the translation helpers (`text/`: the Portuguese font glyphs
+and the menu string table, used through `uiTr.h`) are described, with their
+rules, in [AGENTS.md](../AGENTS.md).
 
 ### Input
 
@@ -164,7 +166,7 @@ Mouse gameplay (`mouse/`), the HD character models (`models/`,
 | `unpack.cpp` / `unpack.h` | Decompression |
 | `resourceGC.cpp` / `resourceGC.h` | Deferred freeing of HD background assets |
 | `save.cpp` / `save.h` | Save and load |
-| `embedded/` | The AITD1 and Jack in the Dark data files as C++ arrays (`getEmbeddedFile`), used when a file is not on disk |
+| `embedded/` | The AITD1 and Jack in the Dark data files, and the Brazilian Portuguese text, as C++ arrays (`getEmbeddedFile`), used when a file is not on disk |
 
 ### Menus and UI
 

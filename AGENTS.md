@@ -42,19 +42,22 @@ Guidance for anyone (human or agent) changing this repository.
   unit-tested in `TatouSource/tests/engine/`: `fontCompose.*` (Brazilian
   Portuguese in the bitmap font: composes ã and õ from a/o and the tilde of ñ,
   and draws accented capitals as the plain capital; used only while Portuguese
-  is the language) and `uiText.*` (the string table of the remaster menus,
-  `kUiRows`, with fr/it/es/de/pt columns). Menus reach it through `uiTr.h`:
-  `tr()` gives UTF-8 for ImGui, `trDos()` the game's codepage for the bitmap
-  menus, game thread only. A new menu string goes through `tr()` or `trDos()`
-  with a row in `kUiRows`. `tools/aitd_data/lang.py` lists the same composed
-  codes, and `tests/tools/test_lang.py` checks they agree. The Portuguese text
+  is the language), `uiText.*` (the string table of the remaster menus,
+  `kUiRows`, with fr/it/es/de/pt columns) and `cp850.h` (the game's codepage,
+  shared with `fontTTF.cpp`). Menus reach the table through `uiTr.h`:
+  `trDos()` gives the game's codepage for the bitmap menus (game thread only),
+  `tr()` UTF-8 for the ImGui F1 dialog, translated into Portuguese only (F1
+  stays English in the original languages). A new menu string goes through
+  `tr()` or `trDos()` with a row in `kUiRows`. `tools/aitd_data/lang.py` lists
+  the same composed codes as `fontCompose.h`, and `tests/tools/test_lang.py`
+  checks they agree. The Portuguese text
   is in `Assets/lang/pt-BR` (`make lang-pack`); in-game sign-off:
   `docs/translation-checklist.md`.
 - `TatouSource/FitdLib/physics/` — collision rules, engine-free and header-only,
   unit-tested in `TatouSource/tests/engine/`: `collisionEscape.h` (how an
   actor already inside a blocker may move, used by `GereCollision`).
-- `tools/` + `tests/tools/` — the Python HD model tools, tested by
-  `make test-tools`. `tools/aitd_data/` reads the game data (PAKs,
+- `tools/` + `tests/tools/` — the Python tools (game data, HD models,
+  translation), tested by `make test-tools`. `tools/aitd_data/` reads the game data (PAKs,
   palette; `lang.py` the game text, via `make lang-extract` and `make
   lang-pack`); `tools/aitd_models/` exports the bodies and imports the
   replacements (`make export-models`, `make import-models`; contract in
@@ -79,6 +82,7 @@ make run [data=DIR]      # play from the folder of .PAK files (default data/aitd
 make test-engine         # C++ unit tests (doctest) for engine-free modules
 make test-tools          # Python tool tests
 make test                # both
+make lang-pack           # check Assets/lang/pt-BR and regenerate the embedded Portuguese
 ```
 
 ## CI
@@ -90,7 +94,10 @@ it green: with a Makefile generator always give `cmake --build` a numbered
 runner), and never name identifiers `min`, `max`, `near` or `far` in engine
 code — windows.h macros; the `NOMINMAX` target define in
 `TatouSource/CMakeLists.txt` keeps `min`/`max` out, MSVC defines
-`near`/`far` anyway.
+`near`/`far` anyway. MSVC also reads source files in the system code page:
+write non-ASCII text as `\x` escapes, or, like `FitdLib/text/uiText.cpp`,
+give the file `/utf-8` in both `FitdLib/CMakeLists.txt` and
+`tests/engine/CMakeLists.txt`.
 
 ## Git
 

@@ -30,7 +30,7 @@ struct RemasterConfig
     // HD Graphics settings (for future implementation)
     struct {
         bool enableHDBackgrounds;
-        bool enableHDModels;    // HD character models (models_hd/*.hdm); off until the art is signed off
+        bool enableHDModels;    // HD character models (models_hd/*.hdm) (default: true)
         int backgroundScale;
         bool enableFiltering;
         bool enableBlurredMenu;

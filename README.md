@@ -1,9 +1,10 @@
 # Alone In The Dark: Re-Haunted v2
 
 A remaster of the 1992 survival horror game. Re-Haunted (AITD-R) reimplements
-the Infogrames engine in C++ ([FITD](https://github.com/yaz0r/FITD), here called Tatou) with bgfx rendering,
-SoLoud audio and [SDL3](https://github.com/libsdl-org/SDL) input. It runs on Windows, Linux and macOS 11.3+ under
-the **GNU GPL v2**.
+the Infogrames engine in C++ ([FITD](https://github.com/yaz0r/FITD), here
+called Tatou) with bgfx rendering, SoLoud audio and
+[SDL3](https://github.com/libsdl-org/SDL) input. It runs on Windows, Linux and
+macOS 11.3+ under the **GNU GPL v2**.
 
 ## This fork
 
@@ -79,8 +80,8 @@ make run         # build the game and play from data/aitd1
 
 **Windows**
 
-In `TatouSource\build`, run `vs2022.bat` (or `vs2026.bat`) and open the generated
-solution. Make **Fitd** the startup project, set its working directory
+In `TatouSource\build`, run `vs2022.bat` (or `vs2026.bat`) and open the
+generated solution. Make **Fitd** the startup project, set its working directory
 (Project → Properties → Debugging) to your game data folder, and press **F5**.
 The build writes `Tatou.exe` and copies the HD models next to it, where the
 game finds them.
@@ -219,9 +220,9 @@ alone-in-the-dark-re-haunted-v2/
 
 ## Contributing
 
-See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md). [AGENTS.md](AGENTS.md) holds this
-fork's firm rules, such as never locking the cursor and keeping keyboard play
-unchanged.
+See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md). [AGENTS.md](AGENTS.md) holds
+this fork's firm rules, such as never locking the cursor and keeping keyboard
+play unchanged.
 
 ## License
 

@@ -1,4 +1,4 @@
-# Contributing to AITDR
+# Contributing
 
 [../AGENTS.md](../AGENTS.md) holds this fork's firm rules, project map and
 testing guidelines. Read it before you change code.
