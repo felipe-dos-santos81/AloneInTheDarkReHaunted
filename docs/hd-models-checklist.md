@@ -101,6 +101,9 @@ Measured results:
   0.97–1.10.
 - Outward-facing Blender models (2026-10-09), saves 0–6, lit rooms: IoU
   0.89–0.97, brightness 0.94–1.17.
+- Smooth shading and softened facets (2026-10-09), saves 0–6, lit rooms:
+  IoU 0.89–0.97, brightness 0.91–1.14 (the same saves with the previous
+  models: 0.93–1.17; every body 0.01–0.03 darker).
 
 ## Rows
 
@@ -128,3 +131,4 @@ Stages S3–S6 fill these in. "Classic" means the option off; "HD" means on.
 | 18 | HD: the seated ghost (room 10, `LISTBODY_141`) shows the room through it as the classic one does, with no holes or doubled layers | | | | |
 | 19 | HD: the flying insect's wings (`LISTBODY_238`/`243`) are see-through; its body is solid | | | | |
 | 20 | HD: Carnby's and Emily's lamp glass (`LISTBODY_011`, `LISTBOD2_011`) is see-through in C1, C9 and C10 | | | | |
+| 21 | HD: bodies shade as rounded forms and their cloth shows no crumpled facets, in a lit room and in the dark room with the lantern (C1, C9, C10); faces and buttons stay crisp; no brightness steps along texture seams; shading steps at the joints no worse than before | | | | |

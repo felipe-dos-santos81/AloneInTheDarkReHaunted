@@ -36,7 +36,8 @@ startup, and the game window is raised above the console.
   masks as PNG for editing.
 - **Textured models:** texture atlases on the classic bodies, cached per floor.
 - **HD character models** (`graphics.hdModels`, on by default): refined,
-  textured meshes for all 42 classic bodies, skinned to the original bones so
+  textured meshes for all 42 classic bodies, shaded as rounded forms with
+  the atlases' painted facets softened, and skinned to the original bones so
   every animation plays unchanged. Translucent parts (the ghost, the insect's
   wings, lamp glass) draw blended, and a body without a model draws classic.
   Every build copies `Assets/models_hd` next to the game. They are made with
