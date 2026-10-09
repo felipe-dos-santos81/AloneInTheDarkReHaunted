@@ -134,9 +134,9 @@ and need their own delivery.
 `make check-models` (a dry run) and `make import-models` align the mesh to
 the original, check the fit, derive skin weights from the original's bone
 groups and write `Assets/models_hd/body_<KEY>.hdm` (see "Import output").
-Every build of the game copies `Assets/models_hd` and `Assets/atlases` next to
-it (into the app bundle on macOS), and `make run` copies them into the data
-folder elsewhere (`make models-install` copies other folders). The game reads
+Every build of the game copies `Assets/models_hd` next to it (into the app
+bundle on macOS; `make models-install` copies other models, and the atlases,
+into the data folder or the bundle). The game reads
 `models_hd/` from the folder it starts in, or else next to the executable, and
 draws them with `graphics.hdModels = true`, the default.
 

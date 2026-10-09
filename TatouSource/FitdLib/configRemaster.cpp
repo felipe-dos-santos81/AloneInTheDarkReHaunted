@@ -16,8 +16,9 @@
 
 RemasterConfig g_remasterConfig;
 
-// 2: graphics.hdModels became on by default. A file from before has it saved
-// off only because that was the old default, so loading one turns it on once.
+// A file saved the defaults of its time, so loading an older one changes those
+// once and saves it. 2: graphics.hdModels became on by default. 3: backgrounds.dump
+// became off by default.
 static const int kConfigVersion = 3;
 
 void initDefaultRemasterConfig()
@@ -171,9 +172,9 @@ void loadRemasterConfig()
         
         if (sscanf(line, "%127s = %127s", key, value) == 2)
         {
-            // Remaster options dialog behavior
             if (strcmp(key, "config.version") == 0)
                 version = atoi(value);
+            // Remaster options dialog behavior
             else if (strcmp(key, "interface.showOptionsAtStartup") == 0)
                 g_remasterConfig.ui.showOptionsAtStartup = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
 
@@ -407,18 +408,12 @@ void loadRemasterConfig()
     if (version < 2 && !g_remasterConfig.graphics.enableHDModels)
     {
         g_remasterConfig.graphics.enableHDModels = true;
-        static bool s_told = false; // the config is loaded more than once at startup
-        if (!s_told)
-            printf(CFG_TAG "graphics.hdModels is now on by default; turned it on (F1 turns it off again)\n");
-        s_told = true;
+        printf(CFG_TAG "graphics.hdModels is now on by default; turned it on (F1 turns it off again)\n");
     }
     if (version < 3 && g_remasterConfig.backgrounds.dumpEnabled)
     {
         g_remasterConfig.backgrounds.dumpEnabled = false;
-        static bool s_told = false;
-        if (!s_told)
-            printf(CFG_TAG "backgrounds.dump is now off by default; turned it off (F1 turns it on again)\n");
-        s_told = true;
+        printf(CFG_TAG "backgrounds.dump is now off by default; turned it off (F1 turns it on again)\n");
     }
 
     // Validate and clamp numeric config values to safe ranges
@@ -460,6 +455,9 @@ void loadRemasterConfig()
     // Sync detail level with HD backgrounds setting
     extern int detailLevel;
     detailLevel = g_remasterConfig.graphics.enableHDBackgrounds ? 1 : 0;
+
+    if (version < kConfigVersion)
+        saveRemasterConfig(); // the upgrades above happen once
 }
 
 void saveRemasterConfig()

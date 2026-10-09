@@ -80,12 +80,6 @@ def test_help_lists_the_asset_targets():
         assert target in out
 
 
-def test_run_copies_the_models_into_the_data_folder_off_macos():
-    out = make_n("run", "BUNDLE_RESOURCES=", "data=/d")
-    assert 'cd "/d" && cmake "-DDESTINATION=."' in out
-    assert "-DDESTINATION" not in make_n("run", "BUNDLE_RESOURCES=/b", "data=/d").split('cd "/d"')[-1]
-
-
 def test_models_install_mirrors_the_models_and_adds_the_atlases(tmp_path):
     # Off macOS (no bundle) the game reads its files from the data folder.
     models, atlases, bundle = tmp_path / "m", tmp_path / "a", tmp_path / "data"
@@ -96,3 +90,13 @@ def test_models_install_mirrors_the_models_and_adds_the_atlases(tmp_path):
     make_run("models-install", f"models_hd={models}", f"atlases={atlases}", "BUNDLE_RESOURCES=", f"data={bundle}")
     assert sorted(p.name for p in (bundle / "models_hd").iterdir()) == ["keep.txt", "new.hdm"]
     assert sorted(p.name for p in (bundle / "atlases").iterdir()) == ["body_X.png", "point_X.png"]
+
+
+def test_models_install_without_models_leaves_the_installed_ones(tmp_path):
+    installed = tmp_path / "data/models_hd/body_X.hdm"
+    installed.parent.mkdir(parents=True)
+    installed.write_text("x")
+    (tmp_path / "empty").mkdir()
+    proc = subprocess.run(["make", "models-install", f"models_hd={tmp_path / 'empty'}", "BUNDLE_RESOURCES=",
+                           f"data={tmp_path / 'data'}"], cwd=ROOT, capture_output=True, text=True)
+    assert proc.returncode != 0 and installed.exists()

@@ -2,16 +2,15 @@
 
 The game reads `aitd_remaster.cfg` from the folder it starts in (in the macOS
 app, `Tatou.app/Contents/Resources/`) and writes it back when you change an
-option in the **F1** dialog. If the file is missing, the game writes it with the
-defaults below.
+option in the **F1** dialog. If the file is missing, the game uses the defaults
+below until the first save.
 
 The file has one `key = value` per line, and `#` starts a comment. Booleans
 are `true` or `false`, and strings are quoted. Unknown keys are ignored.
 
 `config.version` is the file's format. Older files saved the old defaults, so
-loading one changes them once: before version 2 it turns `graphics.hdModels`
-on, before version 3 it turns `backgrounds.dump` off. The next save writes the
-current version.
+loading one changes them once and saves the file: before version 2 it turns
+`graphics.hdModels` on, before version 3 it turns `backgrounds.dump` off.
 
 ## Graphics
 
@@ -19,7 +18,7 @@ current version.
 |---|---|---|
 | `graphics.hdBackgrounds` | `false` | Draw the HD camera views from `backgrounds_hd.hda` (`make hd-install`) |
 | `graphics.backgroundScale` | `2` | Size of the HD art, as a multiple of 320x200 (1–4). The shipped art is 4 |
-| `graphics.hdModels` | `true` | Draw the HD character models from `models_hd/` in the game data folder, or else next to the executable. Each build copies them next to the executable (into the app on macOS) and `make run` into the data folder. A body without a model draws classic, and a missing folder logs one line |
+| `graphics.hdModels` | `true` | Draw the HD character models from `models_hd/` in the game data folder, or else next to the executable. Each build copies them next to the executable (into the app on macOS). A body without a model draws classic, and a missing folder logs one line |
 | `graphics.msaa` | `4` | Anti-aliasing for 3D models: 0, 2, 4, 8 or 16 |
 | `graphics.renderer` | `auto` | `auto`, `d3d11`, `d3d12`, `opengl`, `vulkan` or `metal` |
 | `graphics.fullscreen` | `false` | Start in fullscreen (**F11** toggles it) |

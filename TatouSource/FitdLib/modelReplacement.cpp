@@ -273,7 +273,7 @@ void load(ModelReplacement& r, const std::string& key, const sBody* body)
         static bool s_folderChecked = false; // a missing folder is a packaging mistake: say so once
         if (!s_folderChecked && !std::filesystem::is_directory(modelsDir()))
         {
-            printf(HDM_WARN "graphics.hdModels is on but there is no models_hd/ folder: every body draws classic" CON_RESET "\n");
+            printf(HDM_WARN "graphics.hdModels is on but there is no %s folder: every body draws classic" CON_RESET "\n", modelsDir().c_str());
             fflush(stdout);
         }
         s_folderChecked = true;

@@ -165,7 +165,7 @@ make tools-deps       # once: the Python venv for the tools
 make export-models    # original bodies -> data/models
 make blender-models   # refine them in Blender -> data/models-ai
 make import-models    # check them and pack them into Assets/models_hd
-make run              # the build and run copy the models and atlases next to the game
+make build-fitd       # the build copies the models next to the game
 ```
 
 `make check-models` runs the checks without importing. The format is in

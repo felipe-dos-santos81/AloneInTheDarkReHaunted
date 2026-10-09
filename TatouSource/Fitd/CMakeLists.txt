@@ -98,10 +98,11 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES Darwin)
     )
 endif()
 
-# The HD character models and their atlases, refreshed on every build of the game
-# (graphics.hdModels is on by default) where the game reads its files: the app's
-# Resources on macOS, the executable's folder elsewhere. A plain path: a generator
-# expression naming Fitd here would make the two targets depend on each other.
+# The HD character models, refreshed on every build of the game (graphics.hdModels
+# is on by default) next to the executable, or in the app's Resources on macOS; the
+# game also looks there. Not the atlases: the game reads those with HD models off
+# too. A plain path: a generator expression naming Fitd here would make the two
+# targets depend on each other.
 set(_hd_dir "${CMAKE_CURRENT_BINARY_DIR}")
 if(CMAKE_CONFIGURATION_TYPES)
     string(APPEND _hd_dir "/$<CONFIG>")
@@ -111,9 +112,9 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES Darwin)
 endif()
 add_custom_target(hd_models
     COMMAND ${CMAKE_COMMAND} "-DDESTINATION=${_hd_dir}"
-        "-DMODELS=${CMAKE_SOURCE_DIR}/../Assets/models_hd" "-DATLASES=${CMAKE_SOURCE_DIR}/../Assets/atlases"
+        "-DMODELS=${CMAKE_SOURCE_DIR}/../Assets/models_hd"
         -P "${CMAKE_SOURCE_DIR}/cmake/copy_hd_models.cmake"
-    COMMENT "Copying Assets/models_hd and Assets/atlases next to the game"
+    COMMENT "Copying Assets/models_hd next to the game"
 )
 add_dependencies(Fitd hd_models)
 
