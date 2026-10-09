@@ -8,12 +8,6 @@
 
 namespace text {
 
-const ComposedGlyph kComposed[2] = { { 0xC6, 'a', 0xA4 }, { 0xE4, 'o', 0xA4 } };
-const PlainCapital kPlainCapitals[10] = {
-    { 0xB7, 'A' }, { 0xB5, 'A' }, { 0xB6, 'A' }, { 0xC7, 'A' }, { 0xD2, 'E' },
-    { 0xD6, 'I' }, { 0xE0, 'O' }, { 0xE2, 'O' }, { 0xE5, 'O' }, { 0xE9, 'U' },
-};
-
 namespace {
 
 struct Layout { int align, height, stride, table; bool wordStride; };

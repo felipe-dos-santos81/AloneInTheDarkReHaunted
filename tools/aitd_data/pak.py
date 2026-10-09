@@ -90,3 +90,15 @@ class Pak:
                 f"{self.path.name}: entry {index} size {len(out)} != {info.uncompressed_size}"
             )
         return out
+
+
+def pak_image(entries: list[bytes], flag: int = FLAG_RAW) -> bytes:
+    """A PAK of uncompressed entries in the layout Pak (and the engine) reads:
+    u32 0, u32 offsets[n], then per entry u32 0, u32 size, u32 size, u8 flag,
+    u8 info5, u16 name_len, payload."""
+    blobs = [struct.pack("<IIIBBH", 0, len(e), len(e), flag, 0, 0) + e for e in entries]
+    pos, offsets = 4 * (len(entries) + 1), []
+    for blob in blobs:
+        offsets.append(pos)
+        pos += len(blob)
+    return struct.pack("<I", 0) + b"".join(struct.pack("<I", o) for o in offsets) + b"".join(blobs)
