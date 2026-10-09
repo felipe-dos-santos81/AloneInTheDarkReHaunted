@@ -23,7 +23,7 @@
 @29:Abrir/Vasculhar
 @30:Fechar
 @31:Empurrar
-@32:Jogar
+@32:Lançar
 @33:Largar/Pôr
 
 @40:Fim
@@ -88,7 +88,7 @@
 @218:Um Kit Médico
 @219:Um Frasco
 @220:Um Jarro
-@221:Umas Balas
+@221:Balas
 @222:Uma Estatueta Pesadíssima
 @223:Uma Chave
 @224:Um Livro
@@ -126,7 +126,7 @@
 @256:Uma Espada
 @257:Uma Chave
 @258:Um Calço
-@259:Uma Gema
+@259:Uma Pedra Preciosa
 @260:Um Livro
 @261:Um Livro
 @262:Um Livro
@@ -144,7 +144,7 @@
 @516:Ok, o lampião está aceso
 @517:O lampião já tem óleo
 
-@520:O rifle está vazio
+@520:O rifle está descarregado
 @521:Você não tem munição
 @522:Ok, rifle recarregado
 @523:Os cartuchos estão molhados
@@ -190,7 +190,7 @@
 @710:Você não tem revólver
 @711:Ok, revólver recarregado
 
-@730:A Chave do Gabinete de Jeremy
+@730:A Chave do Escritório de Jeremy
 
 @740:Um Livro Falso
 @741:É um livro falso!
@@ -215,7 +215,7 @@
 
 @940:Você não tem onde tocá-lo
 @941:O Danúbio Azul de J. Strauss
-@942:Você ouve o Danúbio Azul
+@942:Você está ouvindo o Danúbio Azul
 @950:Uma Lata Vazia
 
 @970:A Chave do Porão
@@ -223,12 +223,12 @@
 @990:Eca! Carne humana
 @1000:Uma Caixa de Sapatos Vazia
 @1010:Você não tem balas!
-@1011:O revólver está vazio
+@1011:O revólver está descarregado
 
 @1030:Dança Macabra de Saint-Saëns
-@1031:Você ouve a Dança Macabra
+@1031:Você está ouvindo a Dança Macabra
 @1040:Opus Póstumo 69 n. 1 de Chopin
-@1041:Você ouve o Opus Póstumo 69 n. 1
+@1041:Você está ouvindo o Opus Póstumo 69 n. 1
 
 @1070:A Chave do Salão de Baile
 
