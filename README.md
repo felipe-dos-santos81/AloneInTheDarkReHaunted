@@ -1,15 +1,13 @@
 # Alone In The Dark: Re-Haunted
 
-**A faithful remaster of the original 1992 survival horror classic.**
-
-Re-Haunted (AITD-R) is a C++ reimplementation of the Infogrames engine (FITD,
-here called Tatou), with modern rendering (bgfx), audio (SoLoud) and input
-(SDL3). It runs on Windows, Linux and macOS 11.3+, and is licensed under the
-**GNU GPL v2**.
+A remaster of the 1992 survival horror game. Re-Haunted (AITD-R) reimplements
+the Infogrames engine in C++ (FITD, here called Tatou) with bgfx rendering,
+SoLoud audio and SDL3 input. It runs on Windows, Linux and macOS 11.3+ under
+the **GNU GPL v2**.
 
 ## Original Upscaled vs HD
 
-Seven saved games, with the original graphics upscaled on the left and the HD
+Seven saved games: the original graphics upscaled on the left; HD
 backgrounds, HD character models and post effects on the right.
 
 ![Save 0: original graphics upscaled, then HD](docs/screenshots/save0-original-vs-hd.jpg)
@@ -28,23 +26,22 @@ backgrounds, HD character models and post effects on the right.
 
 ## This fork
 
-This is a fork of
+A fork of
 [spacefarergames/AloneInTheDarkReHaunted](https://github.com/spacefarergames/AloneInTheDarkReHaunted)
 focused on *Alone in the Dark 1*. It adds:
 
 - **Accessibility.** The whole game plays with the mouse's left button alone
-  ([Mouse](#mouse-left-button-only)). An optional automatic counter-attack and
-  slower enemy attacks make fights easier. Keyboard and gamepad play are
-  unchanged.
+  ([Mouse](#mouse-left-button-only)). Optional assists (automatic
+  counter-attack, slower enemy attacks) make fights easier. Keyboard and
+  gamepad play are unchanged.
 - **A native macOS port** for Apple Silicon (arm64)
   ([docs/BUILDING.md](docs/BUILDING.md#macos-apple-silicon)).
-- **HD asset tools.** You can pack the HD backgrounds and generate, check and
+- **HD asset tools** to pack the HD backgrounds and to generate, check and
   import HD character models ([HD assets](#hd-assets)).
 
 *Original project © 2026 Infogrames / Spacefarer Retro Remasters LLC, by Jake
-Jackson (jake@spacefarergames.com). It is a free, non-profit project. You can
-support it at https://buymeacoffee.com/jakeysbakery or by PayPal to
-jake@spacefarergames.com.*
+Jackson (jake@spacefarergames.com): free and non-profit. Support it at
+https://buymeacoffee.com/jakeysbakery or by PayPal to jake@spacefarergames.com.*
 
 ## Game data
 
@@ -59,12 +56,12 @@ CD).
      `Contents/Resources/game/INDARK/`
    - **Steam / GOG (Windows):** `<install folder>/INDARK/`
    - **CD-ROM:** `INDARK/` on the disc
-2. Copy its contents into `data/aitd1/` at the root of this repository. Git
-   ignores `data/`, so the files are never committed.
+2. Copy its contents into `data/aitd1/` at the repository root (`data/` is
+   git-ignored).
 
 On Windows the engine can also find a Steam, GOG or CD install and copy the
-files itself (turn this off with `gamedata.steamless = true`). macOS and Linux
-builds do not search for them.
+files itself (`gamedata.steamless = true` turns this off). macOS and Linux
+builds do not search.
 
 The game reads its files from the folder it starts in and writes
 `aitd_remaster.cfg` there, so that folder must be writable.
@@ -74,7 +71,7 @@ The game reads its files from the folder it starts in and writes
 **macOS and Linux**
 
 ```bash
-git clone --recurse-submodules https://github.com/felipe-dos-santos81/AloneInTheDarkReHaunted.git
+git clone https://github.com/felipe-dos-santos81/AloneInTheDarkReHaunted.git
 cd AloneInTheDarkReHaunted
 make deps        # Linux only: build dependencies (apt, dnf or pacman)
 make run         # build the game and play from data/aitd1
@@ -84,13 +81,13 @@ make run         # build the game and play from data/aitd1
 
 **Windows**
 
-Run `TatouSource\build\vs2022.bat` (or `vs2026.bat`) and open the generated
-solution. Set **Fitd** as the startup project, and set its working directory
-(Project → Properties → Debugging) to your game data folder. Then press **F5**.
-The executable is `Tatou.exe`. The build copies the HD models next to it, and
-the game finds them there.
+In `TatouSource\build`, run `vs2022.bat` (or `vs2026.bat`) and open the generated
+solution. Make **Fitd** the startup project, set its working directory
+(Project → Properties → Debugging) to your game data folder, and press **F5**.
+The build writes `Tatou.exe` and copies the HD models next to it, where the
+game finds them.
 
-[docs/BUILDING.md](docs/BUILDING.md) has the full instructions for every platform.
+Full instructions for every platform: [docs/BUILDING.md](docs/BUILDING.md).
 
 ## Controls
 
@@ -107,7 +104,7 @@ the game finds them there.
 | Options dialog | **F1** or **Home** |
 | Fullscreen | **F11** or **Alt+Enter** |
 
-You can rebind keys under **Controls** in the system menu.
+Rebind keys under **Controls** in the system menu.
 
 ### Mouse (left button only)
 
@@ -120,11 +117,10 @@ You can rebind keys under **Controls** in the system menu.
 | Fight | **Click** an enemy |
 | Inventory / map / menu | **Click** the icons at the top left; every screen also works by click |
 
-- The cursor's shape shows what a click would do. "Not allowed" means nothing
-  would happen.
+- The cursor shape shows what a click would do; "not allowed" means nothing.
 - The game never locks or confines the cursor.
-- Pressing any key or gamepad button takes the hero back from the mouse.
-- To turn mouse play off: **F1 → Controls → Mouse gameplay**
+- Any key or gamepad button takes the hero back from the mouse.
+- Turn mouse play off in **F1 → Controls → Mouse gameplay**
   (`controls.mouseGameplay = false`).
 - Outside gameplay, a double-click on empty space toggles fullscreen.
 
@@ -139,17 +135,16 @@ You can rebind keys under **Controls** in the system menu.
 | System menu / cancel | **B** (○) |
 | Quick turn | **LB** / **RB** (L1 / R1) |
 
-Controllers are hot-pluggable, and you can rebind their buttons in the
-**Controls** menu.
+Controllers are hot-pluggable; rebind their buttons in the **Controls** menu.
 
 ## Configuration
 
 **F1** opens the options dialog, which also shows at startup. Settings are
-saved in `aitd_remaster.cfg` next to the game data; every key, with its default,
-is in [docs/configuration.md](docs/configuration.md). HD backgrounds are off and
-HD character models on by default (`graphics.hdBackgrounds`, `graphics.hdModels`).
-
-[docs/REMASTER.md](docs/REMASTER.md) documents the remaster features in detail.
+saved in `aitd_remaster.cfg` next to the game data;
+[docs/configuration.md](docs/configuration.md) lists every key and its default.
+HD backgrounds are off and HD character models on by default
+(`graphics.hdBackgrounds`, `graphics.hdModels`).
+[docs/REMASTER.md](docs/REMASTER.md) describes the remaster features.
 
 ## HD assets
 
@@ -166,8 +161,8 @@ make import-models    # check them and pack them into Assets/models_hd
 make build-fitd       # the build copies the models next to the game
 ```
 
-`make check-models` runs the checks without importing. The format is in
-[docs/model-contract.md](docs/model-contract.md), the in-game sign-off in
+`make check-models` runs the checks without importing. Format:
+[docs/model-contract.md](docs/model-contract.md); in-game sign-off:
 [docs/hd-models-checklist.md](docs/hd-models-checklist.md).
 
 ## Remaster features
@@ -192,7 +187,7 @@ make build-fitd       # the build copies the models next to the game
 | Game | Status |
 |------|--------|
 | Alone in the Dark 1 | ✅ Completable |
-| Jack in the Dark (promo) | ✅ Completable. It ships as a separate release; keep it in its own folder |
+| Jack in the Dark (promo) | ✅ Completable; a separate release, so keep it in its own folder |
 | Alone in the Dark 2 | In progress, as [a separate fork](https://github.com/spacefarergames/AloneInTheDarkJackIsBackAgain/) |
 | Alone in the Dark 3 | Planned |
 
@@ -213,15 +208,15 @@ AloneInTheDarkReHaunted/
 └── data/                # your game files and exports (git-ignored)
 ```
 
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) explains the engine's modules and data flow.
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) explains the engine modules and data flow.
 
 ## Contributing
 
 See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md). [AGENTS.md](AGENTS.md) holds this
 fork's firm rules, such as never locking the cursor and keeping keyboard play
-unchanged. Run `make test` before sending a change.
+unchanged.
 
 ## License
 
-GNU General Public License v2. See [LICENSE](LICENSE). The original game data
-is not included.
+GNU General Public License v2 ([LICENSE](LICENSE)). The original game data is
+not included.

@@ -1,91 +1,83 @@
-# Building FITD (Alone In The Dark: Re-Haunted)
+# Building
 
-This document covers how to build the Tatou engine (a FITD fork) on every supported platform.
+How to build the Tatou engine (a FITD fork) on each platform. Where the game
+data comes from is in [README → Game data](../README.md#game-data).
 
----
+## Prerequisites
 
-## Prerequisites (All Platforms)
+| Requirement | Version | Notes |
+|-------------|---------|-------|
+| **Git** | 2.x | |
+| **CMake** | 3.25+ | The CMake presets need it; CI uses the same presets |
+| **C++20 compiler** | | MSVC, GCC or Clang. `FitdLib` builds as C++20, the rest as C++17 |
 
-| Requirement | Minimum Version | Notes |
-|-------------|----------------|-------|
-| **Git** | 2.x | Must support `--recurse-submodules` |
-| **CMake** | 3.25+ | Needed by the CMake presets (CI uses the same presets) |
-| **C++17 compiler** | See per-platform sections | MSVC, GCC, or Clang |
-
-Clone the repository **with submodules** — several third-party libraries (bgfx, SDL3, SoLoud, ImGui, zlib, doctest) are pulled in as Git submodules:
+The third-party libraries (bgfx, SDL3, SoLoud, ImGui, zlib, doctest) are
+vendored in `TatouSource/ThirdParty/`, so a plain clone is enough:
 
 ```bash
-git clone --recurse-submodules https://github.com/felipe-dos-santos81/AloneInTheDarkReHaunted.git
+git clone https://github.com/felipe-dos-santos81/AloneInTheDarkReHaunted.git
 cd AloneInTheDarkReHaunted
 ```
 
-If you already cloned without `--recurse-submodules`, run:
+The root `Makefile` wraps the usual flow (`make help` lists every target):
 
 ```bash
-git submodule update --init --recursive
+make deps                          # install build dependencies (apt, dnf, pacman or Homebrew)
+make build-fitd                    # configure and build the game
+make run data=/path/to/game/data   # build, then play from that folder
 ```
 
-The root `Makefile` wraps the primary flow used everywhere, including CI:
-
-```bash
-make deps          # install build dependencies (apt, dnf, pacman or Homebrew)
-make build-fitd    # configure + build the game
-make run data=/path/to/game/data
-```
-
----
+Every build copies the HD character models (`Assets/models_hd`) next to the
+executable (into `Tatou.app/Contents/Resources` on macOS). The game finds them
+there from any working directory.
 
 ## Windows
 
-### Option A — Visual Studio 2022 (recommended)
+### Visual Studio 2022
 
-1. Install **Visual Studio 2022** with the *Desktop development with C++* workload and the **CMake tools for Windows** component.
-2. Run the helper batch file:
+1. Install Visual Studio 2022 with the *Desktop development with C++* workload.
+2. Generate the solution. The script finds Visual Studio with `vswhere` and
+   writes the solution to the `vs2022` folder next to it, so run it from
+   `TatouSource\build`:
 
    ```cmd
-   TatouSource\build\vs2022.bat
+   cd TatouSource\build
+   vs2022.bat
    ```
 
-   This locates the VS2022 installation via `vswhere`, configures the environment, and generates a Visual Studio 17 (2022) solution in `TatouSource\build\vs2022\`.
-
 3. Open `TatouSource\build\vs2022\FITD.sln`.
-4. Set **Fitd** as the startup project.
-5. Set the **Working Directory** (Project Properties → Debugging → Working Directory) to the folder containing your game data (e.g. your AITD1 Steam install directory). The build copies the HD character models next to `Tatou.exe`, and the game finds them there from any working directory.
-6. Select a build configuration (**Debug** or **Release**) and press **F5**.
+4. Make **Fitd** the startup project.
+5. Set its working directory (Project → Properties → Debugging → Working
+   Directory) to your game data folder.
+6. Pick **Debug** or **Release** and press **F5**. The executable is `Tatou.exe`.
 
-> The output executable is named `Tatou.exe`.
+### Visual Studio 2026
 
-### Option B — Visual Studio 2026
+`vs2026.bat` does the same for Visual Studio 18 (2026) and writes
+`TatouSource\build\vs2026\FITD.slnx`. Then follow steps 3–6 above.
 
-A `TatouSource\build\vs2026.bat` script is also provided. It works identically but targets Visual Studio 18 (2026):
+### CMake command line
+
+The preset CI uses (Visual Studio 17 2022 generator, RelWithDebInfo, output in
+`TatouSource\build\vs2026`):
 
 ```cmd
-TatouSource\build\vs2026.bat
-start TatouSource\build\vs2026\FITD.sln
+cd TatouSource
+cmake --preset windows-release
+cmake --build --preset windows-release --target Fitd --parallel 4
 ```
 
-Follow steps 3–6 from Option A above.
-
-### Option C — CMake command-line (any generator)
+Or any generator (`Ninja`, `NMake Makefiles`, `MinGW Makefiles`, …):
 
 ```cmd
 cmake -S TatouSource -B TatouSource\build\custom -DCMAKE_BUILD_TYPE=Release
 cmake --build TatouSource\build\custom --target Fitd
 ```
 
-You may substitute any CMake generator (`"Ninja"`, `"NMake Makefiles"`, `"MinGW Makefiles"`, etc.).
-
----
-
 ## Linux
 
-### 1. Install dependencies
-
-`make deps` runs `TatouSource/install_deps.sh`, which installs the right packages with `apt`, `dnf`, `pacman` or Homebrew depending on the host.
-
-### 2. Configure and build
-
-With CMake 3.25+ (as on CI):
+`make deps` runs `TatouSource/install_deps.sh`, which installs the packages
+with `apt`, `dnf` or `pacman`. Then build with the preset CI uses:
 
 ```bash
 cd TatouSource
@@ -93,7 +85,8 @@ cmake --preset linux-release
 cmake --build --preset linux-release --target Fitd --parallel $(nproc)
 ```
 
-Always give `--parallel` a number on Linux: bare `--parallel` means unbounded `make -j` and exhausts the machine's memory during the bgfx shader-toolchain build.
+Always give `--parallel` a number. Bare `--parallel` runs an unbounded
+`make -j`, which runs out of memory while building the bgfx shader tools.
 
 Without presets (older CMake):
 
@@ -102,18 +95,16 @@ cmake -S TatouSource -B TatouSource/build/linux-release -G Ninja -DCMAKE_BUILD_T
 cmake --build TatouSource/build/linux-release --target Fitd --parallel $(nproc)
 ```
 
-### 3. Run
-
-Run from a writable folder holding the original game data — where the files come from and how to place them is covered in [README → Game data](../README.md#game-data). The HD character models are found next to the executable:
+Run the game from a writable folder that holds the game data:
 
 ```bash
 cd /path/to/game-data
 /path/to/TatouSource/build/linux-release/Fitd/Tatou
 ```
 
-### Windows Subsystem for Linux (WSL)
+### WSL
 
-From the Windows-side checkout, build with the `linux-wsl` preset:
+From the Windows-side checkout, use the `linux-wsl` preset:
 
 ```bash
 cd /mnt/<drive>/AloneInTheDarkReHaunted/TatouSource
@@ -121,22 +112,18 @@ cmake --preset linux-wsl
 cmake --build --preset linux-wsl --target Fitd --parallel 4
 ```
 
----
-
 ## macOS (Apple Silicon)
 
-> Targets `arm64` natively. Windowed mode and an unlocked mouse cursor are the defaults.
+The build targets `arm64` natively (macOS 11.3 or later).
 
-### 1. Install tools
+Install the tools:
 
 ```bash
 xcode-select --install              # Apple Clang
-brew install cmake ninja pkg-config # via Homebrew
+brew install cmake ninja pkg-config # or: make deps
 ```
 
-### 2. Build (CMake preset)
-
-Run from the `TatouSource` directory:
+Build with the preset, from `TatouSource`:
 
 ```bash
 cd TatouSource
@@ -144,84 +131,83 @@ cmake --preset macos-arm64
 cmake --build --preset macos-arm64 --target Fitd
 ```
 
-The app bundle is written to `TatouSource/build/macos-arm64/Fitd/Tatou.app`.
-
-### 3. Build and run (Makefile)
-
-The root `Makefile` drives the same `TatouSource/build/macos-arm64` tree and
-builds arm64. Run these from the repository root:
+Or with the `Makefile`, from the repository root. It uses the same
+`TatouSource/build/macos-arm64` tree:
 
 ```bash
-make build-fitd                                   # configure + build the game
-make run data=/path/to/writable/dir               # build + launch windowed
+make build-fitd                       # configure and build the game
+make run data=/path/to/writable/dir   # build, then launch windowed
 ```
 
-Game data is embedded in the binary, so no original PAK files are required.
-
-> A clean build regenerates the tracked Metal shader headers under
-> `TatouSource/FitdLib/shaders/generated/metal/`. If `git status` shows some of
-> them modified after a build and you did not intend to change them, restore
-> with `git checkout -- TatouSource/FitdLib/shaders/generated/metal`.
-
-### 4. Verify the architecture
+The app bundle is `TatouSource/build/macos-arm64/Fitd/Tatou.app`. On Darwin,
+CMake also compiles the Objective-C++ file `Fitd/bgfxPatch.mm`. To check the
+architecture:
 
 ```bash
 file TatouSource/build/macos-arm64/Fitd/Tatou.app/Contents/MacOS/Tatou
 # => Mach-O 64-bit executable arm64
 ```
 
-The CMake configuration automatically includes the Objective-C++ patch file (`bgfxPatch.mm`) on Darwin.
+At startup the app changes its working directory to
+`Tatou.app/Contents/Resources`. Files it does not find there come from the
+game data embedded in the binary (see [Embedded game data](#embedded-game-data)).
 
----
+A clean build regenerates the tracked Metal shader headers in
+`TatouSource/FitdLib/shaders/generated/metal/`. If `git status` shows them
+modified and you did not change a shader, restore them:
 
-## Build Configurations
+```bash
+git checkout -- TatouSource/FitdLib/shaders/generated/metal
+```
 
-| Configuration | Console Window | Optimisation | Debug Symbols | Notes |
-|---------------|---------------|--------------|---------------|-------|
-| **Debug** | Shown | Off | Full | Default for development |
-| **Release** | Hidden (Win) | Full | None | For distribution |
-| **RelWithDebInfo** | Hidden (Win) | Full | Full | Profiling builds |
-| **MinSizeRel** | Hidden (Win) | Size | None | Minimal binary size |
+## Embedded game data
 
----
+Every build compiles the AITD1 and Jack in the Dark data files (PAK, ITD)
+from `TatouSource/FitdLib/embedded/` into the binary. The engine uses them when a
+file is missing from its working directory.
+
+## Build configurations
+
+| Configuration | Optimisation | Debug symbols |
+|---------------|--------------|---------------|
+| **Debug** | Off | Yes |
+| **Release** | Full | No |
+| **RelWithDebInfo** | Full | Yes |
+| **MinSizeRel** | Size | No |
+
+On Windows, a `CMAKE_BUILD_TYPE` of Release, RelWithDebInfo or MinSizeRel at
+configure time builds `Tatou.exe` without a console window.
 
 ## Address Sanitizer
 
-To enable ASan (and UBSan / LeakSan on non-MSVC), uncomment the `USE_SANITIZER` line in the root CMakeLists:
+Configure with `-DUSE_SANITIZER=ON`, or uncomment `set(USE_SANITIZER ON)` in
+`TatouSource/CMakeLists.txt`. MSVC gets ASan only; other compilers also get
+UBSan and LeakSan.
 
-```cmake
-set(USE_SANITIZER ON)
-```
+## Continuous integration
 
-Or pass it on the command line:
+`.github/workflows/build.yml` runs on pushes and pull requests to `main`:
 
-```bash
-cmake -DUSE_SANITIZER=ON ...
-```
+- **Windows** (`windows-release`, RelWithDebInfo), **Linux** (`linux-release`)
+  and **macOS** (`macos-arm64`) build `Fitd` and run the doctest suite
+  (`engine_tests`).
+- **Tool tests** run the pytest suite for `tools/` on Ubuntu. Tests that need
+  real game data skip without it.
 
----
-
-## Continuous Integration
-
-The project includes a GitHub Actions workflow (`.github/workflows/build.yml`) that runs on pushes and pull requests to `main`:
-
-- **Windows** (VS2022, RelWithDebInfo), **Ubuntu** (Release) and **macOS** (Apple Silicon, Release) — builds `Fitd` and runs the doctest engine suite (`engine_tests`)
-- **Tool tests** — runs the pytest suite for `tools/` on Ubuntu (real-data tests skip without game files)
-
-For agents, [AGENTS.md](../AGENTS.md) records the two platform gotchas the workflow encodes: bounded `--parallel` on Makefile generators, and the Windows `min`/`max`/`near`/`far` macro rules.
-
----
+The platform rules the workflow depends on are in
+[AGENTS.md → CI](../AGENTS.md#ci).
 
 ## Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
-| **Submodule directories are empty** | Run `git submodule update --init --recursive` |
-| **`vs2022.bat` can't find Visual Studio** | Ensure VS2022 is installed with the C++ workload; `vswhere.exe` must be at `%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\` |
-| **Missing OpenGL headers on Linux** | Install `libopengl-dev libglx-dev mesa-common-dev` |
-| **PipeWire warnings** | `can't load config client.conf` is harmless — audio still works via PulseAudio/ALSA fallback |
-| **Build dies with `Terminated` / exit 143 on low-memory Linux** | Compile with fewer jobs: pass `--parallel 2` to `cmake --build` (unbounded `make -j` exhausts memory during the bgfx toolchain build) |
-| **Runtime: game data not found** | Set the working directory to the folder containing the game's original data files |
-| **Runtime: controller not detected** | Ensure `controller.enable = true` in `aitd_remaster.cfg` and that SDL3 supports your gamepad |
-| **Runtime: fullscreen not persisting** | Ensure `graphics.fullscreen = true` is in your `aitd_remaster.cfg`; the setting is saved automatically when you close the system menu |
-| **Runtime: console window covers the game** | The game window is automatically raised to the foreground at startup; press **F11** or **Alt+Enter** to go fullscreen |
+| `vs2022.bat` can't find Visual Studio | Install VS2022 with the C++ workload. `vswhere.exe` must be in `%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\` |
+| Missing OpenGL headers on Linux | Install `libopengl-dev libglx-dev mesa-common-dev` |
+| PipeWire warning `can't load config client.conf` | Harmless. Audio falls back to PulseAudio or ALSA |
+| Build dies with `Terminated` (exit 143) on Linux | Too many jobs for the memory. Use `--parallel 2` |
+| Game data not found | Start the game from the folder that holds the game data |
+| Controller not detected | Check `controller.enable = true` in `aitd_remaster.cfg` and that SDL3 supports the gamepad |
+| Fullscreen does not persist | Set `graphics.fullscreen = true` in `aitd_remaster.cfg`. Closing the system menu saves it |
+| Console window covers the game | The game window comes to the front at startup. **F11** or **Alt+Enter** toggles fullscreen |
+
+Every `aitd_remaster.cfg` key is in [configuration.md](configuration.md).

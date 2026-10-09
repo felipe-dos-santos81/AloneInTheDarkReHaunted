@@ -1,20 +1,20 @@
 # Alone In The Dark: Re-Haunted — the Tatou (FITD) engine.
-# Usual flow: make deps (Linux), then make run (game data in data/aitd1).
-# `make help` lists every target with its arguments.
+# Usual flow: make deps (Linux only), then make run (game data in data/aitd1).
+# `make help` lists every target and its arguments.
 
 # ── Settings ─────────────────────────────────────────────────────────────────
 
-# The CMake project; all build output stays under it.
+# The CMake project; all build output goes under it.
 SRC_DIR    ?= TatouSource
 BUILD_TYPE ?= Release
 JOBS       ?= $(shell sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)
 CMAKE       = cmake
-# The Python tools use the project venv (make tools-deps) when it exists.
+# The Python tools use tools/.venv (make tools-deps) when it exists.
 PYTHON     ?= $(if $(wildcard tools/.venv/bin/python),tools/.venv/bin/python,python3)
 
 ifeq ($(shell uname -s),Darwin)
-# Native Apple Silicon build in the "macos-arm64" preset's tree. arm64 is
-# fixed: an arch-suffixed directory would collide with build/macos-x86_64.
+# Native Apple Silicon build, in the "macos-arm64" preset's tree. arm64 is
+# fixed: an arch-suffixed tree would collide with build/macos-x86_64.
 DEPLOY_TARGET   ?= 11.3
 generator       ?= Ninja
 BUILD_DIR       ?= $(SRC_DIR)/build/macos-arm64
@@ -30,7 +30,7 @@ CMAKE_BUILD     = $(CMAKE) --build "$(BUILD_DIR)" --config "$(BUILD_TYPE)" --par
 
 # ── Target arguments (make run data=DIR) ─────────────────────────────────────
 
-# The game and the HD backgrounds (run, hd-install, hda-pack, hda-unpack).
+# Game data and HD backgrounds (run, hd-install, hda-pack, hda-unpack).
 gamedata    ?= data/aitd1
 data        ?= $(gamedata)
 backgrounds ?= Assets/backgrounds_hd
@@ -38,7 +38,7 @@ src         ?= $(backgrounds)
 out         ?= $(notdir $(src)).hda
 archive     ?= backgrounds_hd.hda
 
-# The HD character models (export-models to models-install).
+# HD character models (export-models ... models-install).
 models          ?= data/models
 models_ai       ?= data/models-ai
 models_identity ?= data/models-identity
@@ -56,13 +56,13 @@ BLENDER_MODELS = $(PYTHON) tools/models.py blender --models "$(models)" --out "$
 
 # ── Built files ──────────────────────────────────────────────────────────────
 
-# The first existing path across single- and multi-config build layouts.
+# The first path that exists, for single- and multi-config build layouts.
 built       = $(firstword $(wildcard $(addprefix $(BUILD_DIR)/,$(1))))
 BINARY      = $(call built,Fitd/Tatou Fitd/Tatou.app/Contents/MacOS/Tatou Fitd/$(BUILD_TYPE)/Tatou.exe)
 HDA_TOOL    = $(call built,tools/build_hda_archive tools/$(BUILD_TYPE)/build_hda_archive.exe)
 UNPACK_TOOL = $(call built,tools/unpack_hda_archive tools/$(BUILD_TYPE)/unpack_hda_archive.exe)
 HD_ARCHIVE  = $(SRC_DIR)/backgrounds_hd.hda
-# Where the game reads its files: the app bundle on macOS, the data folder elsewhere.
+# Where the game reads its files: the app bundle on macOS, else the data folder.
 GAME_DIR    = $(or $(BUNDLE_RESOURCES),$(data))
 
 # $(call require,FILE,NAME,HINT): stop with a hint unless FILE is executable.
@@ -142,7 +142,7 @@ hda-unpack: build-tools ## Extract an .hda archive [archive=FILE out=DIR]
 export-models: ## Export the original bodies into data/models [gamedata=DIR models=DIR bodies=KEY,...]
 	$(PYTHON) tools/models.py export --data "$(gamedata)" --out "$(models)"$(if $(bodies), --bodies "$(bodies)")
 
-identity-models: ## Deliver each original as itself, the compare-mode oracle [models=DIR models_identity=DIR bodies=KEY,...]
+identity-models: ## Turn the exported originals into deliveries, the compare-mode reference [models=DIR models_identity=DIR bodies=KEY,...]
 	$(PYTHON) tools/models.py identity --models "$(models)" --out "$(models_identity)" --bodies "$(bodies)"
 
 blender-models: ## Refine the bodies in Blender into data/models-ai [models=DIR models_ai=DIR bodies=KEY,... BLENDER=PATH]
@@ -154,9 +154,9 @@ check-models: ## Check the deliveries without importing [models_ai=DIR bodies=KE
 import-models: ## Check and pack the deliveries into Assets/models_hd [models_ai=DIR models_hd=DIR bodies=KEY,...]
 	$(MODEL_IMPORT)
 
-# Every build of the game copies Assets/models_hd next to it, where the game finds it
-# unless the data folder has its own models_hd/. This installs other models, and the
-# atlases, where the game reads its files first.
+# Each build copies Assets/models_hd next to the game. A models_hd/ where the game
+# reads its files (GAME_DIR) wins over that copy; this target puts other models,
+# and the atlases, there.
 models-install: ## Copy the models and atlases where the game reads them [models_hd=DIR atlases=DIR data=DIR]
 	@test -d "$(GAME_DIR)" || { echo "error: no $(GAME_DIR) - $(if $(BUNDLE_RESOURCES),run 'make build-fitd' first,see the README's game data steps)"; exit 1; }
 	@$(CMAKE) "-DDESTINATION=$(GAME_DIR)" "-DMODELS=$(abspath $(models_hd))" "-DATLASES=$(abspath $(atlases))" \
