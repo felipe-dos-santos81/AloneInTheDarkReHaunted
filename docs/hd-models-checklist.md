@@ -80,7 +80,8 @@ no screen capture needed:
 
 Set `debug.loadSaveOnStart = -1` and `debug.hdModelsCompare = false` again
 afterwards. Measured on the prototype (identity models, saves 0, 2 and 6):
-IoU 0.91-0.97, brightness 0.97-1.10.
+IoU 0.91-0.97, brightness 0.97-1.10. The outward-facing Blender models
+(2026-10-09, saves 0-6, lit rooms): IoU 0.89-0.97, brightness 0.94-1.17.
 
 ## Rows
 
@@ -96,7 +97,7 @@ Stages S3–S6 fill these in. "Classic" means the option off; "HD" on.
 | 6 | HD: foreground scenery covers the body exactly where it covers the classic one, including any part outside the classic outline (C8) | | | | |
 | 7 | HD: several actors overlap in the right order (C4) | | | | |
 | 8 | HD: lamp glow and flare sit on the HD lamp's flame (C9) | | | | |
-| 9 | HD: in a dark room the body is as dark as the classic one, apart from the lamp's light (C9) | | | | |
+| 9 | HD: in a dark room the body is as dark as the classic one, and the lantern lights it as it lights the classic one (C9; the light strengths were tuned on inside-out bodies, so re-check with the outward ones) | | | | |
 | 10 | HD: fades to and from black darken the body with the room | | | | |
 | 11 | HD: screen shake moves the body with the background | | | | |
 | 12 | HD: close-up cameras show no large near polygons the classic body hides | | | | |
@@ -105,3 +106,6 @@ Stages S3–S6 fill these in. "Classic" means the option off; "HD" on.
 | 15 | HD: inventory and the Tatou intro show the classic bodies | | | | |
 | 16 | A missing, truncated or wrong-skeleton `.hdm` draws classic and logs one line | | | | |
 | 17 | Keyboard and gamepad play is unchanged | | | | |
+| 18 | HD: the seated ghost (room 10, `LISTBODY_141`) shows the room through it as the classic one does, with no holes or doubled layers | | | | |
+| 19 | HD: the flying insect's wings (`LISTBODY_238`/`243`) are see-through, its body solid | | | | |
+| 20 | HD: Carnby's and Emily's lamp glass (`LISTBODY_011`, `LISTBOD2_011`) is see-through in C1, C9 and C10 | | | | |

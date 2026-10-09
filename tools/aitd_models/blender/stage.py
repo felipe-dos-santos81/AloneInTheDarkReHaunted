@@ -10,10 +10,9 @@ writes refined.npz, color.npy, ao.npy and, for a body with transparent
 triangles, mask.npy there. It imports only Blender's
 own modules and numpy."""
 import json
+import math
 import pathlib
 import sys
-
-import math
 
 import bmesh
 import bpy
@@ -148,7 +147,8 @@ RAYS = [(1.0, 0.0, 0.0)] + [(math.cos(math.pi / 4), math.sin(math.pi / 4) * math
 def _orient_outward(model: bpy.types.Object) -> int:
     """The originals mix both windings (most of a body faces inward), and the
     engine lights an HD face on its front only, as the AO bake does. Flip each
-    face whose front sees more of the body than its back; returns how many."""
+    face whose front sees more of the body than its back, or as much but
+    nearer (the nearer wall is the inside); returns how many."""
     bm = bmesh.new()
     bm.from_mesh(model.data)
     bm.normal_update()
@@ -160,9 +160,13 @@ def _orient_outward(model: bpy.types.Object) -> int:
             continue
         centre, t = face.calc_center_median(), n.orthogonal().normalized()
         b = n.cross(t)
-        hits = [sum(tree.ray_cast(centre + n * (side * 1e-5), (n * a + t * u + b * v) * side)[0] is not None
-                    for a, u, v in RAYS) for side in (1, -1)]
-        if hits[0] > hits[1]:
+        counts, nearest = [], []
+        for side in (1, -1):
+            hits = [tree.ray_cast(centre + n * (side * 1e-5), (n * a + t * u + b * v) * side)[3] for a, u, v in RAYS]
+            hits = [d for d in hits if d is not None]
+            counts.append(len(hits))
+            nearest.append(min(hits, default=math.inf))
+        if counts[0] > counts[1] or (counts[0] == counts[1] and nearest[0] < nearest[1]):
             flip.append(face)
     bmesh.ops.reverse_faces(bm, faces=flip)
     bm.to_mesh(model.data)
@@ -182,10 +186,14 @@ def _refined(src: bpy.types.Object, corners, job: dict) -> bpy.types.Object:
     bpy.ops.object.join()  # one object; its pieces stay unconnected
     model = bpy.context.view_layer.objects.active
     model.name = "model"
-    print(f"oriented {_orient_outward(model)} faces outward", flush=True)
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
     bpy.ops.mesh.quads_convert_to_tris()
+    bpy.ops.object.mode_set(mode="OBJECT")
+    # orient after triangulating: splitting an oriented quad turned 8 % of the ghost's triangles inward
+    print(f"oriented {_orient_outward(model)} faces outward", flush=True)
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
     bpy.ops.uv.smart_project(angle_limit=1.15, island_margin=0.003)
     bpy.ops.object.mode_set(mode="OBJECT")
     return model

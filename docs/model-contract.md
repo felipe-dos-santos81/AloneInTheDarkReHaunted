@@ -125,7 +125,7 @@ data/models-ai/bodies/<KEY>/model.glb
 | Orientation | Y up, facing +Z, like `original.glb`; any scale and offset |
 | Triangles | 50,000 at most (import warns above 30,000) |
 | Texture | One base-colour PNG or JPEG, 4096 px at most per side (2048 recommended) |
-| Alpha | Optional. Below 128 a hole; 128–252 translucent, drawn blended at 50 % like the engine's transparent material 2; from 253 opaque |
+| Alpha | Optional. Below 128 a hole; 128–252 translucent, blended at its own alpha (128 is the engine's transparent material 2, 50 %); from 253 opaque. In a texture with translucent texels, a filtered hole edge blends too |
 | Extensions | None required: no Draco, meshopt or KTX2 |
 
 Deliver only for canonical keys, the folders under `bodies/`. Import copies

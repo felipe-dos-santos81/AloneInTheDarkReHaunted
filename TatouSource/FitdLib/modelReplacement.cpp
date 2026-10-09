@@ -326,14 +326,15 @@ bool drawModelReplacement(ModelReplacement* r, sBody* pBody, int x, int y, int z
     for (size_t g = 0; g < groups; ++g)
         models::columnMajor(bones[g], matrices[g]);
     const float proj[4] = { p.px, p.py, p.pz, p.pw };
-    // The opaque texels, then (as the classic path draws the transparent material:
-    // blended, writing no depth, back faces culled; the stage faces every triangle
-    // outward) the translucent ones. bgfx consumes the state per submit.
+    // The opaque texels, then the translucent ones as the classic path draws the
+    // transparent material: blended, writing no depth. That pass culls back faces
+    // (CW in this projection, measured against classic's 50 % blend; the stage faces
+    // every triangle outward). bgfx consumes the state per submit.
     for (int pass = 0; pass < (r->translucent ? 2 : 1); ++pass)
     {
         bgfx::setTransform(matrices, (uint16_t)groups);
         bgfx::setUniform(uniform("u_camProj", bgfx::UniformType::Vec4), proj);
-        const float tint[4] = { g_fadeLevel, g_roomIsDark ? kDarkRoomBrightness : 1.0f, (float)pass,
+        const float tint[4] = { g_fadeLevel, g_roomIsDark ? kDarkRoomBrightness : 1.0f, r->translucent ? (float)pass : -1.0f,
                                 hdCompareUnlit() ? 1.0f : 0.0f };
         bgfx::setUniform(uniform("u_tint", bgfx::UniformType::Vec4), tint);
         setLightUniforms(cam);

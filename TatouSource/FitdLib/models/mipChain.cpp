@@ -23,18 +23,27 @@ std::vector<uint8_t> rgba8MipChain(const uint8_t* rgba, int width, int height, i
             for (int x = 0; x < nw; ++x)
                 for (int c = 0; c < 4; ++c)
                 {
-                    int sum = 0, n = 0;
+                    // colour: the plain average. Alpha: the class (hole, translucent,
+                    // opaque) most texels have, a tie to the more opaque one, then the
+                    // average of that class's texels, so no level makes a new class.
+                    int sum[3] = { 0, 0, 0 }, n[3] = { 0, 0, 0 };
                     for (int dy = 0; dy < 2; ++dy)
                         for (int dx = 0; dx < 2; ++dx)
                         {
                             const int sx = 2 * x + dx, sy = 2 * y + dy;
                             if (sx < w && sy < h)
                             {
-                                sum += out[at + ((size_t)sy * w + sx) * 4 + c];
-                                ++n;
+                                const int v = out[at + ((size_t)sy * w + sx) * 4 + c];
+                                const int k = c < 3 ? 0 : v < kTranslucentAlpha ? 0 : v < kOpaqueAlpha ? 1 : 2;
+                                sum[k] += v;
+                                ++n[k];
                             }
                         }
-                    next[((size_t)y * nw + x) * 4 + c] = (uint8_t)((sum + n / 2) / n);
+                    int k = 0;
+                    for (int i = 1; i < 3; ++i)
+                        if (n[i] >= n[k])
+                            k = i;
+                    next[((size_t)y * nw + x) * 4 + c] = (uint8_t)((sum[k] + n[k] / 2) / n[k]);
                 }
         at = out.size();
         out.insert(out.end(), next.begin(), next.end());

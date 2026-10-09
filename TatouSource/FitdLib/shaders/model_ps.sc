@@ -8,10 +8,12 @@ $input v_texcoord0, v_normal, v_view
 // the unlit texture (compare mode). Texture alpha below 0.5 is a hole; from 0.5
 // to 0.99 a translucent texel (the engine's transparent material), drawn only in
 // the blended pass (u_tint.z = 1); the opaque pass (u_tint.z = 0) draws the rest.
+// A body with no translucent texels draws in one pass (u_tint.z = -1) that keeps
+// every texel from 0.5 opaque, so a filtered cutout edge is not lost.
 #include "bgfx_shader.sh"
 
 SAMPLER2D(s_albedo, 0);
-uniform vec4 u_tint;       // x: fade (0..1), y: room brightness (1, or 0.1 dark), z: 1 = blended pass, w: 1 = unlit
+uniform vec4 u_tint;       // x: fade (0..1), y: room brightness (1, or 0.1 dark), z: 1 = blended pass, 0 = opaque pass, -1 = only pass, w: 1 = unlit
 uniform vec4 u_keyLight;   // xyz: direction to the key light (camera space), w: strength
 uniform vec4 u_ambient;    // xyz: up (camera space), w: unused
 uniform vec4 u_ambientLevels; // x: ground, y: sky, z: specular strength, w: shininess
@@ -25,8 +27,8 @@ void main()
     vec4 albedo = texture2D(s_albedo, v_texcoord0);
     if (albedo.a < 0.5)
         discard;
-    float translucent = albedo.a < 0.99 ? 1.0 : 0.0;
-    if (abs(translucent - u_tint.z) > 0.5)
+    float translucent = (albedo.a < 0.99 ? 1.0 : 0.0) * step(-0.5, u_tint.z);
+    if (abs(translucent - max(u_tint.z, 0.0)) > 0.5)
         discard; // the other pass draws this texel
     float alpha = translucent > 0.5 ? albedo.a : 1.0;
     if (u_tint.w > 0.5)

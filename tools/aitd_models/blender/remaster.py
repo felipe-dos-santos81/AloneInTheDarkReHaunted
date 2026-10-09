@@ -19,12 +19,13 @@ import numpy as np
 
 from aitd_textures.files import png_bytes
 
-from ..body import PRIM_POLY, Body
+from ..body import PRIM_POLY, PRIM_SPHERE, Body
 from ..gltf import ARRAY_BUFFER, UNSIGNED_INT, GlbBuilder
 from ..mesh import Mesh
 
 KIND_PALETTE, KIND_BODY, KIND_RAMP, KIND_OTHER = 0, 1, 2, 3
 KIND_NAMES = ("palette", "body", "ramp", "other")
+MATERIAL_TRANSPARENT = 2  # the engine draws it blended, 50 %
 TRIANGLE_TARGET = 30000  # import warns above it
 MAX_LEVEL = 4
 
@@ -88,7 +89,7 @@ def atlas_paths(key: str, aliases: list[str], atlas_dir: pathlib.Path) -> dict[s
 def kind_of(prim_type: int, material: int, paths: dict) -> int:
     """The atlas the engine overlays on a primitive, or palette: only plain
     polygons take one; material 2 (transparent) never does."""
-    if prim_type != PRIM_POLY or material == 2:
+    if prim_type != PRIM_POLY or material == MATERIAL_TRANSPARENT:
         return KIND_PALETTE
     kind = KIND_BODY if material == 0 else KIND_RAMP if 3 <= material <= 6 else KIND_OTHER if material == 1 else KIND_PALETTE
     return kind if kind == KIND_PALETTE or paths[KIND_NAMES[kind]] is not None else KIND_PALETTE
@@ -190,7 +191,7 @@ def read_edits(path: pathlib.Path, groups: int) -> Edits:
 def corner_arrays(body: Body, mesh: Mesh, paths: dict, edits: Edits) -> dict[str, np.ndarray]:
     """Per triangle of `mesh` (build_mesh's order, which original.glb keeps):
     engine UVs front and back (3T, 2), front weight (T,), atlas kind (T,),
-    whether it is the transparent material 2 (T,), group (T,) and linear
+    whether it is the transparent material 2, polygon or sphere (T,), group (T,) and linear
     palette colour (T, 3)."""
     rest = engine_rest_vertices(body)
     pmin, prange = projection(rest)
@@ -211,9 +212,10 @@ def corner_arrays(body: Body, mesh: Mesh, paths: dict, edits: Edits) -> dict[str
                 if k == KIND_RAMP:
                     a, b = mirror_uv(a), mirror_uv(b)
                 uv_front[3 * t:3 * t + 3], uv_back[3 * t:3 * t + 3] = a, b
-                weight[t], kind[t], transparent[t] = w, k, prim.material == 2
+                weight[t], kind[t], transparent[t] = w, k, prim.material == MATERIAL_TRANSPARENT
                 t += 1
         else:
+            transparent[t:t + n] = prim.type == PRIM_SPHERE and prim.material == MATERIAL_TRANSPARENT
             t += n
     if t != count:
         raise ValueError(f"{t} triangles placed, the mesh has {count}")

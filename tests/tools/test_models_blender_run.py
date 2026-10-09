@@ -1,9 +1,11 @@
 import dataclasses
+import io
 import json
 import pathlib
 
 import numpy as np
 import pytest
+from PIL import Image
 
 import models
 from aitd_models.blender.run import blender_stage, characters, run_bodies, write_report
@@ -56,6 +58,7 @@ def run(export, stage, keys=("LISTBODY_000", "LISTBOD2_001"), edits=None, atlas=
         (tmp / "ai/bodies" / key / "model.glb").write_bytes(b"old")
         (tmp / "work" / key).mkdir(parents=True)
         plant_outputs(tmp / "work" / key)
+        np.save(tmp / "work" / key / "mask.npy", np.ones((4, 4), np.float16))  # an earlier, translucent body
     lines = []
     runs = run_bodies([by_key[k] for k in keys], tmp / "models", tmp / "ai", tmp / "work", stage, lines.append,
                       atlases, edits_dir)
@@ -64,11 +67,13 @@ def run(export, stage, keys=("LISTBODY_000", "LISTBOD2_001"), edits=None, atlas=
 
 def test_a_delivered_body_writes_its_model_and_drops_the_bakes(export):
     calls = []
-    tmp, runs, _ = run(export, fake_stage(calls))
+    tmp, runs, _ = run(export, fake_stage(calls), stale=("LISTBODY_000",))
     assert [(r.key, r.status, r.texture) for r in runs] == [
         ("LISTBODY_000", "delivered", "atlas"), ("LISTBOD2_001", "delivered", "palette")]
     assert runs[0].triangles == 2
-    assert len(read_delivery((tmp / "ai/bodies/LISTBODY_000/model.glb").read_bytes()).triangles) == 2
+    delivery = read_delivery((tmp / "ai/bodies/LISTBODY_000/model.glb").read_bytes())
+    assert len(delivery.triangles) == 2
+    assert Image.open(io.BytesIO(delivery.texture)).mode == "RGB"  # the earlier run's mask.npy did not apply
     assert not (tmp / "work/LISTBODY_000/color.npy").exists()
     assert (tmp / "work/LISTBODY_000/refined.npz").exists()
     assert calls[0]["atlases"]["body"].endswith("body_LISTBODY_000.png") and calls[0]["levels"] == [2, 2, 2, 2]  # 331 triangles (the sphere is an icosphere)

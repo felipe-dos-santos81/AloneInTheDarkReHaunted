@@ -83,15 +83,17 @@ def test_projection_edits_change_their_group_and_leave_bridges_alone():
 def test_corner_arrays_keep_the_order_past_odd_polygons(monkeypatch):
     # a two-point polygon draws nothing; a type-9 polygon draws but takes no atlas;
     # a ramp material, whose UVs (front and back) go through mirror_uv; that is the identity inside the
-    # projection box, so a marker stands in to make the wiring visible; last, a transparent one (material 2)
+    # projection box, so a marker stands in to make the wiring visible; then a transparent polygon and a
+    # transparent sphere (material 2), which the engine draws blended too
     monkeypatch.setattr(remaster, "mirror_uv", lambda v: v + 10)
     prims = [(1, 0, 10, [1, 3], 0), (9, 0, 20, [4, 5, 6], 0), (1, 0, 30, [2, 7, 8], 0), (1, 4, 40, [2, 7, 8], 0),
-             (1, 2, 50, [2, 7, 8], 0)]
+             (1, 2, 50, [2, 7, 8], 0), (3, 2, 60, [2], 30)]
     body = parse_body(body_bytes(prims=prims))
     _rest, mesh = rest_mesh(body, synthetic_palette_rgb())
     arrays = corner_arrays(body, mesh, {"body": "b", "ramp": "r", "other": None}, Edits())
-    assert arrays["kind"].tolist() == [KIND_PALETTE, KIND_BODY, KIND_RAMP, KIND_PALETTE]
-    assert arrays["transparent"].tolist() == [0, 0, 0, 1]
+    assert arrays["kind"][:4].tolist() == [KIND_PALETTE, KIND_BODY, KIND_RAMP, KIND_PALETTE]
+    assert arrays["transparent"][:4].tolist() == [0, 0, 0, 1] and arrays["transparent"][4:].all()
+    assert len(arrays["transparent"]) > 4
     rest = engine_rest_vertices(body)
     pmin, prange = projection(rest)
     corners = rest[[2, 7, 8], :2]
