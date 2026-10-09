@@ -31,6 +31,7 @@ static const LanguageEntry s_allLanguages[] =
     { "ITALIANO", "Italiano" },
     { "ESPAGNOL", "Espa\xA4" "ol"  },
     { "DEUTSCH",  "Deutsch"  },
+    { "PORTUGUE", "Portugu\x88s" },
 };
 static const int s_allLanguagesCount = sizeof(s_allLanguages) / sizeof(s_allLanguages[0]);
 
