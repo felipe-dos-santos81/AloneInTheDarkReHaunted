@@ -18,8 +18,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from aitd_textures.catalog import PALETTE_ENTRY, PALETTE_PAK
-from aitd_textures.decode import decode_palette
+from aitd_textures.decode import PALETTE_ENTRY, PALETTE_PAK, decode_palette
 from aitd_textures.explode import ExplodeError
 from aitd_textures.files import atomic_write_bytes, save_png
 from aitd_textures.pak import Pak, PakError

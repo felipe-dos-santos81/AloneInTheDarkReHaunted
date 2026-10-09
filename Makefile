@@ -37,11 +37,7 @@ out      ?= $(notdir $(src)).hda
 archive  ?= backgrounds_hd.hda
 
 # The asset pipelines read `gamedata`; `data` and `out` belong to run and hda-pack.
-textures    ?= data/textures
-textures_ai ?= data/textures-ai
 dest        ?= Assets/backgrounds_hd
-anims       ?= $(dest)
-dark        ?= mirror
 models      ?= data/models
 models_ai   ?= data/models-ai
 models_identity ?= data/models-identity
@@ -56,8 +52,6 @@ MODEL_IMPORT   = $(PYTHON) tools/models.py import --data "$(gamedata)" --models 
                  --src "$(models_ai)" --dest "$(models_hd)"$(if $(bodies), --bodies "$(bodies)")$(if $(report), --report "$(report)")
 BLENDER_MODELS = $(PYTHON) tools/models.py blender --models "$(models)" --out "$(models_ai)" --work "$(models_blender)" \
                  --blender "$(BLENDER)"$(if $(bodies), --bodies "$(bodies)")
-TEXTURE_IMPORT = $(PYTHON) tools/textures.py import --src "$(textures_ai)" --dest "$(dest)" \
-                 --originals "$(textures)" --dark "$(dark)"
 
 # ── Built files ──────────────────────────────────────────────────────────────
 
@@ -73,7 +67,7 @@ require = @test -x "$(1)" || { echo "error: $(2) not found - $(3)"; exit 1; }
 
 .PHONY: help deps tools-deps configure build build-fitd build-tools run \
         test test-engine test-tools \
-        export-textures check-textures import-textures hd-install hda-pack hda-unpack \
+        hd-install hda-pack hda-unpack \
         export-models identity-models blender-models check-models import-models models-install \
         clean distclean rebuild
 
@@ -122,15 +116,6 @@ test-tools: ## Texture and model tool tests (pytest)
 	$(PYTHON) -m pytest tests/tools -q
 
 ##@ HD backgrounds
-
-export-textures: ## Export the original backgrounds, screens and animations [gamedata=DIR textures=DIR anims=DIR]
-	$(PYTHON) tools/textures.py export --data "$(gamedata)" --out "$(textures)" --anims "$(anims)"
-
-check-textures: ## Validate upscaled textures, write nothing [textures_ai=DIR dest=DIR dark=mirror|all|none]
-	$(TEXTURE_IMPORT) --dry-run
-
-import-textures: ## Import upscaled textures into Assets/backgrounds_hd [textures_ai=DIR dest=DIR dark=mirror|all|none]
-	$(TEXTURE_IMPORT)
 
 hd-install: build-tools ## Pack Assets/backgrounds_hd into backgrounds_hd.hda and copy it into the app bundle
 	$(call require,$(HDA_TOOL),build_hda_archive,run 'make build-tools')
