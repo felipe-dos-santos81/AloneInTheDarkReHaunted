@@ -3,8 +3,8 @@
 Manual sign-off for the Portuguese text (spec:
 `docs/superpowers/specs/2026-10-09-pt-br-translation-design.md`, local only).
 Alone in the Dark 1. Build: `make build-fitd`; run: `make run data=DIR`. Pick
-**Português** in the language menu (the sixth row). Run every row with
-`font.enableTTF = false`, then rows 15-23 again with `font.enableTTF = true`.
+**Português** in the language menu (the sixth row). Run rows 1-21 and 24-26 with
+`font.enableTTF = false`, then rows 15-23 with `font.enableTTF = true`.
 Mark each cell `pass`, or `fail:` with a one-line note.
 
 The text is checked on the branch by `make test` and `make lang-pack` (message
@@ -17,13 +17,13 @@ checks they fit.
 |---|---|---|---|
 | 1 | Language menu: six rows, "Português" last; pick it by keyboard, then again by mouse | | |
 | 2 | Language menu: the five flags line up with English, Français, Italiano, Español and Deutsch (no flag for Português) | | |
-| 3 | Language menu with no artwork (`detailLevel` 0, the classic frame): the frame encloses all six rows | | |
+| 3 | Language menu with `graphics.hdBackgrounds = false` (no HD backgrounds, so the classic frame): the frame encloses all six rows | | |
 | 4 | Start menu and the loading screen ("Aguarde...") are in Portuguese | | |
 | 5 | Picking up an object: the found-object box is in Portuguese and the name fits the box | | |
 | 6 | Inventory: object names and action names are in Portuguese | | |
 | 7 | Using and throwing an object: the messages are in Portuguese | | |
 | 8 | Save and load screens are in Portuguese | | |
-| 9 | Width: the longest names in `width-ok.txt` fit their boxes (spot-check @850 and @730, then a few more) | | |
+| 9 | Width: the longest names in `width-ok.txt` fit their boxes (spot-check messages 850 and 730, then a few more) | | |
 | 10 | System menu (Escape): "Tela: Janela/Cheia", "Controles", "Dicas: Sim/Não", "Mapa" | | |
 | 11 | Controls menu: headers "Ação", "Tecla", "Botão"; "Voltar" and "Padrão" | | |
 | 12 | Switch to Français: the controls menu shows "Par Défaut" with the é | | |
