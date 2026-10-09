@@ -54,7 +54,7 @@ imprudentes.
 capaz de matar as criaturas da noite.
 Loucura. O mal se esconjura pela ciência
 e pelo segredo.
-#PAquele que ronda entre os livros
+#PAquele que espreita entre os livros
 perecerá pela lâmina. Aquele que voa nas
 cavernas escuras gritará de medo. Aquele
 que nada nas profundezas se evaporará.
@@ -65,9 +65,10 @@ Aquele que sabe nada diz.
 #THá domínios mais terríveis que a
 morte. Não está morto o que pode
 eternamente jazer. Toda criatura se
-esconjura e não está morta, mas retorna
-às origens. Um monstro, uma ciência. O
-aço mata o errante que jamais morre.
+esconjura; esconjurada, não morre, mas
+retorna às origens. Um monstro, uma
+ciência. O aço mata o errante que jamais
+morre.
 #P
 #CNota do tradutor.
 #C + +

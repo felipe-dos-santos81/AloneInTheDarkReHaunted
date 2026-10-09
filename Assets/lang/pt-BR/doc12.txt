@@ -54,12 +54,12 @@ divindade da fertilidade. O sacerdote,
 depois de pronunciar a invocação, deve
 escolher o punhal adequado ao
 sacrifício.
-#PA faca de lâmina sinusoidal, que deve
-ser mergulhada sete vezes, nas noites de
-lua cheia, em água destilada cem vezes,
-será posta de lado, pois mandaria o
-Errante de volta à sua própria dimensão
-(ver ilustração).
+#PO punhal de lâmina sinusoidal, que
+deve ser mergulhado sete vezes, nas
+noites de lua cheia, em água destilada
+cem vezes, será posto de lado, pois
+mandaria o Errante de volta à sua
+própria dimensão (ver ilustração).
 #G1
 #PO sacerdote escolherá antes o punhal
 de lâmina curva, mais apropriado para
