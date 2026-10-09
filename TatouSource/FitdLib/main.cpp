@@ -17,6 +17,7 @@ extern void playMenuSound(const char* soundName);
 #include "anim2d.h"
 #include "fontTTF.h"
 #include "menuMouse.h"
+#include "uiTr.h"
 
 #include "hdBackground.h"
 #include "nativeLife.h"
@@ -5361,7 +5362,7 @@ int parseAllSaves(int arg)
                     for (int px = 183; px <= 286; px++)
                         logicalScreen[py * 320 + px] = 0;
                 SetFont(PtrFont, 4);
-                PrintFont(185, 70, logicalScreen, (u8*)"No Preview");
+                PrintFont(185, 70, logicalScreen, (u8*)trDos("No Preview"));
             }
         }
 

@@ -246,12 +246,12 @@ static void drawControlRow(int y, KeyAction action, bool selected, bool remappin
 
 	// Action name
 	const char* actionName = getActionName(action);
-	drawTextLeft(leftCol, y, actionName, selected ? CONTROLS_SELECT_COUL : CONTROLS_LABEL_COUL);
+	drawTextLeft(leftCol, y, trDos(actionName), selected ? CONTROLS_SELECT_COUL : CONTROLS_LABEL_COUL);
 
 	// Keyboard binding
 	if (selected && remapping && !remapGamepad)
 	{
-		drawTextLeft(midCol, y, "Press Key...", CONTROLS_SELECT_COUL);
+		drawTextLeft(midCol, y, trDos("Press Key..."), CONTROLS_SELECT_COUL);
 	}
 	else
 	{
@@ -263,7 +263,7 @@ static void drawControlRow(int y, KeyAction action, bool selected, bool remappin
 	{
 		if (selected && remapping && remapGamepad)
 		{
-			drawTextLeft(rightCol, y, "Press...", CONTROLS_SELECT_COUL);
+			drawTextLeft(rightCol, y, trDos("Press..."), CONTROLS_SELECT_COUL);
 		}
 		else
 		{

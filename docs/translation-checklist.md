@@ -28,7 +28,7 @@ checks they fit.
 | 11 | Controls menu: headers "Ação", "Tecla", "Botão"; "Voltar" and "Padrão" | | |
 | 12 | Switch to Français: the controls menu shows "Par Défaut" with the é | | |
 | 13 | F1 dialog: every page, every tooltip | | |
-| 14 | F1 dialog, opened at startup and in game: the footer ("Salvar", "Fechar" in game) and the status messages after Save, Reload and Restore | | |
+| 14 | F1 dialog pressed in game: the footer ("Salvar", "Fechar" in game) and the status messages after Save, Reload and Restore | | |
 | 15 | Book (e.g. doc05): pages turn, text fits the page, image pages (#G) still show | | |
 | 16 | Letter (e.g. doc07): text fits, no cut-off line | | |
 | 17 | Notebook: text fits, no cut-off line | | |
@@ -40,14 +40,16 @@ checks they fit.
 | 23 | Books, letters and notebooks read in TrueType text (`font.enableTTF = true`) | | |
 | 24 | Voice-over: books and letters play the English voice-over page by page | | |
 | 25 | Switch to English: text, the original font and the menus are the original, with no leftover Portuguese | | |
-| 26 | Switch back to Português and quit and restart: the language and text hold | | |
+| 26 | Quit and restart: the language menu appears again and Português can be picked again | | |
 
 ## Known issues
 
 Not fixed on this branch:
 
 - With `font.enableTTF`, some spaces between words disappear in documents (the
-  renderer, in every language).
+  renderer; seen in Portuguese documents, not yet compared with English).
+- In Portuguese the controls menu's key and button name column (SDL's key
+  names, e.g. "Up", "Left") stays English.
 - On macOS and Linux, message 13 shows "Return to macOS/Linux" in English in
   every language (`main.cpp`).
 - In TrueType mode the lantern-glow suppression matches the English "lamp has

@@ -150,9 +150,12 @@ const UiRow kUiRows[] = {
     { "Right", "", "", "", "", "Para a direita" },
     { "Confirm", "", "", "", "", "Confirmar" },
     { "Cancel", "", "", "", "", "Cancelar" },
-    { "Quick Turn Left", "", "", "", "", "Giro rápido à esquerda" },
-    { "Quick Turn Right", "", "", "", "", "Giro rápido à direita" },
+    { "Quick Turn Left", "", "", "", "", "Giro veloz à esquerda" },
+    { "Quick Turn Right", "", "", "", "", "Giro veloz à direita" },
     { "Run", "", "", "", "", "Correr" },
+    { "Press Key...", "", "", "", "", "Pressione..." },
+    { "Press...", "", "", "", "", "Pressione..." },
+    { "No Preview", "", "", "", "", "Sem prévia" },
 };
 const size_t kUiRowCount = sizeof(kUiRows) / sizeof(kUiRows[0]);
 
