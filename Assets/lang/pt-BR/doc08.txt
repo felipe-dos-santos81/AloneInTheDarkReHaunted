@@ -1,70 +1,76 @@
 
-#CA Brightness From Afar
-#CBy Lord Boleskine
-#CAn account of his celebrated
-#Cvoyage to New England.
+#CUm Fulgor Distante
+#Cpor Lord Boleskine
+#CRelato de sua célebre
+#Cviagem à Nova Inglaterra.
 #C1824
-#CAleister Publications.
+#CEdições Aleister.
 #CCambridge.
-#PFollowing a splendid journey, the sunny
-harbor came into sight. The locals were
-much impressed with one's arrival in
-their midst. One had time to sketch
-several of them and notice signs of
-degeneracy. Some children showed one
-their queer hands that would inspire
-uneasiness.
-#PUpon the promise of a few coins, a child
-has undertaken to reveal to one a most
-"prodigious phenomenon" of a natural
-order. One admits to being skeptical as
-to the prodigiousness of the marvel,
-whatever it may be; indeed, one suspects
-it to be little more than an evening
-stroll to some charming wooden hut
-situated in the forest hereabouts. One
-will nonetheless go, for it is always
-well to submit to such local enthusiasms.
-#POne admits to being somewhat
-flabbergasted! The Milky Way shone like
-the fires of the Apocalypse from the
-inky celestial vault. Certain distant
-stars, normally invisible to the naked
-eye, were clearly visible, glittering
-indeed with a strange intensity.
-The heavy clouds that had settled above
-the village had no hold over that place.
-#PIt would be pointless to offer here the
-names of the constellations one
-perceived in utter clarity; apart from
-the interminable length of such a list,
-one might conceivably risk being charged
-with exaggeration!
-#PThe cross cast its shadow on the ground.
-The sea, in the distance, was dead calm.
-Tonight one will return to that spot and
-draw those stars. Tomorrow night, one
-will at last see Halley's comet in all
-its brilliance. The youngster will carry
-torches. Despite one's developed sense of
-direction, honed by years of travel, one
-feels incapable of finding one's way
-through the dark forest unaided.
-#PThe drawings will, one is convinced, set
-light to the souls of men!
-#PSuch a moon! One lost count of the
-craters, so sharply was their
-definition. Loath as one is to seem
-excessive in one's appraisal, one cannot
-but feel that the forest clearing is
-indeed a place outside the common laws
-of time and space. Surely it is not an
-hallucination!
-#PHow strange to consider that idle
-conversation, some research in the
-British Museum and a voyage to this
-backward village should culminate in so
-astounding a discovery. It may be that
-others have noticed the extraordinary
-nature of that place; how else could one
-explain the presence of that cross?
+#PApós uma esplêndida travessia, o porto
+ensolarado surgiu à vista. Os nativos
+mostraram-se muito impressionados com
+nossa chegada em seu meio. Tivemos tempo
+de esboçar vários deles e de notar
+sinais de degenerescência. Algumas
+crianças mostraram-nos suas mãos
+singulares, capazes de inspirar
+inquietação.
+#PMediante a promessa de algumas moedas,
+um menino comprometeu-se a revelar-nos
+um "prodigioso fenômeno" de ordem
+natural. Confessamos certo ceticismo
+quanto ao prodígio da maravilha, seja
+ela qual for; com efeito, suspeitamos
+que não passe de um passeio noturno até
+alguma encantadora cabana de madeira
+situada na floresta destas paragens.
+Iremos, não obstante, pois convém sempre
+ceder a tais entusiasmos locais.
+#PConfessamos estar um tanto
+estupefatos! A Via Láctea resplandecia
+como os fogos do Apocalipse na abóbada
+celeste negra como tinta. Certas
+estrelas distantes, normalmente
+invisíveis a olho nu, viam-se com
+clareza, cintilando, aliás, com estranha
+intensidade. As nuvens pesadas que se
+haviam assentado sobre a aldeia não
+tinham domínio algum sobre aquele lugar.
+#PSeria inútil enumerar aqui os nomes
+das constelações que divisamos com
+absoluta nitidez; além da interminável
+extensão de tal lista, correríamos
+talvez o risco de ser acusados de
+exagero!
+#PA cruz projetava sua sombra no chão. O
+mar, ao longe, jazia em completa
+calmaria. Esta noite voltaremos àquele
+local para desenhar aquelas estrelas.
+Amanhã à noite veremos enfim o cometa de
+Halley em todo o seu esplendor. O
+rapazinho levará tochas. Apesar de nosso
+apurado senso de orientação, aprimorado
+por anos de viagens, sentimo-nos
+incapazes de achar sozinhos o caminho
+através da floresta escura.
+#PEstes desenhos, disso estamos
+convictos, hão de incendiar as almas dos
+homens!
+#PQue lua! Perdemos a conta das
+crateras, tão nítidos eram seus
+contornos. Por mais que nos repugne
+parecer excessivos em nossa apreciação,
+não podemos deixar de sentir que a
+clareira da floresta é de fato um lugar
+à margem das leis comuns do tempo e do
+espaço. Por certo não se trata de uma
+alucinação!
+#PComo é estranho considerar que uma
+conversa ociosa, algumas pesquisas no
+Museu Britânico e uma viagem a esta
+aldeia atrasada tenham culminado em
+descoberta tão assombrosa. Pode ser que
+outros tenham notado a natureza
+extraordinária daquele lugar; de que
+outro modo explicar a presença daquela
+cruz?

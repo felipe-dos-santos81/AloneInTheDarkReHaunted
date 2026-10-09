@@ -1,78 +1,78 @@
 
 
-#CThe Creatures
-#Cof Night
+#CAs Criaturas
+#Cda Noite
 
-#CBy Hubertus
-#Cthe Bald
+#Cpor Hubertus
+#Co Calvo
 
-#Ctranslated from Latin
-#Cby his brother in prayer
+#Ctraduzido do latim
+#Cpor seu irmão em oração
 #CFratre Johan Markus
 
-#P#T#TOf Monstrosity
+#P#T#TDa Monstruosidade
 
-#TYou who read me, know that night
-engenders monsters and that night
-creatures exist. The accursed book
-of Abdul Al Azred is clear on this
-matter:
-"That is not dead which can eternal lie."
-Unhappy he who knows that book.
-#PUnhappy he whose eyes alight upon
-that foulest of texts.
-Unhappy he who implores the
-standing stones.
-For he will free the powers of darkness.
-#P#T#TOf the Pit
+#TTu que me lês, sabe que a noite
+engendra monstros e que as criaturas
+noturnas existem. O livro maldito de
+Abdul Al Azred é claro nesta matéria:
+"Não está morto o que pode eternamente
+jazer." Infeliz aquele que conhece esse
+livro.
+#PInfeliz aquele cujos olhos pousam
+sobre o mais imundo dos textos. Infeliz
+aquele que implora às pedras erguidas.
+Pois ele libertará os poderes das
+trevas.
+#P#T#TDo Poço
 
-#TStagnant waters are like the memory of
-men. Beneath the surface calm, clawed
-beasts await and are known to initiates
-as the Deep Ones.
-#PAwaiting his prey, the Deep One seizes
-him and drags him down to the abyss
-where Dagon the cruel god swims and
-reveres him whose name may not be
-pronounced.
-#P#T#TOf Libraries
+#TAs águas estagnadas são como a memória
+dos homens. Sob a calma da superfície
+aguardam feras dotadas de garras, que os
+iniciados conhecem como os Profundos.
+#PÀ espera de sua presa, o Profundo a
+agarra e a arrasta para o abismo onde
+nada Dagon, o deus cruel, que reverencia
+aquele cujo nome não pode ser
+pronunciado.
+#P#T#TDas Bibliotecas
 
-#TUnhappy he who frees the prowler.
-Unhappy he who meets the prowler erring
-among the books. He generates the
-vagabond that comes from other spheres.
-He believes the vagabond does not exist.
-#PHe will feel the embrace of death for, in
-the eyes of the vagabond, books are no
-more than dreams, stone no more than wind.
-The vagabond knows how to take the
-breath of the reckless.
-#P#T#TOf Strife
+#TInfeliz aquele que liberta o
+espreitador. Infeliz aquele que encontra
+o espreitador vagueando entre os livros.
+Ele gera o errante que vem de outras
+esferas. Ele crê que o errante não
+existe.
+#PSentirá o abraço da morte, pois, aos
+olhos do errante, os livros não passam
+de sonhos, e a pedra não passa de vento.
+O errante sabe tomar o fôlego dos
+imprudentes.
+#P#T#TDo Combate
 
-#THe who speaks does not know and believes
-he is able to kill the creatures of the
-night. Folly. Evil is conjured up by
-science and secrecy.
-PHe who prowls among
-books will perish by the blade. He who
-flies in the dark caverns will scream in
-fear. He who swims in the depths will
-evaporate. But he who believes he knows,
-knows nothing. He who knows, says nothing.
-#P#T#TOf Death
+#TAquele que fala não sabe, e crê ser
+capaz de matar as criaturas da noite.
+Loucura. O mal se esconjura pela ciência
+e pelo segredo.
+#PAquele que ronda entre os livros
+perecerá pela lâmina. Aquele que voa nas
+cavernas escuras gritará de medo. Aquele
+que nada nas profundezas se evaporará.
+Mas aquele que crê saber nada sabe.
+Aquele que sabe nada diz.
+#P#T#TDa Morte
 
-#TThere are domains more terrible than
-death. That is not dead which can eternal
-lie. Each creature is conjured up and
-is not dead but returns to the origins.
-A monster, a science. Steel kills the
-vagabond who never dies.
+#THá domínios mais terríveis que a
+morte. Não está morto o que pode
+eternamente jazer. Toda criatura se
+esconjura e não está morta, mas retorna
+às origens. Um monstro, uma ciência. O
+aço mata o errante que jamais morre.
 #P
-#CTranslator's note.
+#CNota do tradutor.
 #C + +
-#THere ends the manuscript of
-Hubertus, who died in the library
-of the convent of Taroella in
-the year of Our Lord 1666.
+#TAqui termina o manuscrito de Hubertus,
+que morreu na biblioteca do convento de
+Taroella no ano de Nosso Senhor de 1666.
 #TRequiescat in pace.
 #C + + +

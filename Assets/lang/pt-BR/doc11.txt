@@ -1,48 +1,47 @@
-#CThe Book of Yael.
-#CSigns of Stone.
-#CEucharistic Rituals
-#Cof Forbidden Cults.
+#CO Livro de Yael.
+#CSinais de Pedra.
+#CRituais Eucarísticos
+#Cdos Cultos Proibidos.
 #C+ + + +
-#CTexts collated by
-#CMonsignor Vachey.
-#CLegate in the Curia
-#Cof the Vatican.
+#CTextos reunidos por
+#CMonsenhor Vachey.
+#CLegado na Cúria
+#Cdo Vaticano.
 #C+ + +
-#PNumerous devilish cults speak of
-monstrous creatures called the Old
-Ones. These supernatural beings are
-believed to be possessed of powers
-equivalent to those of the gods of
-antique religions. Adepts of such cults
-refer to forbidden literature in order
-to cause these frightful entities to
-appear before them.
-#PWhat serious student
-of folk myths has not come across the
-names of Cthulhu and Shub Niggurath?
-#PIt must be said that these creatures
-wield tremendous power and are difficult
-to control once they have been unleashed
-into the world.
-Those who serve "He who goes in shadows"
-protect themselves with signs of stone,
-carved into the walls of houses or
-engraved on various objects.
-#PFor these misguided servants of evil,
-the best protection appears to be that
-afforded by "the sign of the most
-ancient gods", engraved in MNAR stone, a
-heavy material, said to be disagreeable
-to the touch.
+#PNumerosos cultos diabólicos falam de
+criaturas monstruosas chamadas Grandes
+Antigos. Acredita-se que esses seres
+sobrenaturais possuam poderes
+equivalentes aos dos deuses das
+religiões antigas. Os adeptos de tais
+cultos recorrem a uma literatura
+proibida a fim de fazer surgir diante de
+si essas entidades pavorosas.
+#PQue estudioso sério dos mitos
+populares não terá deparado com os nomes
+de Cthulhu e Shub Niggurath?
+#PCumpre dizer que essas criaturas detêm
+um poder tremendo e são difíceis de
+dominar depois de libertadas no mundo.
+Os que servem "Aquele que anda nas
+sombras" protegem-se com sinais de
+pedra, entalhados nas paredes das casas
+ou gravados em diversos objetos.
+#PPara esses servos extraviados do mal,
+a melhor proteção parece ser a que
+confere "o sinal dos deuses mais
+antigos", gravado em pedra de MNAR,
+material pesado, dito desagradável ao
+toque.
 #G0
-#PThe sinful practices of those who fall
-into such errors can only lead to the
-darkest of despair and are a mortal
-danger to the soul.
-Such monsters as those invoked by these
-foolhardy individuals are engendered
-when reason drops its guard.
-Man is easily tempted into perversion.
-#PIt is why we must forever remain alert
-and renounce Satan with each breath we
-take. His ways are infinite in number.
+#PAs práticas pecaminosas daqueles que
+caem em tais erros só podem levar ao
+mais sombrio desespero e são um perigo
+mortal para a alma. Monstros como os que
+esses temerários invocam são engendrados
+quando a razão baixa a guarda. O homem é
+facilmente tentado à perversão.
+#PEis por que devemos permanecer sempre
+vigilantes e renunciar a Satanás a cada
+fôlego. Seus caminhos são em número
+infinito.
