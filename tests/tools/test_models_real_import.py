@@ -15,8 +15,8 @@ from aitd_models.importer import ImportPaths, run_import
 from aitd_models.manifest import read_manifest
 from aitd_models.original import rest_mesh
 from aitd_models.pose import pose_float
-from aitd_textures.decode import DataNotFound, decode_palette, find_data_dir
-from aitd_textures.pak import Pak
+from aitd_data.decode import DataNotFound, decode_palette, find_data_dir
+from aitd_data.pak import Pak
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 KEYS = ("LISTBODY_011", "LISTBOD2_011", "LISTBODY_024")

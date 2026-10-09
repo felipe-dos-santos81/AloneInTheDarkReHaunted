@@ -30,23 +30,24 @@ CMAKE_BUILD     = $(CMAKE) --build "$(BUILD_DIR)" --config "$(BUILD_TYPE)" --par
 
 # ── Target arguments (make run data=DIR) ─────────────────────────────────────
 
-gamedata ?= data/aitd1
-data     ?= $(gamedata)
-src      ?= Assets/backgrounds_hd
-out      ?= $(notdir $(src)).hda
-archive  ?= backgrounds_hd.hda
+# The game and the HD backgrounds (run, hd-install, hda-pack, hda-unpack).
+gamedata    ?= data/aitd1
+data        ?= $(gamedata)
+backgrounds ?= Assets/backgrounds_hd
+src         ?= $(backgrounds)
+out         ?= $(notdir $(src)).hda
+archive     ?= backgrounds_hd.hda
 
-# The asset pipelines read `gamedata`; `data` and `out` belong to run and hda-pack.
-dest        ?= Assets/backgrounds_hd
-models      ?= data/models
-models_ai   ?= data/models-ai
+# The HD character models (export-models to models-install).
+models          ?= data/models
+models_ai       ?= data/models-ai
 models_identity ?= data/models-identity
-models_hd   ?= Assets/models_hd
-atlases     ?= Assets/atlases
-models_blender ?= data/models-blender
-BLENDER     ?= /Applications/Blender.app/Contents/MacOS/Blender
-bodies      ?=
-report      ?=
+models_blender  ?= data/models-blender
+models_hd       ?= Assets/models_hd
+atlases         ?= Assets/atlases
+BLENDER         ?= /Applications/Blender.app/Contents/MacOS/Blender
+bodies          ?=
+report          ?=
 
 MODEL_IMPORT   = $(PYTHON) tools/models.py import --data "$(gamedata)" --models "$(models)" \
                  --src "$(models_ai)" --dest "$(models_hd)"$(if $(bodies), --bodies "$(bodies)")$(if $(report), --report "$(report)")
@@ -82,7 +83,7 @@ help: ## List the targets
 deps: ## Install the build dependencies for this platform
 	@$(SRC_DIR)/install_deps.sh
 
-tools-deps: ## Create tools/.venv for the model tools
+tools-deps: ## Create tools/.venv for the Python tools
 	python3 -m venv tools/.venv
 	tools/.venv/bin/pip install -q -r tools/requirements-dev.txt
 
@@ -112,14 +113,14 @@ test-engine: configure ## Engine unit tests (doctest)
 	$(CMAKE_BUILD) --target engine_tests
 	cd "$(BUILD_DIR)" && ctest -C "$(BUILD_TYPE)" --output-on-failure -R engine_tests
 
-test-tools: ## Model tool tests (pytest)
+test-tools: ## Python tool tests (pytest)
 	$(PYTHON) -m pytest tests/tools -q
 
 ##@ HD backgrounds
 
-hd-install: build-tools ## Pack Assets/backgrounds_hd into backgrounds_hd.hda and copy it into the app bundle
+hd-install: build-tools ## Pack Assets/backgrounds_hd and copy it into the app bundle [backgrounds=DIR]
 	$(call require,$(HDA_TOOL),build_hda_archive,run 'make build-tools')
-	"$(HDA_TOOL)" "$(dest)" "$(HD_ARCHIVE)"
+	"$(HDA_TOOL)" "$(backgrounds)" "$(HD_ARCHIVE)"
 	@if [ -n "$(BUNDLE_RESOURCES)" ] && [ -d "$(BUNDLE_RESOURCES)" ]; then \
 		cp "$(HD_ARCHIVE)" "$(BUNDLE_RESOURCES)/" && echo "installed $(HD_ARCHIVE) -> $(BUNDLE_RESOURCES)/"; \
 	else \
@@ -136,19 +137,19 @@ hda-unpack: build-tools ## Extract an .hda archive [archive=FILE out=DIR]
 
 ##@ HD character models
 
-export-models: ## Export animated bodies for the model generator [gamedata=DIR models=DIR bodies=KEY,...]
+export-models: ## Export the original bodies into data/models [gamedata=DIR models=DIR bodies=KEY,...]
 	$(PYTHON) tools/models.py export --data "$(gamedata)" --out "$(models)"$(if $(bodies), --bodies "$(bodies)")
 
-identity-models: ## Write identity deliveries (each original as its own model) [models=DIR models_identity=DIR bodies=KEY,...]
+identity-models: ## Deliver each original as itself, the compare-mode oracle [models=DIR models_identity=DIR bodies=KEY,...]
 	$(PYTHON) tools/models.py identity --models "$(models)" --out "$(models_identity)" --bodies "$(bodies)"
 
-blender-models: ## Refine character bodies in Blender into data/models-ai [models=DIR models_ai=DIR bodies=KEY,... BLENDER=PATH]
+blender-models: ## Refine the bodies in Blender into data/models-ai [models=DIR models_ai=DIR bodies=KEY,... BLENDER=PATH]
 	$(BLENDER_MODELS)
 
-check-models: ## Check delivered models, write nothing (report=DIR writes reports only) [models_ai=DIR models_hd=DIR bodies=KEY,...]
+check-models: ## Check the deliveries without importing [models_ai=DIR bodies=KEY,... report=DIR]
 	$(MODEL_IMPORT) --dry-run
 
-import-models: ## Import delivered models into Assets/models_hd [models_ai=DIR models_hd=DIR bodies=KEY,...]
+import-models: ## Check and pack the deliveries into Assets/models_hd [models_ai=DIR models_hd=DIR bodies=KEY,...]
 	$(MODEL_IMPORT)
 
 # The bundle's models_hd mirrors models_hd (a stale .hdm would still draw); atlases are added, never removed.

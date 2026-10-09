@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from aitd_textures.files import png_bytes
+from aitd_data.files import png_bytes
 
 from ..body import PRIM_POLY, PRIM_SPHERE, Body
 from ..gltf import ARRAY_BUFFER, UNSIGNED_INT, GlbBuilder

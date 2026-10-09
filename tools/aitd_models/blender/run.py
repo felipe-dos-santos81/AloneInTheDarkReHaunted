@@ -14,8 +14,8 @@ from typing import Callable
 
 import numpy as np
 
-from aitd_textures.decode import decode_palette
-from aitd_textures.files import atomic_write_bytes
+from aitd_data.decode import decode_palette
+from aitd_data.files import atomic_write_bytes
 
 from ..body import parse_body
 from ..export import PALETTE_NAME

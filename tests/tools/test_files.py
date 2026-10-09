@@ -1,7 +1,7 @@
 import numpy as np
 from PIL import Image
 
-from aitd_textures.files import atomic_write_bytes, save_png
+from aitd_data.files import atomic_write_bytes, save_png
 
 
 def test_atomic_write_creates_parents_and_leaves_no_tmp(tmp_path):

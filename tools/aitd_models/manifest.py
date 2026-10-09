@@ -7,7 +7,7 @@ import json
 import pathlib
 from dataclasses import asdict, dataclass, field
 
-from aitd_textures.files import atomic_write_bytes
+from aitd_data.files import atomic_write_bytes
 
 SCHEMA = 1
 CONTRACT = 1

@@ -40,9 +40,9 @@ from aitd_models.gltf import GltfError  # noqa: E402
 from aitd_models.identity import identity_glb  # noqa: E402
 from aitd_models.importer import DELIVERY_NAME, ImportPaths, run_import  # noqa: E402
 from aitd_models.manifest import MANIFEST_NAME, ManifestError, read_manifest  # noqa: E402
-from aitd_textures.files import atomic_write_bytes  # noqa: E402
-from aitd_textures.decode import DataNotFound, find_data_dir  # noqa: E402
-from aitd_textures.pak import PakError  # noqa: E402
+from aitd_data.files import atomic_write_bytes  # noqa: E402
+from aitd_data.decode import DataNotFound, find_data_dir  # noqa: E402
+from aitd_data.pak import PakError  # noqa: E402
 
 EXIT_OK = 0
 EXIT_FINDINGS = 1

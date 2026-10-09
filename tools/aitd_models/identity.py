@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from aitd_textures.files import png_bytes
+from aitd_data.files import png_bytes
 
 from .gltf import ARRAY_BUFFER, GlbBuilder, GltfError, read_glb
 from .hdm import TEXTURE_MIME, TEXTURE_PNG

@@ -1,4 +1,4 @@
-"""Test fixtures for the texture and model tools. Puts tools/ on sys.path so the
+"""Test fixtures for the Python tools. Puts tools/ on sys.path so the
 package imports without installation."""
 import pathlib
 import sys
