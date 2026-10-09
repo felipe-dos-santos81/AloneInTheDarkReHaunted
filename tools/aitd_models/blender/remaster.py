@@ -258,12 +258,15 @@ def composite(colour: np.ndarray, ao: np.ndarray, strength: float = AO_STRENGTH,
     return rgb[::-1]
 
 
-def model_glb(positions: np.ndarray, loop_vertex: np.ndarray, loop_uv: np.ndarray, png: bytes) -> bytes:
+def model_glb(positions: np.ndarray, round_positions: np.ndarray, loop_vertex: np.ndarray, loop_uv: np.ndarray,
+              png: bytes) -> bytes:
     """The delivery: Blender's triangles (one loop per corner, three per
     triangle) as an indexed glTF mesh, Z-up (x, y, z) -> Y-up (x, z, -y),
     one vertex per (position, UV) pair, v flipped to glTF's top-left origin.
-    NORMAL is area-weighted per Blender vertex, so the pieces a UV seam splits
-    shade as one surface; a zero-area vertex's normal stays zero."""
+    NORMAL is the round surface's (`round_positions`, the same vertices),
+    area-weighted per Blender vertex over the same triangles, so the pieces
+    a UV seam splits shade as one surface; a zero-area vertex's normal stays
+    zero."""
     loop_vertex = np.asarray(loop_vertex, np.int64)
     loop_uv = np.asarray(loop_uv, float)
     pairs = np.column_stack([loop_vertex, np.round(loop_uv * 1e6).astype(np.int64)])
@@ -272,7 +275,8 @@ def model_glb(positions: np.ndarray, loop_vertex: np.ndarray, loop_uv: np.ndarra
     first = np.zeros(len(unique), np.int64)
     first[inverse[::-1]] = np.arange(len(inverse))[::-1]
     gltf = np.column_stack([positions[:, 0], positions[:, 2], -positions[:, 1]]).astype(float)
-    corners = gltf[loop_vertex].reshape(-1, 3, 3)
+    shape = np.column_stack([round_positions[:, 0], round_positions[:, 2], -round_positions[:, 1]]).astype(float)
+    corners = shape[loop_vertex].reshape(-1, 3, 3)
     face = np.cross(corners[:, 1] - corners[:, 0], corners[:, 2] - corners[:, 0])
     smooth = np.zeros_like(gltf)
     for k in range(3):
@@ -296,8 +300,11 @@ def finish_glb(work: pathlib.Path) -> tuple[bytes, int]:
     """model.glb from the stage's outputs in `work` (refined.npz carries a
     mask only for a body with glass), and its triangle count."""
     refined = np.load(work / "refined.npz")
+    if "round" not in refined.files:
+        raise ValueError(f"{work / 'refined.npz'} has no round surface (written before it had one): rerun the stage")
     colour = np.load(work / "color.npy")
     ao = np.load(work / "ao.npy")
     mask = refined["mask"] if "mask" in refined.files else None
     png = png_bytes(composite(colour, ao, mask=mask))
-    return model_glb(refined["positions"], refined["loop_vertex"], refined["loop_uv"], png), len(refined["loop_vertex"]) // 3
+    return (model_glb(refined["positions"], refined["round"], refined["loop_vertex"], refined["loop_uv"], png),
+            len(refined["loop_vertex"]) // 3)

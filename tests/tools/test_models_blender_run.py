@@ -24,10 +24,16 @@ def export(tmp_path):
     return tmp_path, by_key
 
 
-def plant_outputs(work: pathlib.Path) -> None:
-    """What stage.py leaves in the work folder: a quad and two 4x4 bakes."""
-    np.savez(work / "refined.npz", positions=np.array([[0, 0, 0], [1, 0, 0], [1, 0, 2], [0, 0, 2]], np.float32),
-             loop_vertex=np.array([0, 1, 2, 0, 2, 3]), loop_uv=np.zeros((6, 2), np.float32))
+QUAD = np.array([[0, 0, 0], [1, 0, 0], [1, 0, 2], [0, 0, 2]], np.float32)
+
+
+def plant_outputs(work: pathlib.Path, round_surface: bool = True) -> None:
+    """What stage.py leaves in the work folder: a quad (its own round surface)
+    and two 4x4 bakes; without the round surface, what a stage from before it
+    left."""
+    shape = {"round": QUAD} if round_surface else {}
+    np.savez(work / "refined.npz", positions=QUAD, loop_vertex=np.array([0, 1, 2, 0, 2, 3]),
+             loop_uv=np.zeros((6, 2), np.float32), **shape)
     np.save(work / "color.npy", np.full((4, 4, 3), 0.5, np.float16))
     np.save(work / "ao.npy", np.ones((4, 4), np.float16))
 
@@ -82,7 +88,8 @@ def test_a_delivered_body_writes_its_model_and_drops_the_bakes(export):
     (failing_stage, "boom"),
     (lambda work: None, "refined.npz"),  # a stage that wrote nothing must not finish the stale outputs
     (lambda work: (work / "refined.npz").write_bytes(b"junk"), ""),  # a truncated output
-], ids=["error", "no-output", "corrupt"])
+    (lambda work: plant_outputs(work, round_surface=False), "no round surface"),  # an older stage's output
+], ids=["error", "no-output", "corrupt", "no-round"])
 def test_a_failing_body_fails_alone_and_leaves_no_stale_delivery(export, first, detail):
     calls = []
     stages = iter([first, fake_stage(calls)])

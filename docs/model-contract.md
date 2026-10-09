@@ -269,11 +269,16 @@ Per body (`tools/aitd_models/blender/`):
      spanning triangles plus 6·4^(L−1) for each other triangle;
    - gives each connected island one winding and turns it to the side that
      sees out of the body (the originals mostly face inward);
+   - keeps where each vertex sat on its subdivided piece before the pull,
+     creased on the piece's open edges only (the round surface). The
+     delivered normals come from it, and the ambient occlusion is baked with
+     them, so the body shades as rounded forms while its vertices stay on
+     the original's polygons;
    - unwraps the result and bakes onto it the textured original, its ambient
      occlusion and, for a body with transparent polygons or spheres (the
      glass kind), a mask of them.
 3. `remaster.py` composites the bakes into one 2048 px PNG, with the mask as
-   alpha 128, and writes `model.glb`.
+   alpha 128, and writes `model.glb` with the round surface's normals.
 
 Working files go to `data/models-blender/<KEY>/`. `data/models-ai/run.md`
 lists every body: delivered (triangles, texture source, seconds), failed

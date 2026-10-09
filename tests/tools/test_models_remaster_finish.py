@@ -16,19 +16,24 @@ def test_composite_darkens_by_ao_and_flips_rows():
 
 
 def test_model_glb_round_trips_through_the_delivery_reader():
-    # a bent quad in Blender space (z up); vertex 2 is one Blender vertex with two UVs,
-    # a UV seam between the bent triangles, so its two glTF vertices must share a normal
-    positions = np.array([[0, 0, 0], [1, 0, 0], [1, 0, 2], [0, 1, 2]], float)
+    # a flat quad in Blender space (z up) over a bent round surface; vertex 2 is one Blender vertex
+    # with two UVs, a UV seam between the bent triangles, so its two glTF vertices must share a normal
+    positions = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]], float)
+    round_positions = np.array([[0, 0, 0], [1, 0, 0], [1, 0, 2], [0, 1, 2]], float)
     loops = np.array([0, 1, 2, 0, 2, 3])
     uvs = np.array([[0, 0], [1, 0], [1, 1], [0, 0], [0.5, 1], [0, 1]], float)
-    delivery = read_delivery(model_glb(positions, loops, uvs, TINY_PNG))
+    delivery = read_delivery(model_glb(positions, round_positions, loops, uvs, TINY_PNG))
     assert len(delivery.positions) == 5            # vertex 2 split by its two UVs
     assert len(delivery.triangles) == 2
-    # Blender (x, y, z) -> glTF (x, z, -y) -> engine (x, -y, -z) / 0.001
-    assert sorted(set(delivery.positions[:, 1].round().tolist())) == [-2000.0, 0.0]
+    # POSITION is the positions: Blender (x, y, z) -> glTF (x, z, -y) -> engine (x, -y, -z) / 0.001
+    assert sorted(set(delivery.positions[:, 1].round().tolist())) == [0.0]
     assert sorted(set(delivery.positions[:, 0].round().tolist())) == [0.0, 1000.0]
     assert sorted(set(delivery.positions[:, 2].round().tolist())) == [0.0, 1000.0]
-    seam = np.flatnonzero((delivery.positions == [1000.0, -2000.0, 0.0]).all(axis=1))
+    # NORMAL is the round surface's: vertex 1 lies on its first triangle only, which faces Blender -y
+    # (engine -z); the flat quad's normal would be Blender +z (engine -y)
+    one = np.flatnonzero((delivery.positions == [1000.0, 0.0, 0.0]).all(axis=1))
+    assert np.allclose(delivery.normals[one], [0.0, 0.0, -1.0])
+    seam = np.flatnonzero((delivery.positions == [1000.0, 0.0, 1000.0]).all(axis=1))
     assert len(seam) == 2
     assert np.allclose(delivery.normals[seam[0]], delivery.normals[seam[1]])
     # v flipped: Blender's (0.5, 1) is glTF's (0.5, 0)
