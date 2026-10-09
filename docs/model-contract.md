@@ -229,7 +229,9 @@ Per body (`tools/aitd_models/blender/`):
    bone group, subdivides each with its open and sharp edges creased, and
    pulls it back onto its own original surface. A triangle spanning groups
    stays as it is: the engine stretches it, and subdivided it would tear
-   past the import's stretch check. The stage then unwraps the result and
+   past the import's stretch check. Every group takes the highest level
+   whose predicted count, the spanning triangles plus 6·4^(L−1) for each
+   other one, stays within 30,000. The stage then unwraps the result and
    bakes the textured original onto it, plus its ambient occlusion.
 3. `remaster.py` composites the bakes into one 2048 px PNG and writes
    `model.glb`.

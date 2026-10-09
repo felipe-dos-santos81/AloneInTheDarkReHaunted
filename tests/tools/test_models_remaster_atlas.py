@@ -82,6 +82,8 @@ def test_srgb_conversions_match_the_standard_and_round_trip():
     assert linear_to_srgb(srgb_to_linear(c)) == pytest.approx(c)
 
 
-@pytest.mark.parametrize("triangles, level", [(340, 2), (5000, 1), (5001, 0), (1, 4)])
-def test_budget_level_is_the_highest_within_30000(triangles, level):
-    assert budget_level(triangles) == level
+# Bridges stay as they are: Carnby's 340 triangles, 121 of them bridges, fit level 3.
+@pytest.mark.parametrize("triangles, bridges, level", [(340, 0, 2), (340, 121, 3), (360, 48, 3), (361, 48, 2),
+                                                       (5000, 0, 1), (5001, 0, 0), (1, 0, 4)])
+def test_budget_level_is_the_highest_within_30000(triangles, bridges, level):
+    assert budget_level(triangles, bridges) == level

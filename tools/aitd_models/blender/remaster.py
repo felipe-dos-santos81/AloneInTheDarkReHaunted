@@ -114,11 +114,13 @@ def linear_to_srgb(c: np.ndarray) -> np.ndarray:
     return np.where(c <= 0.0031308, c * 12.92, 1.055 * c ** (1 / 2.4) - 0.055)
 
 
-def budget_level(triangles: int, target: int = TRIANGLE_TARGET) -> int:
-    """The highest Catmull-Clark level whose predicted triangle count,
-    T * 6 * 4^(L-1), stays within `target` (0 when even level 1 does not)."""
+def budget_level(triangles: int, bridges: int = 0, target: int = TRIANGLE_TARGET) -> int:
+    """The highest Catmull-Clark level whose predicted triangle count stays
+    within `target` (0 when even level 1 does not). Bridges stay as they are;
+    each other triangle becomes 6 * 4^(L-1). The real count, after degenerate
+    faces drop out, is at most the prediction."""
     level = 0
-    while level < MAX_LEVEL and triangles * 6 * 4 ** level <= target:
+    while level < MAX_LEVEL and bridges + (triangles - bridges) * 6 * 4 ** level <= target:
         level += 1
     return level
 
@@ -227,9 +229,9 @@ def corner_arrays(body: Body, mesh: Mesh, paths: dict, edits: Edits) -> dict[str
             "tri_group": group, "palette": colour}
 
 
-def levels(groups: int, triangles: int, edits: Edits) -> list[int]:
+def levels(groups: int, triangles: int, edits: Edits, bridges: int = 0) -> list[int]:
     """The subdivision level of each group: the budget's, unless edited."""
-    base = budget_level(triangles)
+    base = budget_level(triangles, bridges)
     return [edits.subdivide.get(g, base) for g in range(groups)]
 
 

@@ -21,7 +21,7 @@ from ..body import parse_body
 from ..export import PALETTE_NAME
 from ..manifest import BodyRecord
 from ..original import rest_mesh
-from .remaster import atlas_paths, corner_arrays, finish_glb, levels, read_edits
+from .remaster import BRIDGE, atlas_paths, corner_arrays, finish_glb, levels, read_edits
 
 HERE = pathlib.Path(__file__).resolve().parent
 STAGE = HERE / "stage.py"
@@ -74,9 +74,10 @@ def prepare(record: BodyRecord, models: pathlib.Path, work: pathlib.Path,
     arrays = corner_arrays(body, mesh, paths, edits)
     work.mkdir(parents=True, exist_ok=True)
     np.savez(work / "corners.npz", **arrays)
+    bridges = int((arrays["tri_group"] == BRIDGE).sum())
     job = {"key": record.key, "original": str((folder / "original.glb").resolve()),
            "atlases": {k: (str(p.resolve()) if p else None) for k, p in paths.items()},
-           "levels": levels(len(body.groups), mesh.triangle_count, edits), "flat": sorted(edits.crease),
+           "levels": levels(len(body.groups), mesh.triangle_count, edits, bridges), "flat": sorted(edits.crease),
            **STAGE_SETTINGS}
     (work / "job.json").write_text(json.dumps(job, indent=1) + "\n")
     return edits, paths
