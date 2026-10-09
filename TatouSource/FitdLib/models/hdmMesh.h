@@ -6,7 +6,7 @@
 //
 // Little-endian, no padding: a 32-byte header ("AHDM", u16 version 1, u16
 // group count, u64 skeleton hash, u32 vertex count, u32 index count, u32
-// texture bytes, u8 texture kind, 3 zero bytes), 40-byte vertices, u32
+// texture bytes, u8 texture kind, u8 flags, 2 zero bytes), 40-byte vertices, u32
 // indices, the texture bytes, and a CRC-32 of everything before it.
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
@@ -25,6 +25,7 @@ constexpr uint32_t kHdmMaxVertices = 3 * kHdmMaxTriangles;
 constexpr uint32_t kHdmMaxTextureBytes = 64u << 20;
 constexpr uint8_t kHdmTexturePng = 1;
 constexpr uint8_t kHdmTextureJpeg = 2;
+constexpr uint8_t kHdmFlagTranslucent = 1; // some texels are translucent (mipChain.h): a blended pass
 
 // One vertex, in the file's order: engine space, rest pose; joints are bone
 // groups and the four weights sum to 255.
@@ -46,6 +47,7 @@ struct HdmMesh
     std::vector<uint32_t> indices; // triangles
     std::vector<uint8_t> texture;  // PNG or JPEG bytes, as delivered
     uint8_t textureKind = 0;       // kHdmTexturePng or kHdmTextureJpeg
+    bool translucent = false;      // kHdmFlagTranslucent
 };
 
 // Parses and validates a whole file. On failure returns false, leaves *out

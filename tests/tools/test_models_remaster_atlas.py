@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from aitd_models.blender.remaster import (BRIDGE, KIND_BODY, KIND_OTHER, KIND_PALETTE, KIND_RAMP, atlas_paths, budget_level,
+from aitd_models.blender.remaster import (BRIDGE, KIND_BODY, KIND_GLASS, KIND_OTHER, KIND_PALETTE, KIND_RAMP, atlas_paths, budget_level,
                                           corner_uv, engine_rest_vertices, front_weight, kind_of, linear_to_srgb,
                                           mirror_uv, projection, srgb_to_linear, triangle_groups)
 from aitd_models.body import PRIM_LINE, PRIM_POLY, PRIM_SPHERE, parse_body
@@ -62,7 +62,7 @@ NO_RAMP = {"body": "b", "ramp": None, "other": "o"}
 
 @pytest.mark.parametrize("prim_type, material, paths, kind", [
     (PRIM_POLY, 0, FULL, KIND_BODY), (PRIM_POLY, 4, FULL, KIND_RAMP), (PRIM_POLY, 1, FULL, KIND_OTHER),
-    (PRIM_POLY, 2, FULL, KIND_PALETTE),                     # transparent: never an atlas
+    (PRIM_POLY, 2, FULL, KIND_GLASS), (PRIM_SPHERE, 2, FULL, KIND_GLASS),  # transparent: glass, never an atlas
     (PRIM_SPHERE, 0, FULL, KIND_PALETTE), (PRIM_LINE, 0, FULL, KIND_PALETTE), (9, 0, FULL, KIND_PALETTE),
     (PRIM_POLY, 4, NO_RAMP, KIND_PALETTE),                  # no ramp atlas on disk: palette
 ])

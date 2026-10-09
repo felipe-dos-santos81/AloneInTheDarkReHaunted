@@ -22,14 +22,11 @@ constexpr int kSwatchSide = 64;
 // *levels gets the level count.
 std::vector<uint8_t> rgba8MipChain(const uint8_t* rgba, int width, int height, int* levels);
 
-// A texel's alpha: below kTranslucentAlpha a hole (model_ps.sc discards it),
-// up to kOpaqueAlpha - 1 translucent (the engine's transparent material 2,
-// blended at 50 %, drawn in a second pass), from kOpaqueAlpha opaque. The
-// shader's thresholds are 0.5 and 0.99.
+// A texel's alpha class: below kTranslucentAlpha a hole, up to kOpaqueAlpha - 1
+// translucent (the engine's transparent material 2, blended at 50 %, drawn in a
+// second pass), from kOpaqueAlpha opaque. model_ps.sc and tools/aitd_models/hdm.py
+// use the same values (tests/tools/test_models_hdm.py checks).
 constexpr uint8_t kTranslucentAlpha = 128;
 constexpr uint8_t kOpaqueAlpha = 253;
-
-// True when any texel is translucent: the body needs the blended pass.
-bool hasTranslucentTexels(const uint8_t* rgba, int width, int height);
 
 } // namespace models

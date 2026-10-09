@@ -6,8 +6,8 @@
 or, through MCP for Blender's execute_blender_code, `stage.run(WORK_DIR,
 keep=True)`, which works in a new scene of its own and leaves it open for a
 look. WORK_DIR holds job.json and corners.npz from remaster.py; the stage
-writes refined.npz, color.npy, ao.npy and, for a body with transparent
-triangles, mask.npy there. It imports only Blender's
+writes refined.npz (with the transparency mask of a body that has glass),
+color.npy and ao.npy there. It imports only Blender's
 own modules and numpy."""
 import json
 import math
@@ -19,7 +19,7 @@ import bpy
 import numpy as np
 from mathutils.bvhtree import BVHTree
 
-KINDS = ("palette", "body", "ramp", "other")
+KINDS = ("palette", "body", "ramp", "other", "glass")  # remaster.KIND_NAMES
 
 
 def _socket(sockets, identifier: str):
@@ -51,8 +51,6 @@ def _source(job: dict, corners) -> bpy.types.Object:
         uv = corners[f"uv_{name}"]
         me.uv_layers.new(name=name).data.foreach_set("uv", np.column_stack([uv[:, 0], 1.0 - uv[:, 1]]).ravel())
     me.attributes.new("w_front", "FLOAT", "CORNER").data.foreach_set("value", np.repeat(corners["w_front"], 3))
-    me.attributes.new("transparent", "FLOAT", "CORNER").data.foreach_set(
-        "value", np.repeat(corners["transparent"], 3).astype(np.float32))
     rgba = np.column_stack([np.repeat(corners["palette"], 3, axis=0), np.ones(3 * count)]).astype(np.float32)
     me.attributes.new("pal", "FLOAT_COLOR", "CORNER").data.foreach_set("color", rgba.ravel())
     me.materials.clear()  # the import's own glTF material would shift every index
@@ -152,32 +150,68 @@ def _hits(tree, centre, frame, side: int) -> list[float]:
     return [d for d in casts if d is not None]
 
 
+def _islands(bm) -> list[list]:
+    """The faces of `bm` in edge-connected islands."""
+    seen, islands = set(), []
+    for start in bm.faces:
+        if start in seen:
+            continue
+        seen.add(start)
+        stack, island = [start], []
+        while stack:
+            face = stack.pop()
+            island.append(face)
+            for edge in face.edges:
+                for other in edge.link_faces:
+                    if other not in seen:
+                        seen.add(other)
+                        stack.append(other)
+        islands.append(island)
+    return islands
+
+
+VOTERS = 200  # faces of an island that cast rays, evenly spread
+
+
 def _orient_outward(model: bpy.types.Object) -> int:
-    """The originals mix both windings (most of a body faces inward), and the
-    engine lights an HD face on its front only, as the AO bake does. Flip each
-    face whose front sees more of the body than its back, or as much but
-    nearer (the nearer wall is the inside); returns how many."""
+    """Triangulate, then face every island of the mesh outward: the originals
+    mix both windings (most of a body faces inward), and the engine lights an
+    HD face on its front only, as the AO bake does. Each island first gets one
+    winding, then flips when its faces' fronts see more of the body than their
+    backs, or as much but nearer (the nearer wall is the inside); returns how
+    many faces end up flipped from the original winding."""
     bm = bmesh.new()
     bm.from_mesh(model.data)
+    bmesh.ops.triangulate(bm, faces=bm.faces[:], quad_method="BEAUTY", ngon_method="BEAUTY")
+    bm.normal_update()
+    before = {face: face.normal.copy() for face in bm.faces}
+    islands = _islands(bm)
+    for island in islands:
+        bmesh.ops.recalc_face_normals(bm, faces=island)
     bm.normal_update()
     tree = BVHTree.FromBMesh(bm)
     flip = []
-    for face in bm.faces:
-        n = face.normal
-        if n.length == 0:
-            continue
-        centre, t = face.calc_center_median(), n.orthogonal().normalized()
-        b = n.cross(t)
-        front = _hits(tree, centre, (n, t, b), 1)
-        if not front:
-            continue  # an open front already faces outward
-        back = _hits(tree, centre, (n, t, b), -1)
-        if len(front) > len(back) or (len(front) == len(back) and min(front) < min(back)):
-            flip.append(face)
+    for island in islands:
+        votes, nearest = [0, 0], [math.inf, math.inf]
+        # ponytail: a sample of VOTERS faces decides a large island; vote them all if one ever comes out wrong
+        for face in island[::max(1, len(island) // VOTERS)]:
+            n = face.normal
+            if n.length == 0:
+                continue
+            centre, t = face.calc_center_median(), n.orthogonal().normalized()
+            b = n.cross(t)
+            for k, side in enumerate((1, -1)):
+                hits = _hits(tree, centre, (n, t, b), side)
+                votes[k] += len(hits)
+                nearest[k] = min([nearest[k], *hits])
+        if votes[0] > votes[1] or (votes[0] == votes[1] and nearest[0] < nearest[1]):
+            flip.extend(island)
     bmesh.ops.reverse_faces(bm, faces=flip)
+    bm.normal_update()
+    changed = sum(face.normal.dot(before[face]) < 0 for face in bm.faces)
     bm.to_mesh(model.data)
     bm.free()
-    return len(flip)
+    return changed
 
 
 def _refined(src: bpy.types.Object, corners, job: dict) -> bpy.types.Object:
@@ -192,11 +226,6 @@ def _refined(src: bpy.types.Object, corners, job: dict) -> bpy.types.Object:
     bpy.ops.object.join()  # one object; its pieces stay unconnected
     model = bpy.context.view_layer.objects.active
     model.name = "model"
-    bpy.ops.object.mode_set(mode="EDIT")
-    bpy.ops.mesh.select_all(action="SELECT")
-    bpy.ops.mesh.quads_convert_to_tris()
-    bpy.ops.object.mode_set(mode="OBJECT")
-    # orient after triangulating: splitting an oriented quad turned 8 % of the ghost's triangles inward
     print(f"oriented {_orient_outward(model)} faces outward", flush=True)
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
@@ -205,15 +234,14 @@ def _refined(src: bpy.types.Object, corners, job: dict) -> bpy.types.Object:
     return model
 
 
-def _mask_material() -> bpy.types.Material:
-    """Emission of the source's "transparent" attribute: 1 on the engine's
-    transparent material 2, else 0."""
-    mat = bpy.data.materials.new("transparent")
+def _mask_material(value: float) -> bpy.types.Material:
+    """A plain emission of `value`: 1 for the glass kind (the engine's
+    transparent material 2), 0 for the others."""
+    mat = bpy.data.materials.new(f"mask {value:g}")
     nt = mat.node_tree
     nt.nodes.clear()
-    out, emit, attr = (nt.nodes.new(t) for t in ("ShaderNodeOutputMaterial", "ShaderNodeEmission", "ShaderNodeAttribute"))
-    attr.attribute_name = "transparent"
-    nt.links.new(attr.outputs["Fac"], emit.inputs["Color"])
+    out, emit = nt.nodes.new("ShaderNodeOutputMaterial"), nt.nodes.new("ShaderNodeEmission")
+    emit.inputs["Color"].default_value = (value, value, value, 1.0)
     nt.links.new(emit.outputs[0], out.inputs["Surface"])
     return mat
 
@@ -235,7 +263,7 @@ def _bake(model, src, job: dict, translucent: bool):
     out, images = [], []
     passes = [("EMIT", "EMIT", job["samples_emit"], True), ("AO", "AO", job["samples_ao"], False)]
     if translucent:
-        passes.append(("MASK", "EMIT", job["samples_emit"], True))
+        passes.append(("MASK", "EMIT", 1, True))  # 0 or 1 per texel, thresholded at 0.5: one sample is enough
     for name, kind, samples, from_source in passes:
         image = bpy.data.images.new(name, size, size, alpha=False, float_buffer=True)
         node.image = image
@@ -249,14 +277,10 @@ def _bake(model, src, job: dict, translucent: bool):
         model.select_set(True)
         bpy.context.view_layer.objects.active = model
         extra = {"use_selected_to_active": True, "cage_extrusion": job["cage"], "max_ray_distance": job["ray"]} if from_source else {}
-        saved = [slot.material for slot in src.material_slots]
-        if name == "MASK":
-            mask = _mask_material()
-            for slot in src.material_slots:
-                slot.material = mask
+        if name == "MASK":  # the last pass: the source keeps the mask materials after it
+            for slot, kind_name in zip(src.material_slots, KINDS):
+                slot.material = _mask_material(1.0 if kind_name == "glass" else 0.0)
         bpy.ops.object.bake(type=kind, margin=8, **extra)
-        for slot, material in zip(src.material_slots, saved):
-            slot.material = material
         pixels = np.empty(size * size * 4, np.float32)
         image.pixels.foreach_get(pixels)  # no 16M-float Python list
         out.append(pixels.reshape(size, size, 4))
@@ -287,7 +311,7 @@ def run(work, keep: bool = False) -> None:
         bpy.ops.wm.read_factory_settings(use_empty=True)
     src = _source(job, corners)
     model = _refined(src, corners, job)
-    colour, ao, mask, emission = _bake(model, src, job, bool(corners["transparent"].any()))
+    colour, ao, mask, emission = _bake(model, src, job, bool((corners["kind"] == KINDS.index("glass")).any()))
     me = model.data
     world = np.array(model.matrix_world)
     co = np.zeros(len(me.vertices) * 3, np.float32)
@@ -297,11 +321,12 @@ def run(work, keep: bool = False) -> None:
     me.loops.foreach_get("vertex_index", loop_vertex)
     loop_uv = np.zeros(len(me.loops) * 2, np.float32)
     me.uv_layers.active.data.foreach_get("uv", loop_uv)
-    np.savez(work / "refined.npz", positions=co, loop_vertex=loop_vertex, loop_uv=loop_uv.reshape(-1, 2))
+    refined = {"positions": co, "loop_vertex": loop_vertex, "loop_uv": loop_uv.reshape(-1, 2)}
+    if mask is not None:
+        refined["mask"] = mask.astype(np.float16)
+    np.savez(work / "refined.npz", **refined)
     np.save(work / "color.npy", colour.astype(np.float16))
     np.save(work / "ao.npy", ao.astype(np.float16))
-    if mask is not None:
-        np.save(work / "mask.npy", mask.astype(np.float16))
     if keep:
         _show(model, src, emission)
     else:

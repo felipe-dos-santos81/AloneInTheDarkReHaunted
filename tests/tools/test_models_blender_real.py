@@ -8,15 +8,14 @@ import pathlib
 
 import numpy as np
 import pytest
-from PIL import Image
-
-from aitd_models.blender.remaster import TRANSLUCENT_ALPHA
+from aitd_data.decode import DataNotFound, find_data_dir
 from aitd_models.blender.run import blender_stage, run_bodies
 from aitd_models.export import export_models
 from aitd_models.gltf import read_glb
+from aitd_models.hdm import TRANSLUCENT_ALPHA
 from aitd_models.importer import ImportPaths, run_import
 from aitd_models.manifest import read_manifest
-from aitd_data.decode import DataNotFound, find_data_dir
+from PIL import Image
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 BLENDER = pathlib.Path(os.environ.get("BLENDER", "/Applications/Blender.app/Contents/MacOS/Blender"))

@@ -124,7 +124,7 @@ data/models-ai/bodies/<KEY>/model.glb
 | Orientation | Y up, facing +Z, like `original.glb`; any scale and offset |
 | Triangles | 50,000 at most (import warns above 30,000) |
 | Texture | One base-colour PNG or JPEG, 4096 px at most per side (2048 recommended) |
-| Alpha | Optional. Below 128 a hole; 128–252 translucent, blended at its own alpha (128 is the engine's transparent material 2, 50 %); from 253 opaque. In a texture with translucent texels, a filtered hole edge blends too |
+| Alpha | Optional. Below 128 a hole; 128–252 translucent, blended at its own alpha (128 is the engine's transparent material 2, 50 %); from 253 opaque. The engine tells the classes apart on the unfiltered texel, so a filtered hole edge never blends |
 | Extensions | None required: no Draco, meshopt or KTX2 |
 
 Deliver only for canonical keys, the folders under `bodies/`. Import copies
@@ -226,7 +226,7 @@ Per body (`tools/aitd_models/blender/`):
    it takes, and which hand-made atlas in `Assets/atlases/` paints it
    (`body_`/`flat_`, `ramp_`, `other_`, the key's own or an alias's), all as
    `modelAtlas.cpp` and `renderer.cpp` do. Only plain polygons take an
-   atlas, never a transparent one; the rest keep their palette colour.
+   atlas, never a transparent one (glass); the rest keep their palette colour.
 2. `stage.py` (headless Blender) splits the original into one piece per
    bone group, subdivides each with its open and sharp edges creased, and
    pulls it back onto its own original surface. A triangle spanning groups
@@ -234,9 +234,10 @@ Per body (`tools/aitd_models/blender/`):
    past the import's stretch check. Every group, unless an edit sets it, takes the highest level
    whose predicted count, the spanning triangles plus 6·4^(L−1) for each
    other one, stays within 30,000. The originals mostly face inward, so the
-   stage turns every face to whichever side sees out of the body. It then
-   unwraps the result and bakes the textured original onto it, its ambient
-   occlusion and, for a body with transparent polygons, a mask of them.
+   stage gives each connected island one winding and turns it to whichever
+   side sees out of the body. It then unwraps the result and bakes the
+   textured original onto it, its ambient occlusion and, for a body with
+   transparent polygons or spheres (the glass kind), a mask of them.
 3. `remaster.py` composites the bakes into one 2048 px PNG, the mask as
    alpha 128, and writes `model.glb`.
 
@@ -276,7 +277,7 @@ copied to every alias. Little-endian, no padding:
 | 6 | `u16` group count (1..32; must equal the body's) |
 | 8 | `u64` skeleton hash (the manifest's `skeleton_hash`; the engine compares it with the loaded body's) |
 | 16 | `u32` vertex count (3..150,000), `u32` index count (a multiple of 3, 3..150,000) |
-| 24 | `u32` texture bytes (1 byte..64 MiB), `u8` texture kind (1 PNG, 2 JPEG), 3 bytes that must be zero |
+| 24 | `u32` texture bytes (1 byte..64 MiB), `u8` texture kind (1 PNG, 2 JPEG), `u8` flags (1: some texels are translucent, so the engine draws a blended pass; other bits zero), 2 bytes that must be zero |
 | 32 | vertices, 40 bytes each: `f32x3` position, `f32x3` normal, `f32x2` uv, `u8x4` joints, `u8x4` weights |
 | … | `u32` indices, then the texture bytes as delivered |
 | end − 4 | `u32` CRC-32 (zlib) of every byte before it |

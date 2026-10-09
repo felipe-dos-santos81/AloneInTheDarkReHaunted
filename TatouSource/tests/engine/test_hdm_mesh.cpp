@@ -79,8 +79,19 @@ TEST_CASE("hdm: the shared fixture parses to the values the importer wrote")
     CHECK(mesh.vertices[1].weights[1] == 127);
     CHECK(mesh.indices == std::vector<uint32_t>{0, 1, 2, 2, 1, 3});
     CHECK(mesh.textureKind == kHdmTexturePng);
+    CHECK_FALSE(mesh.translucent);
     REQUIRE(mesh.texture.size() == 69);
     CHECK(mesh.texture[1] == 'P');
+}
+
+TEST_CASE("hdm: the translucent flag reads back")
+{
+    std::vector<uint8_t> d = tinyHdm();
+    put<uint8_t>(d, 29, kHdmFlagTranslucent);
+    HdmMesh mesh;
+    std::string why;
+    REQUIRE_MESSAGE(parseHdm(d.data(), d.size(), &mesh, &why), why);
+    CHECK(mesh.translucent);
 }
 
 TEST_CASE("hdm: CRC-32 is zlib's")
@@ -108,7 +119,7 @@ TEST_CASE("hdm: every broken rule is refused with its reason")
     CHECK(reason(d) == "unsupported version 2");
 
     d = good;
-    put<uint8_t>(d, 29, 1);
+    put<uint8_t>(d, 29, 2); // a flag bit with no meaning
     CHECK(reason(d) == "reserved header bytes are not zero");
 
     d = good;

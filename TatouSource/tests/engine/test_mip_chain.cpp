@@ -43,18 +43,6 @@ TEST_CASE("mip chain: a 1x1 texture is its own only level")
     CHECK(chain == std::vector<uint8_t>{ 1, 2, 3, 4 });
 }
 
-TEST_CASE("translucent texels: alpha 128..252 is translucent, below a hole, above opaque")
-{
-    const struct { uint8_t alpha; bool translucent; } rows[] = {
-        { 255, false }, { 253, false }, { 252, true }, { 128, true }, { 127, false }, { 0, false } };
-    for (const auto& row : rows)
-    {
-        CAPTURE((int)row.alpha);
-        const uint8_t texels[8] = { 9, 9, 9, 255, 9, 9, 9, row.alpha }; // 2x1: an opaque texel and the row's
-        CHECK(hasTranslucentTexels(texels, 2, 1) == row.translucent);
-    }
-}
-
 TEST_CASE("mip chain: a level's alpha keeps the class most of its texels have (hole, translucent, opaque)")
 {
     // 2x2 down to 1x1: averaging would move an opaque border into the blended pass, or a cutout's edge into it
@@ -62,6 +50,8 @@ TEST_CASE("mip chain: a level's alpha keeps the class most of its texels have (h
         { { 255, 255, 128, 128 }, 255 }, // a tie goes to the more opaque class
         { { 255, 128, 128, 200 }, 152 }, // translucent: the mean of the translucent texels
         { { 0, 0, 0, 255 }, 0 },         // a hole
+        { { 127, 127, 128, 128 }, 128 }, // the class boundaries: 127 a hole, 128 translucent,
+        { { 252, 252, 253, 253 }, 253 }, // 252 translucent, 253 opaque
     };
     for (size_t r = 0; r < std::size(rows); ++r)
     {
