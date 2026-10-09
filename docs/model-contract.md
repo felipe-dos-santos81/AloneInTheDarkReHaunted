@@ -279,9 +279,9 @@ Per body (`tools/aitd_models/blender/`):
      glass kind), a mask of them.
 3. `remaster.py` evens out the colour bake's brightness steps (the hand-made
    atlases paint crumpled low-poly facets; a self-guided filter on log
-   brightness over 24-texel windows of the 2048 px bake flattens the weak
-   steps, keeps strong detail such as faces and buttons, and never changes
-   hue), then composites the bakes into one 2048 px PNG, with the mask as
+   brightness over the texels within 24 of each texel on the 2048 px bake
+   flattens the weak steps, keeps strong detail such as faces and buttons,
+   and changes neither hue nor the texture's mean brightness), then composites the bakes into one 2048 px PNG, with the mask as
    alpha 128, and writes `model.glb` with the round surface's normals.
 
 Working files go to `data/models-blender/<KEY>/`. `data/models-ai/run.md`

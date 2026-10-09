@@ -53,6 +53,15 @@ def test_soften_evens_out_painted_facets_and_keeps_strong_detail():
     assert np.allclose(out / out.sum(axis=-1, keepdims=True)[..., :1].clip(1e-12),
                        image / image.sum(axis=-1, keepdims=True)[..., :1].clip(1e-12))  # hue kept
     assert not out[:, :4].any()                 # the background stays empty
+    # smoothing log brightness lowers the plain mean; the texture keeps its own (measured 2 % darker before)
+    covered = image.max(axis=-1) > 0
+    assert np.isclose((out @ LUMA)[covered].mean(), (image @ LUMA)[covered].mean(), rtol=1e-3)
+    # a texel lifted past full brightness is scaled down whole, so composite's clip never shifts its hue
+    lamp = np.tile([0.9, 0.9, 0.9], (16, 16, 1))
+    lamp[:8] = [1.0, 0.6, 0.3]                 # a saturated glow beside brighter grey: lifted to 1.17 unclamped
+    lifted = soften(lamp, 8)
+    assert lifted.max() <= 1.0
+    assert np.allclose(lifted / lifted.sum(axis=-1, keepdims=True), lamp / lamp.sum(axis=-1, keepdims=True))
     flat = np.tile(cloth, (16, 16, 1))
     flat[:, :4] = 0.0
     assert np.allclose(soften(flat, 8), flat)   # and never darkens the texels beside it

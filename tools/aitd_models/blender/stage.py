@@ -137,8 +137,8 @@ def _piece(src: bpy.types.Object, faces: np.ndarray, level: int, flat: bool, job
     done = bpy.data.objects.new("refined", bpy.data.meshes.new_from_object(piece.evaluated_get(bpy.context.evaluated_depsgraph_get())))
     bpy.context.scene.collection.objects.link(done)
     done.matrix_world = src.matrix_world
-    shape = np.empty(len(done.data.vertices) * 3, np.float32)
-    done.data.vertices.foreach_get("co", shape)
+    round_co = np.empty(len(done.data.vertices) * 3, np.float32)
+    done.data.vertices.foreach_get("co", round_co)  # no subdivision, or kept flat: the round surface is the piece
     if level > 0 and not flat:
         mesh.attributes["crease_edge"].data.foreach_set("value", open_edges)
         mesh.update()
@@ -146,8 +146,8 @@ def _piece(src: bpy.types.Object, faces: np.ndarray, level: int, flat: bool, job
         smooth = piece.evaluated_get(bpy.context.evaluated_depsgraph_get()).data
         if len(smooth.vertices) != len(done.data.vertices):
             raise RuntimeError(f"the round surface has {len(smooth.vertices)} vertices, the piece {len(done.data.vertices)}")
-        smooth.vertices.foreach_get("co", shape)
-    done.data.attributes.new("round", "FLOAT_VECTOR", "POINT").data.foreach_set("vector", shape)
+        smooth.vertices.foreach_get("co", round_co)
+    done.data.attributes.new("round", "FLOAT_VECTOR", "POINT").data.foreach_set("vector", round_co)
     bpy.data.objects.remove(piece)
     bpy.data.objects.remove(target)
     return done
@@ -263,19 +263,24 @@ def _mask_material(value: float) -> bpy.types.Material:
     return mat
 
 
+def _round_co(me: bpy.types.Mesh) -> np.ndarray:
+    """The mesh's `round` attribute (see _piece) as (V, 3), object space."""
+    round_co = np.zeros(len(me.vertices) * 3, np.float32)
+    me.attributes["round"].data.foreach_get("vector", round_co)
+    return round_co.reshape(-1, 3)
+
+
 def _shade_round(model: bpy.types.Object) -> None:
     """Shade the model smooth with the round surface's normals: per vertex
     the area-weighted normal of its `round` attribute over the model's
     triangles, the normals remaster.model_glb delivers."""
     me = model.data
-    shape = np.zeros(len(me.vertices) * 3, np.float32)
-    me.attributes["round"].data.foreach_get("vector", shape)
-    shape = shape.reshape(-1, 3)
+    round_co = _round_co(me)
     corner = np.zeros(len(me.loops), np.int32)
     me.loops.foreach_get("vertex_index", corner)
     tri = corner.reshape(-1, 3)  # _orient_outward triangulated the model
-    face = np.cross(shape[tri[:, 1]] - shape[tri[:, 0]], shape[tri[:, 2]] - shape[tri[:, 0]])
-    normal = np.zeros_like(shape)
+    face = np.cross(round_co[tri[:, 1]] - round_co[tri[:, 0]], round_co[tri[:, 2]] - round_co[tri[:, 0]])
+    normal = np.zeros_like(round_co)
     for k in range(3):
         np.add.at(normal, tri[:, k], face)
     normal /= np.maximum(np.linalg.norm(normal, axis=1, keepdims=True), 1e-12)
@@ -361,10 +366,8 @@ def run(work, keep: bool = False) -> None:
     me.loops.foreach_get("vertex_index", loop_vertex)
     loop_uv = np.zeros(len(me.loops) * 2, np.float32)
     me.uv_layers.active.data.foreach_get("uv", loop_uv)
-    shape = np.zeros(len(me.vertices) * 3, np.float32)
-    me.attributes["round"].data.foreach_get("vector", shape)
-    shape = shape.reshape(-1, 3) @ world[:3, :3].T + world[:3, 3]
-    refined = {"positions": co, "round": shape, "loop_vertex": loop_vertex, "loop_uv": loop_uv.reshape(-1, 2)}
+    round_co = _round_co(me) @ world[:3, :3].T + world[:3, 3]
+    refined = {"positions": co, "round": round_co, "loop_vertex": loop_vertex, "loop_uv": loop_uv.reshape(-1, 2)}
     if mask is not None:
         refined["mask"] = mask.astype(np.float16)
     np.savez(work / "refined.npz", **refined)
