@@ -5,7 +5,9 @@ This document covers two directions:
 - what `make export-models` hands a model generator;
 - what the generator must deliver for `make import-models` to accept.
 
-It is the reference for external generators such as `aitd-texture-enhancement`.
+It is the reference for any generator: the in-repo one, `make blender-models`
+(see "The in-repo generator: Blender"), and external ones such as
+`aitd-texture-enhancement`.
 Paths are relative to the export folder (`data/models/`) and the delivery
 folder (`data/models-ai/`). Contract version: **1**.
 
@@ -206,6 +208,55 @@ engine folder is not in the report). A gate must read the process exit code
 (0 nothing failed, 1 at least one body failed, 2 a usage or data error) to
 know a delivery is clean, and look in the output folder for the `.hdm` files
 themselves; neither `status` nor `files` says a file was written.
+
+## The in-repo generator: Blender
+
+`make blender-models [bodies=KEY,...] [BLENDER=PATH]` delivers every
+canonical character body (`kind: character`) into `data/models-ai/`, then
+`make check-models` and `make import-models` judge and import it as any
+delivery. It needs the export and Blender (5.2 or later; `BLENDER` defaults
+to the macOS app), not the game data.
+
+Per body (`tools/aitd_models/blender/`):
+
+1. `remaster.py` (outside Blender) works out, per original triangle, the
+   engine's atlas UVs for the front and the back painting, how much of each
+   it takes, and which hand-made atlas in `Assets/atlases/` paints it
+   (`body_`/`flat_`, `ramp_`, `other_`, the key's own or an alias's), all as
+   `modelAtlas.cpp` and `renderer.cpp` do. Only plain polygons take an
+   atlas, never a transparent one; the rest keep their palette colour.
+2. `stage.py` (headless Blender) splits the original into one piece per
+   bone group, subdivides each with its open and sharp edges creased, and
+   pulls it back onto its own original surface. A triangle spanning groups
+   stays as it is: the engine stretches it, and subdivided it would tear
+   past the import's stretch check. The stage then unwraps the result and
+   bakes the textured original onto it, plus its ambient occlusion.
+3. `remaster.py` composites the bakes into one 2048 px PNG and writes
+   `model.glb`.
+
+Working files go to `data/models-blender/<KEY>/`; `data/models-ai/run.md`
+lists every body: delivered (triangles, texture source, seconds), failed
+(the error) or skipped.
+
+**Edits.** `tools/aitd_models/blender/edits/<KEY>.json` adjusts one body;
+none is needed by default. Its fields, all optional (an unknown one fails
+the body):
+
+| Field | Meaning |
+|---|---|
+| `subdivide` | `{"gNN": level}`: a group's level (0..4) instead of the budget's |
+| `crease` | `["gNN", ...]`: groups kept flat (plain subdivision) |
+| `projection` | `{"gNN": "front" \| "back" \| "blend" \| "palette"}`: which painting a group takes |
+| `skip` | `{"reason": "..."}`: no delivery; the body stays classic |
+
+**Through MCP for Blender**, run the same stage in the open Blender and
+leave its scene up to look at, after `make blender-models bodies=KEY` has
+written the body's working files:
+
+```python
+import sys; sys.path.insert(0, "<repo>/tools/aitd_models/blender")
+import stage; stage.run("<repo>/data/models-blender/LISTBODY_011", keep=True)
+```
 
 ## Import output: body_<KEY>.hdm
 

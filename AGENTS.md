@@ -41,7 +41,11 @@ Guidance for anyone (human or agent) changing this repository.
 - `tools/` + `tests/tools/` — the Python texture pipeline and the HD model
   export and import (`tools/aitd_models/`, `make export-models`,
   `make import-models`; contract in `docs/model-contract.md`, sign-off in
-  `docs/hd-models-checklist.md`); `make test-tools` runs both suites.
+  `docs/hd-models-checklist.md`), and the in-repo model generator
+  (`tools/aitd_models/blender/`, `make blender-models`: Blender refines the
+  original bodies and bakes the hand-made `Assets/atlases` onto them; its
+  `stage.py` runs inside Blender and imports only `bpy`, `bmesh` and numpy);
+  `make test-tools` runs both suites.
 - `docs/` — contracts and checklists (`docs/mouse-gameplay-checklist.md`).
 - `graphify-out/` (any depth) — generated knowledge graph (`/graphify`);
   git-ignored, never commit it.
