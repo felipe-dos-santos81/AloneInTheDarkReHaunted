@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-only
-"""Export the original AITD1 animated bodies for the image-to-3D generator,
-and import what it delivers.
+"""Export the original AITD1 animated bodies for the model generator, and
+import what it delivers.
 
     tools/models.py export   [--data DIR] [--out DIR] [--bodies KEY[,KEY...]]
                              [--size PX] [--ssaa N]

@@ -38,14 +38,14 @@ Guidance for anyone (human or agent) changing this repository.
 - `TatouSource/FitdLib/physics/` — collision rules, engine-free and header-only,
   unit-tested in `TatouSource/tests/engine/`: `collisionEscape.h` (how an
   actor already inside a blocker may move, used by `GereCollision`).
-- `tools/` + `tests/tools/` — the Python texture pipeline and the HD model
-  export and import (`tools/aitd_models/`, `make export-models`,
+- `tools/` + `tests/tools/` — the Python HD model export and import
+  (reading the game data through `tools/aitd_textures/`) (`tools/aitd_models/`, `make export-models`,
   `make import-models`; contract in `docs/model-contract.md`, sign-off in
   `docs/hd-models-checklist.md`), and the in-repo model generator
   (`tools/aitd_models/blender/`, `make blender-models`: Blender refines the
   original bodies and bakes the hand-made `Assets/atlases` onto them; its
   `stage.py` runs inside Blender and imports only `bpy`, `bmesh`, `mathutils` and numpy);
-  `make test-tools` runs both suites.
+  `make test-tools` runs their tests.
 - `docs/` — contracts and checklists (`docs/mouse-gameplay-checklist.md`).
 - `graphify-out/` (any depth) — generated knowledge graph (`/graphify`);
   git-ignored, never commit it.
@@ -57,7 +57,7 @@ make help                # every target, grouped, with its arguments
 make build-fitd          # build the game
 make run [data=DIR]      # play from the folder of .PAK files (default data/aitd1)
 make test-engine         # C++ unit tests (doctest) for engine-free modules
-make test-tools          # Python texture-tool tests
+make test-tools          # Python tool tests
 make test                # both
 ```
 

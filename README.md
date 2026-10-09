@@ -21,8 +21,8 @@ focused on *Alone in the Dark 1*. It adds:
   unchanged.
 - **A native macOS port** for Apple Silicon (arm64)
   ([BUILDING.md](BUILDING.md#macos-apple-silicon)).
-- **HD asset tools.** You can export, upscale and import backgrounds and
-  character models ([HD assets](#hd-assets)).
+- **HD asset tools.** You can pack the HD backgrounds and generate, check and
+  import HD character models ([HD assets](#hd-assets)).
 
 *Original project © 2026 Infogrames / Spacefarer Retro Remasters LLC, by Jake
 Jackson (jake@spacefarergames.com). It is a free, non-profit project. You can
@@ -143,26 +143,14 @@ Settings are saved in `aitd_remaster.cfg` next to the game data:
 
 ## HD assets
 
-**Backgrounds.** Upscale the original 320x200 camera views and screens with
-any tool. Then import them; the engine loads them from `backgrounds_hd.hda`
-when `graphics.hdBackgrounds = true`.
+**Backgrounds.** The upscaled camera views and screens live in
+`Assets/backgrounds_hd` (the pipeline that made them was retired; it is in git
+history). The engine loads them from `backgrounds_hd.hda` when
+`graphics.hdBackgrounds = true`.
 
 ```bash
-make tools-deps        # once: Python venv for the tools
-make export-textures   # originals -> data/textures/ (+ manifest.json)
-# upscale data/textures/** into data/textures-ai/**, keeping the file names
-make check-textures    # validate data/textures-ai, writing nothing
-make import-textures   # copy into Assets/backgrounds_hd, derive the _DARK variants
 make hd-install       # pack backgrounds_hd.hda into the app
 ```
-
-- Any 16:10 resolution works. Integer multiples of 320x200 are best.
-- A missing file keeps the current HD art.
-- `dark=all|none` controls the `_DARK` variants.
-- Animated backgrounds (`anim_<NAME>/`) are exported as frame jobs.
-- `import-textures` also accepts m-aitd's export layout.
-
-The upscaler contract is in [docs/texture-contract.md](docs/texture-contract.md).
 
 **Character models.** `make export-models` writes the animated bodies for a
 model generator. `make check-models` and `make import-models` validate the

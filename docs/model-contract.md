@@ -1,13 +1,12 @@
-# Model contract: export → image-to-3D generator → import
+# Model contract: export → model generator → import
 
 This document covers two directions:
 
 - what `make export-models` hands a model generator;
 - what the generator must deliver for `make import-models` to accept.
 
-It is the reference for any generator: the in-repo one, `make blender-models`
-(see "The in-repo generator: Blender"), and external ones such as
-`aitd-texture-enhancement`.
+It is the reference for any generator, such as the in-repo one,
+`make blender-models` (see "The in-repo generator: Blender").
 Paths are relative to the export folder (`data/models/`) and the delivery
 folder (`data/models-ai/`). Contract version: **1**.
 

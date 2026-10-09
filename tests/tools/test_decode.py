@@ -1,13 +1,7 @@
 import numpy as np
 import pytest
 
-from aitd_textures.decode import (
-    SCREEN_PIXELS,
-    DataNotFound,
-    decode_image,
-    decode_palette,
-    find_data_dir,
-)
+from aitd_textures.decode import DataNotFound, decode_palette, find_data_dir
 
 
 def test_find_data_dir_accepts_the_indark_folder_itself(tmp_path):
@@ -43,23 +37,3 @@ def test_decode_palette_scales_6bit_values_by_four():
 def test_decode_palette_rejects_wrong_length():
     with pytest.raises(ValueError, match="768"):
         decode_palette(b"\0" * 767)
-
-
-def _palette():
-    return (np.arange(768) % 256).astype(np.uint8).reshape(256, 3)
-
-
-def test_decode_image_looks_up_palette():
-    img = decode_image(bytes([7]) * SCREEN_PIXELS, _palette())
-    assert img.shape == (200, 320, 3) and img.dtype == np.uint8
-    assert (img == _palette()[7]).all()
-
-
-def test_decode_image_honours_offset():
-    raw = b"\xff" * 10 + bytes([7]) * SCREEN_PIXELS
-    assert (decode_image(raw, _palette(), offset=10) == _palette()[7]).all()
-
-
-def test_decode_image_rejects_short_input():
-    with pytest.raises(ValueError, match="64000"):
-        decode_image(b"\0" * 100, _palette())

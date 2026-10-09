@@ -96,7 +96,7 @@ def test_a_foreign_manifest_is_rejected(tmp_path):
 def test_writes_the_raw_body_and_the_palette(tmp_path):
     import hashlib
     from aitd_models.export import BODY_NAME, PALETTE_NAME
-    from aitd_textures.catalog import PALETTE_ENTRY, PALETTE_PAK
+    from aitd_textures.decode import PALETTE_ENTRY, PALETTE_PAK
     from aitd_textures.pak import Pak
     result, out, _lines = run(tmp_path)
     data = tmp_path / "INDARK"

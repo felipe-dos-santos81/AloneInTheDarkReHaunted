@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only
-"""Export every animated AITD1 body for the image-to-3D generator:
+"""Export every animated AITD1 body for the model generator:
 bodies/<KEY>/original.glb, body.bin (the raw entry), reference/<view>.png,
 reference/views.json, and manifest.json with palette.bin (the raw palette
 entry) beside it, so the import can run from the export alone. Alias groups (byte-identical bodies) are exported once, under
@@ -18,8 +18,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from aitd_textures.catalog import PALETTE_ENTRY, PALETTE_PAK
-from aitd_textures.decode import decode_palette
+from aitd_textures.decode import PALETTE_ENTRY, PALETTE_PAK, decode_palette
 from aitd_textures.explode import ExplodeError
 from aitd_textures.files import atomic_write_bytes, save_png
 from aitd_textures.pak import Pak, PakError

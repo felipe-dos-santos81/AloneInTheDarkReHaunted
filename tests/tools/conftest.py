@@ -1,4 +1,4 @@
-"""Test fixtures for the texture tools. Puts tools/ on sys.path so the
+"""Test fixtures for the texture and model tools. Puts tools/ on sys.path so the
 package imports without installation."""
 import pathlib
 import sys
@@ -17,7 +17,3 @@ import helpers  # noqa: E402  (tests/tools/ is on sys.path: no __init__.py here)
 def pak_bytes():
     return helpers.pak_bytes
 
-
-@pytest.fixture
-def synthetic_data_dir(tmp_path):
-    return helpers.write_synthetic_data_dir(tmp_path / "INDARK")
