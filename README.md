@@ -167,6 +167,10 @@ make build-fitd       # the build copies the models next to the game
 `OFL.txt`) for the TrueType text (`font.enableTTF`); every build copies it next
 to the game.
 
+**Portuguese text** is in `Assets/lang/pt-BR`; `make lang-pack` checks it and
+rebuilds the copy compiled into the game. In-game sign-off:
+[docs/translation-checklist.md](docs/translation-checklist.md).
+
 ## Remaster features
 
 | Feature | Details |
@@ -182,6 +186,7 @@ to the game.
 | Combat assists | Automatic counter-attack and slower enemy attacks (AITD1) |
 | Maps and hints | Interactive mansion maps; highlighted interactable objects |
 | Voice-over | CD voice-over for books and letters |
+| Languages | English, French, Italian, Spanish, German, and Brazilian Portuguese (this fork) |
 | Quality of life | Fullscreen toggle, transparent menus, crash log (`crash_log.txt`), update check |
 
 ## Supported games

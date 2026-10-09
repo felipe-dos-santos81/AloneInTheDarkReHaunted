@@ -38,12 +38,25 @@ Guidance for anyone (human or agent) changing this repository.
   likewise; `attackPace.*` is its engine adapter. The adapters are the only
   assist files that touch engine globals. In-game sign-off:
   `docs/combat-assist-checklist.md`.
+- `TatouSource/FitdLib/text/` — text, engine-free (standard headers only) and
+  unit-tested in `TatouSource/tests/engine/`: `fontCompose.*` (Brazilian
+  Portuguese in the bitmap font: composes ã and õ from a/o and the tilde of ñ,
+  and draws accented capitals as the plain capital; used only while Portuguese
+  is the language) and `uiText.*` (the string table of the remaster menus,
+  `kUiRows`, with fr/it/es/de/pt columns). Menus reach it through `uiTr.h`:
+  `tr()` gives UTF-8 for ImGui, `trDos()` the game's codepage for the bitmap
+  menus, game thread only. A new menu string goes through `tr()` or `trDos()`
+  with a row in `kUiRows`. `tools/aitd_data/lang.py` lists the same composed
+  codes, and `tests/tools/test_lang.py` checks they agree. The Portuguese text
+  is in `Assets/lang/pt-BR` (`make lang-pack`); in-game sign-off:
+  `docs/translation-checklist.md`.
 - `TatouSource/FitdLib/physics/` — collision rules, engine-free and header-only,
   unit-tested in `TatouSource/tests/engine/`: `collisionEscape.h` (how an
   actor already inside a blocker may move, used by `GereCollision`).
 - `tools/` + `tests/tools/` — the Python HD model tools, tested by
   `make test-tools`. `tools/aitd_data/` reads the game data (PAKs,
-  palette); `tools/aitd_models/` exports the bodies and imports the
+  palette; `lang.py` the game text, via `make lang-extract` and `make
+  lang-pack`); `tools/aitd_models/` exports the bodies and imports the
   replacements (`make export-models`, `make import-models`; contract in
   `docs/model-contract.md`, sign-off in `docs/hd-models-checklist.md`);
   `tools/aitd_models/blender/` is the in-repo generator (`make
