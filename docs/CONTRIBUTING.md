@@ -14,7 +14,7 @@ Thank you for your interest in contributing to ALONE IN THE DARK REHAUNTED! This
 
 2. **Build** the project — see [BUILDING.md](BUILDING.md) for platform-specific instructions.
 
-3. **Obtain game data** — you need original game files from Steam or GOG (AITD1 is the easiest to start with).
+3. **Obtain game data** — you need original game files from Steam or GOG (AITD1 is the easiest to start with); see [README → Game data](../README.md#game-data).
 
 4. **Read the architecture guide** — [ARCHITECTURE.md](ARCHITECTURE.md) gives a full overview of the code modules and data flow.
 
@@ -30,7 +30,7 @@ Thank you for your interest in contributing to ALONE IN THE DARK REHAUNTED! This
 
 2. Make your changes, keeping commits small and focused.
 
-3. Build and run the game to verify nothing is broken.
+3. Run `make test` (engine and tool tests), then build and run the game to verify nothing is broken. [AGENTS.md](../AGENTS.md) lists this fork's firm rules and its testing guidelines.
 
 4. Push your branch and open a **Pull Request** against `main`.
 
@@ -103,7 +103,6 @@ Use `#pragma once` for new headers, or traditional include guards matching the e
 |------|-------------|
 | **AITD2 / AITD3 completability** | These games have many unimplemented Life macros and missing features |
 | **Graphics correctness** | Polygon rendering, palette handling, and depth-masking issues |
-| **macOS support** | Build works but is largely untested at runtime |
 | **Time Gate: Knight's Chase** | Very early; most engine extensions are unimplemented |
 | **Testing** | Any playtesting and bug reports are valuable |
 

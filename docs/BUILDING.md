@@ -10,7 +10,7 @@ This document covers how to build the Tatou engine (a FITD fork) on every suppor
 |-------------|----------------|-------|
 | **Git** | 2.x | Must support `--recurse-submodules` |
 | **CMake** | 3.25+ | Needed by the CMake presets (CI uses the same presets) |
-| **C++20 compiler** | See per-platform sections | MSVC, GCC, or Clang |
+| **C++17 compiler** | See per-platform sections | MSVC, GCC, or Clang |
 
 Clone the repository **with submodules** — several third-party libraries (bgfx, SDL3, SoLoud, ImGui, zlib, doctest) are pulled in as Git submodules:
 
@@ -50,7 +50,7 @@ make run data=/path/to/game/data
 
 3. Open `TatouSource\build\vs2022\FITD.sln`.
 4. Set **Fitd** as the startup project.
-5. Set the **Working Directory** (Project Properties → Debugging → Working Directory) to the folder containing your game data (e.g. your AITD1 Steam install directory).
+5. Set the **Working Directory** (Project Properties → Debugging → Working Directory) to the folder containing your game data (e.g. your AITD1 Steam install directory). The build copies the HD character models next to `Tatou.exe`, and the game finds them there from any working directory.
 6. Select a build configuration (**Debug** or **Release**) and press **F5**.
 
 > The output executable is named `Tatou.exe`.
@@ -104,7 +104,7 @@ cmake --build TatouSource/build/linux-release --target Fitd --parallel $(nproc)
 
 ### 3. Run
 
-Run from a writable folder holding the original game data — where the files come from and how to place them is covered in [README → Adding the Original Game Files](README.md#adding-the-original-game-files):
+Run from a writable folder holding the original game data — where the files come from and how to place them is covered in [README → Game data](../README.md#game-data). The HD character models are found next to the executable:
 
 ```bash
 cd /path/to/game-data
@@ -208,7 +208,7 @@ The project includes a GitHub Actions workflow (`.github/workflows/build.yml`) t
 - **Windows** (VS2022, RelWithDebInfo), **Ubuntu** (Release) and **macOS** (Apple Silicon, Release) — builds `Fitd` and runs the doctest engine suite (`engine_tests`)
 - **Tool tests** — runs the pytest suite for `tools/` on Ubuntu (real-data tests skip without game files)
 
-For agents, `AGENTS.md` records the two platform gotchas the workflow encodes: bounded `--parallel` on Makefile generators, and the Windows `min`/`max`/`near`/`far` macro rules.
+For agents, [AGENTS.md](../AGENTS.md) records the two platform gotchas the workflow encodes: bounded `--parallel` on Makefile generators, and the Windows `min`/`max`/`near`/`far` macro rules.
 
 ---
 

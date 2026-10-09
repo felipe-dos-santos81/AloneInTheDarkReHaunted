@@ -50,8 +50,9 @@ Guidance for anyone (human or agent) changing this repository.
   blender-models`: Blender refines the original bodies and bakes the
   hand-made `Assets/atlases` onto them; its `stage.py` runs inside Blender
   and imports only `bpy`, `bmesh`, `mathutils` and numpy).
-- `docs/` — contracts, checklists (`docs/mouse-gameplay-checklist.md`) and
-  the `aitd_remaster.cfg` manual (`docs/configuration.md`: a new key goes there);
+- `docs/` — the guides (`BUILDING.md`, `ARCHITECTURE.md`, `REMASTER.md`,
+  `CONTRIBUTING.md`), contracts, checklists (`docs/mouse-gameplay-checklist.md`)
+  and the `aitd_remaster.cfg` manual (`docs/configuration.md`: a new key goes there);
   `docs/screenshots/` holds the README's original-vs-HD pairs.
 - `graphify-out/` (any depth) — generated knowledge graph (`/graphify`);
   git-ignored, never commit it.

@@ -37,7 +37,7 @@ focused on *Alone in the Dark 1*. It adds:
   slower enemy attacks make fights easier. Keyboard and gamepad play are
   unchanged.
 - **A native macOS port** for Apple Silicon (arm64)
-  ([BUILDING.md](BUILDING.md#macos-apple-silicon)).
+  ([docs/BUILDING.md](docs/BUILDING.md#macos-apple-silicon)).
 - **HD asset tools.** You can pack the HD backgrounds and generate, check and
   import HD character models ([HD assets](#hd-assets)).
 
@@ -90,7 +90,7 @@ solution. Set **Fitd** as the startup project, and set its working directory
 The executable is `Tatou.exe`. The build copies the HD models next to it, and
 the game finds them there.
 
-[BUILDING.md](BUILDING.md) has the full instructions for every platform.
+[docs/BUILDING.md](docs/BUILDING.md) has the full instructions for every platform.
 
 ## Controls
 
@@ -149,7 +149,7 @@ saved in `aitd_remaster.cfg` next to the game data; every key, with its default,
 is in [docs/configuration.md](docs/configuration.md). HD backgrounds are off and
 HD character models on by default (`graphics.hdBackgrounds`, `graphics.hdModels`).
 
-[REMASTER.md](REMASTER.md) documents the remaster features in detail.
+[docs/REMASTER.md](docs/REMASTER.md) documents the remaster features in detail.
 
 ## HD assets
 
@@ -209,15 +209,15 @@ AloneInTheDarkReHaunted/
 ├── tools/               # Python HD model tools
 ├── tests/tools/         # its pytest suite (make test-tools)
 ├── Assets/              # HD backgrounds, masks, atlases and models
-├── docs/                # contracts, in-game checklists, screenshots
+├── docs/                # guides, contracts, in-game checklists, screenshots
 └── data/                # your game files and exports (git-ignored)
 ```
 
-[ARCHITECTURE.md](ARCHITECTURE.md) explains the engine's modules and data flow.
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) explains the engine's modules and data flow.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). [AGENTS.md](AGENTS.md) holds this
+See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md). [AGENTS.md](AGENTS.md) holds this
 fork's firm rules, such as never locking the cursor and keeping keyboard play
 unchanged. Run `make test` before sending a change.
 

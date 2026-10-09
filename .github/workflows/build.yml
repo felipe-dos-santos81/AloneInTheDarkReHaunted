@@ -1,6 +1,6 @@
 # Builds the Tatou engine and runs the test suites on every supported
 # desktop platform. Mirrors the local flow: `make build-fitd`,
-# `make test-engine`, `make test-tools` (see BUILDING.md and the Makefile).
+# `make test-engine`, `make test-tools` (see docs/BUILDING.md and the Makefile).
 name: Build
 
 on:

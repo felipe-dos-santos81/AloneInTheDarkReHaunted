@@ -26,7 +26,7 @@ case "$(uname -s)" in
                 libx11 libxext libxrandr libxinerama libxcursor libxi \
                 mesa glu alsa-lib libpulse wayland libxkbcommon pipewire
         else
-            echo "Unsupported Linux distribution - see BUILDING.md"
+            echo "Unsupported Linux distribution - see docs/BUILDING.md"
             exit 1
         fi
         ;;
@@ -34,7 +34,7 @@ case "$(uname -s)" in
         brew install cmake ninja pkg-config
         ;;
     *)
-        echo "Unsupported platform $(uname -s) - see BUILDING.md"
+        echo "Unsupported platform $(uname -s) - see docs/BUILDING.md"
         exit 1
         ;;
 esac
