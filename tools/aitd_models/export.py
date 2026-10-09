@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only
-"""Export every animated AITD1 body for the image-to-3D generator:
+"""Export every animated AITD1 body for the model generator:
 bodies/<KEY>/original.glb, body.bin (the raw entry), reference/<view>.png,
 reference/views.json, and manifest.json with palette.bin (the raw palette
 entry) beside it, so the import can run from the export alone. Alias groups (byte-identical bodies) are exported once, under

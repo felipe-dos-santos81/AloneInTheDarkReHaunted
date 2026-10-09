@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
 """original.glb: an AITD1 body as a skinned glTF, for Blender and for the
-image-to-3D reference.
+import's reference.
 
 Axes: glTF = FLIP @ engine * METRES_PER_UNIT, where FLIP = diag(1, -1, -1)
 (a 180-degree turn about X, so winding is kept). The engine is y-down and its
