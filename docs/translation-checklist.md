@@ -16,7 +16,7 @@ checks they fit.
 | # | What to check | Result | Notes |
 |---|---|---|---|
 | 1 | Language menu: six rows, "Português" last; pick it by keyboard, then again by mouse | | |
-| 2 | Language menu: the five flags line up with English, Français, Italiano, Español and Deutsch (no flag for Português) | | |
+| 2 | Language menu: each of the six flags lines up with its language, the Brazilian one beside Português | | |
 | 3 | Language menu with `graphics.hdBackgrounds = false` (no HD backgrounds, so the classic frame): the frame encloses all six rows | | |
 | 4 | Start menu (including "Voltar ao macOS/Linux" off Windows) and the loading screen ("Aguarde...") are in Portuguese, centred | | |
 | 5 | Picking up an object: the found-object box is in Portuguese and the name fits the box | | |

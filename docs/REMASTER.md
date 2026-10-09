@@ -69,7 +69,7 @@ Each effect has its own switch and settings under `postprocessing.*`:
 
 English, French, Italian, Spanish, German and Brazilian Portuguese. Pick one
 in the language menu; **Português** is listed below the five original
-languages so the flags painted in the menu art stay aligned (it has no flag).
+languages, with its Brazilian flag painted into the menu art like the others.
 
 - Portuguese plays the English CD voice-over, as Italian, Spanish and German do.
 - The bitmap font has no ã, õ or accented capitals: ã and õ are composed from
