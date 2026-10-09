@@ -74,8 +74,9 @@ languages so the flags painted in the menu art stay aligned (it has no flag).
 - The bitmap font has no ã, õ or accented capitals: ã and õ are composed from
   a/o and the tilde of ñ, and À Á Â Ã Ê Í Ó Ô Õ Ú draw as the plain capital.
   TrueType text (`font.enableTTF`) draws them all.
-- The remaster menus (system, controls, "Please Wait...", F1) are translated
-  too, in French, Italian, Spanish, German and Portuguese.
+- The remaster's bitmap menus (system, controls, "Please Wait...") are
+  translated too, in French, Italian, Spanish, German and Portuguese; the F1
+  options dialog only in Portuguese (English in the other languages).
 - The text is in `Assets/lang/pt-BR`; `make lang-pack` checks it and writes the
   copy compiled into the game, and `make lang-extract` writes the English and
   French text as UTF-8 for reference. In-game sign-off:

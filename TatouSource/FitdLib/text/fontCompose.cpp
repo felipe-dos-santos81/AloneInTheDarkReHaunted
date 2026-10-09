@@ -1,4 +1,3 @@
-// TatouSource/FitdLib/text/fontCompose.cpp
 ///////////////////////////////////////////////////////////////////////////////
 // Alone In The Dark Re-Haunted
 // Extends the AITD1 bitmap font for Portuguese.
@@ -30,6 +29,7 @@ bool readLayout(const unsigned char* f, size_t size, Layout* l)
     l->stride = l->wordStride ? f[4] | (f[5] << 8) : f[3];
     l->table = (f[6] << 8) | f[7];
     // The strip runs from byte 8 to the table, which holds a u16 per code from align.
+    // The game font's table stops at code 0xFE, 2 bytes short of 0xFF: allow that.
     return l->stride != 0 && l->height != 0 && l->table == 8 + l->height * l->stride
         && (size_t)l->table + (256 - l->align) * 2 <= size + 2;
 }

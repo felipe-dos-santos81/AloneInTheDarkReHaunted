@@ -1,4 +1,3 @@
-// TatouSource/FitdLib/text/fontCompose.h
 ///////////////////////////////////////////////////////////////////////////////
 // Alone In The Dark Re-Haunted
 // Extends the AITD1 bitmap font for Portuguese: composes the glyphs it lacks
