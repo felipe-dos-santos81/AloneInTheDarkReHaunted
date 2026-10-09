@@ -110,3 +110,46 @@ def embedded_cpp(name: str, data: bytes) -> str:
             "///////////////////////////////////////////////////////////////////////////////\n\n"
             f"extern const unsigned char embdata_{name}_PAK[] = {{\n{body}\n}};\n\n"
             f"extern const unsigned long long embdata_{name}_PAK_size = {len(data)}ULL;\n")
+
+
+FONT_ENTRY = 5          # ITD_RESS.PAK entry: the AITD1 bitmap font
+WORD_SPACE, LETTER_SPACE = 2, 0   # main.cpp SetFontSpace(2, 0) for AITD1
+
+
+def font_widths(font: bytes) -> list[int]:
+    """Glyph widths per code, as font.cpp reads them (SetFont / ExtGetSizeFont),
+    with the composed and plain-capital codes the engine adds for Portuguese."""
+    align = struct.unpack_from("<h", font, 0)[0] & 0xFF
+    table = struct.unpack_from(">H", font, 6)[0]
+    widths = [0] * 256
+    for c in range(align, 256):
+        pos = table + (c - align) * 2
+        if pos + 2 <= len(font):
+            widths[c] = font[pos] >> 4
+    for code, (base, _mark) in COMPOSED.items():
+        widths[code] = widths[base]
+    for code, plain in PLAIN_CAPITALS.items():
+        widths[code] = widths[plain]
+    return widths
+
+
+def text_width(line: bytes, widths: list[int]) -> int:
+    """ExtGetSizeFont: a zero-width code (space) adds the word space."""
+    return sum(widths[b] + LETTER_SPACE + (WORD_SPACE if widths[b] == 0 else 0) for b in line)
+
+
+def _messages(entry: bytes) -> dict[int, bytes]:
+    body = entry[:entry.find(0x1A)] if 0x1A in entry else entry
+    out = {}
+    for line in body.split(b"\r\n"):
+        m = re.match(rb"@(\d+):(.*)", line)
+        if m:
+            out[int(m.group(1))] = m.group(2)
+    return out
+
+
+def too_wide(pt0: bytes, en0: bytes, widths: list[int], allowed: set[int]) -> list[int]:
+    """Message numbers drawn wider in Portuguese than in English, minus `allowed`."""
+    pt, en = _messages(pt0), _messages(en0)
+    return [n for n in sorted(pt) if n in en and n not in allowed
+            and text_width(pt[n], widths) > text_width(en[n], widths)]
