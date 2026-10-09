@@ -153,9 +153,10 @@ def _refined(src: bpy.types.Object, corners, job: dict) -> bpy.types.Object:
     return model
 
 
-def _bake(model, src, job: dict) -> tuple[np.ndarray, np.ndarray]:
+def _bake(model, src, job: dict):
     """The source's emission onto the model (selected to active), then the
-    model's own ambient occlusion: linear float images, rows bottom-up."""
+    model's own ambient occlusion: linear float images, rows bottom-up.
+    Returns both arrays and the emission image."""
     scene = bpy.context.scene
     scene.render.engine = "CYCLES"
     scene.cycles.device = "CPU"
@@ -164,10 +165,11 @@ def _bake(model, src, job: dict) -> tuple[np.ndarray, np.ndarray]:
     node = target.node_tree.nodes.new("ShaderNodeTexImage")
     model.data.materials.clear()
     model.data.materials.append(target)
-    out = []
+    out, images = [], []
     for kind, samples, from_source in (("EMIT", job["samples_emit"], True), ("AO", job["samples_ao"], False)):
         image = bpy.data.images.new(kind, size, size, alpha=False, float_buffer=True)
         node.image = image
+        images.append(image)
         target.node_tree.nodes.active = node
         scene.cycles.samples = samples
         src.hide_render = not from_source
@@ -179,10 +181,24 @@ def _bake(model, src, job: dict) -> tuple[np.ndarray, np.ndarray]:
         extra = {"use_selected_to_active": True, "cage_extrusion": job["cage"], "max_ray_distance": job["ray"]} if from_source else {}
         bpy.ops.object.bake(type=kind, margin=8, **extra)
         out.append(np.array(image.pixels[:], np.float32).reshape(size, size, 4))
-    return out[0][..., :3], out[1][..., 0]
+    return out[0][..., :3], out[1][..., 0], images[0]
+
+
+def _show(model, src, image) -> None:
+    """For a stage left open: the model shows its emission bake and the
+    source, which sits in the same place, steps aside."""
+    tree = model.data.materials[0].node_tree
+    tex = next(n for n in tree.nodes if n.type == "TEX_IMAGE")
+    tex.image = image
+    emit = tree.nodes.new("ShaderNodeEmission")
+    tree.links.new(tex.outputs["Color"], emit.inputs["Color"])
+    tree.links.new(emit.outputs[0], next(n for n in tree.nodes if n.type == "OUTPUT_MATERIAL").inputs["Surface"])
+    src.hide_viewport = src.hide_render = True
 
 
 def run(work, keep: bool = False) -> None:
+    if not keep and not bpy.app.background:
+        raise RuntimeError("stage.run in a live Blender needs keep=True; it would reset the open file")
     work = pathlib.Path(work)
     job = json.loads((work / "job.json").read_text())
     corners = np.load(work / "corners.npz")
@@ -192,7 +208,7 @@ def run(work, keep: bool = False) -> None:
         bpy.ops.wm.read_factory_settings(use_empty=True)
     src = _source(job, corners)
     model = _refined(src, corners, job)
-    colour, ao = _bake(model, src, job)
+    colour, ao, emission = _bake(model, src, job)
     me = model.data
     world = np.array(model.matrix_world)
     co = np.zeros(len(me.vertices) * 3, np.float32)
@@ -205,7 +221,9 @@ def run(work, keep: bool = False) -> None:
     np.savez(work / "refined.npz", positions=co, loop_vertex=loop_vertex, loop_uv=loop_uv.reshape(-1, 2))
     np.save(work / "color.npy", colour.astype(np.float16))
     np.save(work / "ao.npy", ao.astype(np.float16))
-    if not keep:
+    if keep:
+        _show(model, src, emission)
+    else:
         bpy.ops.wm.read_factory_settings(use_empty=True)
 
 
