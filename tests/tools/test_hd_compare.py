@@ -18,7 +18,7 @@ def write_frames(tmp_path, shift_px=0, lit_scale=1.0, near_background=False):
     classic = background.copy()
     classic[100:220, 200:280] = (180, 60, 60)
     classic[100:220:6, 200:280] = (230, 90, 90)  # painted detail the swatch lacks
-    unlit, lit = background.copy(), background.copy()
+    unlit, lit = background + 2, background.copy()  # the unlit frame jitters by 2 levels
     unlit[100:220, 200 + shift_px:280 + shift_px] = (90, 200, 40)
     if near_background:
         unlit[100:220, 200:280] = background[100:220, 200:280] + 8

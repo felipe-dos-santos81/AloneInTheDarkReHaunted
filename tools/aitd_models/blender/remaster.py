@@ -229,7 +229,7 @@ def corner_arrays(body: Body, mesh: Mesh, paths: dict, edits: Edits) -> dict[str
             "tri_group": group, "palette": colour}
 
 
-def levels(groups: int, triangles: int, edits: Edits, bridges: int = 0) -> list[int]:
+def levels(groups: int, triangles: int, bridges: int, edits: Edits) -> list[int]:
     """The subdivision level of each group: the budget's, unless edited."""
     base = budget_level(triangles, bridges)
     return [edits.subdivide.get(g, base) for g in range(groups)]

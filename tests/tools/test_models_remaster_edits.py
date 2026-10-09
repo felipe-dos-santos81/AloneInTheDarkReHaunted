@@ -16,7 +16,7 @@ def chain():
 
 
 def test_levels_take_an_edit_over_the_budget():
-    assert levels(3, 340, Edits(subdivide={1: 0})) == [2, 0, 2]
+    assert levels(3, 340, 121, Edits(subdivide={1: 0})) == [3, 0, 3]  # Carnby: 121 of 340 are bridges
 
 
 def write(tmp_path, doc):

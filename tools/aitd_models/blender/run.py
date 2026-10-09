@@ -77,7 +77,7 @@ def prepare(record: BodyRecord, models: pathlib.Path, work: pathlib.Path,
     bridges = int((arrays["tri_group"] == BRIDGE).sum())
     job = {"key": record.key, "original": str((folder / "original.glb").resolve()),
            "atlases": {k: (str(p.resolve()) if p else None) for k, p in paths.items()},
-           "levels": levels(len(body.groups), mesh.triangle_count, edits, bridges), "flat": sorted(edits.crease),
+           "levels": levels(len(body.groups), mesh.triangle_count, bridges, edits), "flat": sorted(edits.crease),
            **STAGE_SETTINGS}
     (work / "job.json").write_text(json.dumps(job, indent=1) + "\n")
     return edits, paths
