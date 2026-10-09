@@ -5,8 +5,8 @@ in-repo generator"). It runs outside Blender, before and after it:
 - prepare: per original triangle, the engine's atlas UVs (front and back),
   its front weight and which atlas it takes, so Blender bakes exactly what
   the engine paints (TatouSource/FitdLib/modelAtlas.cpp, renderer.cpp);
-- finish: the two bakes composited into one sRGB PNG, and the refined mesh
-  written as model.glb.
+- finish: the colour bake softened, the bakes composited into one sRGB
+  PNG, and the refined mesh written as model.glb.
 
 Blender itself only refines geometry and bakes (stage.py)."""
 from __future__ import annotations
@@ -242,6 +242,43 @@ def levels(groups: int, triangles: int, bridges: int, edits: Edits) -> list[int]
 
 
 AO_STRENGTH = 0.3
+# The hand-made atlases paint crumpled low-poly facets; soften() evens out their
+# brightness steps. Chosen from renders of Carnby (spec 2026-10-09): a radius of
+# 24 texels on the 2048 px bake, scaled with the bake's size.
+SOFTEN_RADIUS = 24 / 2048
+SOFTEN_EPS = 0.3
+LUMA = np.array([0.2126, 0.7152, 0.0722])  # Rec. 709, linear
+
+
+def _box(x: np.ndarray, r: int) -> np.ndarray:
+    """The sum of x over the (2r+1)-wide square around each texel, cut at the
+    image's edges."""
+    h, w = x.shape
+    total = np.zeros((h + 1, w + 1))
+    total[1:, 1:] = x.cumsum(0).cumsum(1)
+    y0, y1 = np.clip(np.arange(h) - r, 0, h), np.clip(np.arange(h) + r + 1, 0, h)
+    x0, x1 = np.clip(np.arange(w) - r, 0, w), np.clip(np.arange(w) + r + 1, 0, w)
+    return total[y1][:, x1] - total[y0][:, x1] - total[y1][:, x0] + total[y0][:, x0]
+
+
+def soften(colour: np.ndarray, radius: int, eps: float = SOFTEN_EPS) -> np.ndarray:
+    """Linear (H, W, 3) colour with its low-contrast brightness steps evened
+    out and its high-contrast ones kept: a guided filter (He, Sun and Tang)
+    of log brightness guided by itself, over `radius`-texel windows; eps is
+    the variance below which a window counts as flat. Only brightness moves,
+    never hue. Texels with no channel above 0 are the bake's empty
+    background: they neither change nor count."""
+    colour = np.asarray(colour, float)
+    covered = colour.max(axis=-1) > 0
+    weight = covered.astype(float)
+    count = np.maximum(_box(weight, radius), 1.0)
+    lum = np.log(np.maximum(colour @ LUMA, 1e-4))
+    mean = _box(lum * weight, radius) / count
+    var = np.maximum(_box(lum * lum * weight, radius) / count - mean * mean, 0.0)
+    a = var / (var + eps)
+    b = mean - a * mean
+    smooth = _box(a * weight, radius) / count * lum + _box(b * weight, radius) / count
+    return np.where(covered[..., None], colour * np.exp(smooth - lum)[..., None], colour)
 
 
 def composite(colour: np.ndarray, ao: np.ndarray, strength: float = AO_STRENGTH,
@@ -258,12 +295,15 @@ def composite(colour: np.ndarray, ao: np.ndarray, strength: float = AO_STRENGTH,
     return rgb[::-1]
 
 
-def model_glb(positions: np.ndarray, loop_vertex: np.ndarray, loop_uv: np.ndarray, png: bytes) -> bytes:
+def model_glb(positions: np.ndarray, round_positions: np.ndarray, loop_vertex: np.ndarray, loop_uv: np.ndarray,
+              png: bytes) -> bytes:
     """The delivery: Blender's triangles (one loop per corner, three per
     triangle) as an indexed glTF mesh, Z-up (x, y, z) -> Y-up (x, z, -y),
     one vertex per (position, UV) pair, v flipped to glTF's top-left origin.
-    NORMAL is area-weighted per Blender vertex, so the pieces a UV seam splits
-    shade as one surface; a zero-area vertex's normal stays zero."""
+    NORMAL is the round surface's (`round_positions`, the same vertices),
+    area-weighted per Blender vertex over the same triangles, so the pieces
+    a UV seam splits shade as one surface; a zero-area vertex's normal stays
+    zero."""
     loop_vertex = np.asarray(loop_vertex, np.int64)
     loop_uv = np.asarray(loop_uv, float)
     pairs = np.column_stack([loop_vertex, np.round(loop_uv * 1e6).astype(np.int64)])
@@ -272,7 +312,8 @@ def model_glb(positions: np.ndarray, loop_vertex: np.ndarray, loop_uv: np.ndarra
     first = np.zeros(len(unique), np.int64)
     first[inverse[::-1]] = np.arange(len(inverse))[::-1]
     gltf = np.column_stack([positions[:, 0], positions[:, 2], -positions[:, 1]]).astype(float)
-    corners = gltf[loop_vertex].reshape(-1, 3, 3)
+    shape = np.column_stack([round_positions[:, 0], round_positions[:, 2], -round_positions[:, 1]]).astype(float)
+    corners = shape[loop_vertex].reshape(-1, 3, 3)
     face = np.cross(corners[:, 1] - corners[:, 0], corners[:, 2] - corners[:, 0])
     smooth = np.zeros_like(gltf)
     for k in range(3):
@@ -294,10 +335,15 @@ def model_glb(positions: np.ndarray, loop_vertex: np.ndarray, loop_uv: np.ndarra
 
 def finish_glb(work: pathlib.Path) -> tuple[bytes, int]:
     """model.glb from the stage's outputs in `work` (refined.npz carries a
-    mask only for a body with glass), and its triangle count."""
+    mask only for a body with glass), its colour bake softened, and its
+    triangle count."""
     refined = np.load(work / "refined.npz")
+    if "round" not in refined.files:
+        raise ValueError(f"{work / 'refined.npz'} has no round surface (written before it had one): rerun the stage")
     colour = np.load(work / "color.npy")
+    colour = soften(colour, max(1, round(SOFTEN_RADIUS * len(colour))))
     ao = np.load(work / "ao.npy")
     mask = refined["mask"] if "mask" in refined.files else None
     png = png_bytes(composite(colour, ao, mask=mask))
-    return model_glb(refined["positions"], refined["loop_vertex"], refined["loop_uv"], png), len(refined["loop_vertex"]) // 3
+    return (model_glb(refined["positions"], refined["round"], refined["loop_vertex"], refined["loop_uv"], png),
+            len(refined["loop_vertex"]) // 3)

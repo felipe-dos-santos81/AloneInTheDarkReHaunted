@@ -6,7 +6,8 @@
 or, through MCP for Blender's execute_blender_code, `stage.run(WORK_DIR,
 keep=True)`, which works in a new scene of its own and leaves it open for a
 look. WORK_DIR holds job.json and corners.npz from remaster.py; the stage
-writes refined.npz (with the transparency mask of a body that has glass),
+writes refined.npz (positions, the round surface its normals come from and,
+for a body that has glass, the transparency mask),
 color.npy and ao.npy there. It imports only Blender's
 own modules and numpy."""
 import json
@@ -102,7 +103,11 @@ def _material(name: str, atlas: str | None) -> bpy.types.Material:
 def _piece(src: bpy.types.Object, faces: np.ndarray, level: int, flat: bool, job: dict) -> bpy.types.Object:
     """One group's faces as a surface, subdivided with its open and sharp
     edges creased (or plainly, when the group is kept flat), then pulled
-    fully back onto that group's original faces."""
+    fully back onto that group's original faces. Its point attribute
+    `round` holds where each vertex sits on the subdivided surface before
+    the pull, creased on its open edges only: the shape its normals come
+    from (the positions themselves, for a piece with no subdivision or kept
+    flat)."""
     bm = bmesh.new()
     bm.from_mesh(src.data)
     bm.faces.ensure_lookup_table()
@@ -113,6 +118,7 @@ def _piece(src: bpy.types.Object, faces: np.ndarray, level: int, flat: bool, job
     for e in bm.edges:
         if e.is_boundary or e.calc_face_angle(0.0) > job["crease_angle"]:
             e[crease] = 1.0
+    open_edges = np.array([e.is_boundary for e in bm.edges], np.float32)
     mesh = bpy.data.meshes.new("piece")
     bm.to_mesh(mesh)
     bm.free()
@@ -131,6 +137,17 @@ def _piece(src: bpy.types.Object, faces: np.ndarray, level: int, flat: bool, job
     done = bpy.data.objects.new("refined", bpy.data.meshes.new_from_object(piece.evaluated_get(bpy.context.evaluated_depsgraph_get())))
     bpy.context.scene.collection.objects.link(done)
     done.matrix_world = src.matrix_world
+    shape = np.empty(len(done.data.vertices) * 3, np.float32)
+    done.data.vertices.foreach_get("co", shape)
+    if level > 0 and not flat:
+        mesh.attributes["crease_edge"].data.foreach_set("value", open_edges)
+        mesh.update()
+        piece.modifiers.remove(wrap)
+        smooth = piece.evaluated_get(bpy.context.evaluated_depsgraph_get()).data
+        if len(smooth.vertices) != len(done.data.vertices):
+            raise RuntimeError(f"the round surface has {len(smooth.vertices)} vertices, the piece {len(done.data.vertices)}")
+        smooth.vertices.foreach_get("co", shape)
+    done.data.attributes.new("round", "FLOAT_VECTOR", "POINT").data.foreach_set("vector", shape)
     bpy.data.objects.remove(piece)
     bpy.data.objects.remove(target)
     return done
@@ -246,12 +263,32 @@ def _mask_material(value: float) -> bpy.types.Material:
     return mat
 
 
+def _shade_round(model: bpy.types.Object) -> None:
+    """Shade the model smooth with the round surface's normals: per vertex
+    the area-weighted normal of its `round` attribute over the model's
+    triangles, the normals remaster.model_glb delivers."""
+    me = model.data
+    shape = np.zeros(len(me.vertices) * 3, np.float32)
+    me.attributes["round"].data.foreach_get("vector", shape)
+    shape = shape.reshape(-1, 3)
+    corner = np.zeros(len(me.loops), np.int32)
+    me.loops.foreach_get("vertex_index", corner)
+    tri = corner.reshape(-1, 3)  # _orient_outward triangulated the model
+    face = np.cross(shape[tri[:, 1]] - shape[tri[:, 0]], shape[tri[:, 2]] - shape[tri[:, 0]])
+    normal = np.zeros_like(shape)
+    for k in range(3):
+        np.add.at(normal, tri[:, k], face)
+    normal /= np.maximum(np.linalg.norm(normal, axis=1, keepdims=True), 1e-12)
+    me.shade_smooth()
+    me.normals_split_custom_set_from_vertices(normal.tolist())
+
+
 def _bake(model, src, job: dict, translucent: bool):
-    """The source's emission onto the model (selected to active), then the
-    model's own ambient occlusion and, for a body with transparent
-    triangles, the source's transparency mask: linear float images, rows
-    bottom-up. Returns the colour, AO and mask (or None) arrays and the
-    emission image."""
+    """The source's emission onto the model (selected to active), for a body
+    with transparent triangles the source's transparency mask, then the
+    model's own ambient occlusion, shaded with the round surface's normals:
+    linear float images, rows bottom-up. Returns the colour, AO and mask (or
+    None) arrays and the emission image."""
     scene = bpy.context.scene
     scene.render.engine = "CYCLES"
     scene.cycles.device = "CPU"
@@ -260,10 +297,11 @@ def _bake(model, src, job: dict, translucent: bool):
     node = target.node_tree.nodes.new("ShaderNodeTexImage")
     model.data.materials.clear()
     model.data.materials.append(target)
-    out, images = [], []
-    passes = [("EMIT", "EMIT", job["samples_emit"], True), ("AO", "AO", job["samples_ao"], False)]
+    out, images = {}, []
+    passes = [("EMIT", "EMIT", job["samples_emit"], True)]
     if translucent:
         passes.append(("MASK", "EMIT", 1, True))  # 0 or 1 per texel, thresholded at 0.5: one sample is enough
+    passes.append(("AO", "AO", job["samples_ao"], False))  # last: the round normals stay on the model after it
     for name, kind, samples, from_source in passes:
         image = bpy.data.images.new(name, size, size, alpha=False, float_buffer=True)
         node.image = image
@@ -277,14 +315,16 @@ def _bake(model, src, job: dict, translucent: bool):
         model.select_set(True)
         bpy.context.view_layer.objects.active = model
         extra = {"use_selected_to_active": True, "cage_extrusion": job["cage"], "max_ray_distance": job["ray"]} if from_source else {}
-        if name == "MASK":  # the last pass: the source keeps the mask materials after it
+        if name == "MASK":  # the source keeps the mask materials after it: AO does not read the source
             for slot, kind_name in zip(src.material_slots, KINDS):
                 slot.material = _mask_material(1.0 if kind_name == "glass" else 0.0)
+        if name == "AO":
+            _shade_round(model)
         bpy.ops.object.bake(type=kind, margin=8, **extra)
         pixels = np.empty(size * size * 4, np.float32)
         image.pixels.foreach_get(pixels)  # no 16M-float Python list
-        out.append(pixels.reshape(size, size, 4))
-    return out[0][..., :3], out[1][..., 0], out[2][..., 0] if translucent else None, images[0]
+        out[name] = pixels.reshape(size, size, 4)
+    return out["EMIT"][..., :3], out["AO"][..., 0], out["MASK"][..., 0] if translucent else None, images[0]
 
 
 def _show(model, src, image) -> None:
@@ -321,7 +361,10 @@ def run(work, keep: bool = False) -> None:
     me.loops.foreach_get("vertex_index", loop_vertex)
     loop_uv = np.zeros(len(me.loops) * 2, np.float32)
     me.uv_layers.active.data.foreach_get("uv", loop_uv)
-    refined = {"positions": co, "loop_vertex": loop_vertex, "loop_uv": loop_uv.reshape(-1, 2)}
+    shape = np.zeros(len(me.vertices) * 3, np.float32)
+    me.attributes["round"].data.foreach_get("vector", shape)
+    shape = shape.reshape(-1, 3) @ world[:3, :3].T + world[:3, 3]
+    refined = {"positions": co, "round": shape, "loop_vertex": loop_vertex, "loop_uv": loop_uv.reshape(-1, 2)}
     if mask is not None:
         refined["mask"] = mask.astype(np.float16)
     np.savez(work / "refined.npz", **refined)

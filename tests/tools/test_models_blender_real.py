@@ -23,6 +23,7 @@ KEY = "LISTBODY_011"
 DISTINCT = 1000  # colours the baked texture must hold
 OUTWARD = 0.6  # share of the surface, by area, facing away from the vertical axis
 GREEN = 1.1      # its mean green over the mean of red and blue: Carnby's suit is green
+FACETED = 0.10   # share of the surface, by area, whose triangles' corner normals agree within 0.5 degrees
 
 
 @pytest.fixture(scope="module")
@@ -73,3 +74,8 @@ def test_carnby_passes_the_gate(gate):
     radial[:, 1] = 0
     area = np.linalg.norm(face, axis=1)
     assert area[(radial * face).sum(axis=1) > 0].sum() > OUTWARD * area.sum()
+    # normals come from the round surface, not the facets it is pulled back onto (measured 0.212 from the
+    # facets, 0.032 round): in a facet's interior all three corners of a triangle share one normal
+    n = glb.accessor(prim["attributes"]["NORMAL"]).astype(float)[tri]
+    agree = np.minimum.reduce([(n[:, a] * n[:, b]).sum(axis=1) for a, b in ((0, 1), (1, 2), (0, 2))])
+    assert area[agree > np.cos(np.radians(0.5))].sum() < FACETED * area.sum()
