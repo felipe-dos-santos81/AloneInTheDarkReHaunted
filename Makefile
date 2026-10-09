@@ -1,4 +1,4 @@
-# Alone In The Dark: Re-Haunted — the Tatou (FITD) engine.
+# Alone In The Dark: Re-Haunted v2 — the Tatou (FITD) engine.
 # Usual flow: make deps (Linux only), then make run (game data in data/aitd1).
 # `make help` lists every target and its arguments.
 
@@ -76,7 +76,7 @@ require = @test -x "$(1)" || { echo "error: $(2) not found - $(3)"; exit 1; }
         clean distclean rebuild
 
 help: ## List the targets
-	@printf '\033[1;32mAlone In The Dark: Re-Haunted\033[0m\nUsage: make <target> [arg=value ...]\n'
+	@printf '\033[1;32mAlone In The Dark: Re-Haunted v2\033[0m\nUsage: make <target> [arg=value ...]\n'
 	@awk 'BEGIN {FS = ":.*?## "} \
 		/^##@/ {printf "\n\033[33m%s\033[0m\n", substr($$0, 5)} \
 		/^[a-zA-Z0-9_.\/-]+:.*## / {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)

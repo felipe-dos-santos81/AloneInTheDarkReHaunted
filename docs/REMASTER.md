@@ -1,13 +1,14 @@
 # Remaster Features
 
-What Re-Haunted adds to the original [FITD](https://github.com/yaz0r/FITD) engine. Every `aitd_remaster.cfg`
-key, with its default, is in [configuration.md](configuration.md); mouse
-gameplay and the combat assists are in the
-[README](../README.md#mouse-left-button-only).
+What Re-Haunted adds to the original [FITD](https://github.com/yaz0r/FITD)
+engine. Every `aitd_remaster.cfg` key, with its default, is in
+[configuration.md](configuration.md); mouse gameplay and the combat assists are
+in the [README](../README.md#mouse-left-button-only).
 
 ## Controllers
 
-Xbox, PlayStation, Switch Pro and any other [SDL3](https://github.com/libsdl-org/SDL) gamepad. Controllers are
+Xbox, PlayStation, Switch Pro and any other
+[SDL3](https://github.com/libsdl-org/SDL) gamepad. Controllers are
 hot-pluggable, and every button can be rebound in the **Controls** menu.
 
 - **Move:** left stick (analog) or D-pad. A stick reads as a direction past 0.3.
