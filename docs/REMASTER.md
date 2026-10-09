@@ -1,6 +1,6 @@
 # Remaster Features
 
-What Re-Haunted adds to the original FITD engine. Every `aitd_remaster.cfg`
+What Re-Haunted adds to the original [FITD](https://github.com/yaz0r/FITD) engine. Every `aitd_remaster.cfg`
 key, with its default, is in [configuration.md](configuration.md); mouse
 gameplay and the combat assists are in the
 [README](../README.md#mouse-left-button-only).

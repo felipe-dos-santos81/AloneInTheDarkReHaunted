@@ -1,6 +1,6 @@
 # Building
 
-How to build the Tatou engine (a FITD fork) on each platform. Where the game
+How to build the Tatou engine (a [FITD](https://github.com/yaz0r/FITD) fork) on each platform. Where the game
 data comes from is in [README → Game data](../README.md#game-data).
 
 ## Prerequisites

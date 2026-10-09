@@ -1,7 +1,7 @@
 # Alone In The Dark: Re-Haunted v2
 
 A remaster of the 1992 survival horror game. Re-Haunted (AITD-R) reimplements
-the Infogrames engine in C++ (FITD, here called Tatou) with bgfx rendering,
+the Infogrames engine in C++ ([FITD](https://github.com/yaz0r/FITD), here called Tatou) with bgfx rendering,
 SoLoud audio and SDL3 input. It runs on Windows, Linux and macOS 11.3+ under
 the **GNU GPL v2**.
 
