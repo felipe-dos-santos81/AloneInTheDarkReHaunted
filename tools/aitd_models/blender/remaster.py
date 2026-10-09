@@ -19,12 +19,13 @@ import numpy as np
 
 from aitd_textures.files import png_bytes
 
-from ..body import PRIM_POLY, Body
+from ..body import PRIM_POLY, PRIM_SPHERE, Body
 from ..gltf import ARRAY_BUFFER, UNSIGNED_INT, GlbBuilder
 from ..mesh import Mesh
 
 KIND_PALETTE, KIND_BODY, KIND_RAMP, KIND_OTHER = 0, 1, 2, 3
 KIND_NAMES = ("palette", "body", "ramp", "other")
+MATERIAL_TRANSPARENT = 2  # the engine draws it blended, 50 %
 TRIANGLE_TARGET = 30000  # import warns above it
 MAX_LEVEL = 4
 
@@ -88,7 +89,7 @@ def atlas_paths(key: str, aliases: list[str], atlas_dir: pathlib.Path) -> dict[s
 def kind_of(prim_type: int, material: int, paths: dict) -> int:
     """The atlas the engine overlays on a primitive, or palette: only plain
     polygons take one; material 2 (transparent) never does."""
-    if prim_type != PRIM_POLY or material == 2:
+    if prim_type != PRIM_POLY or material == MATERIAL_TRANSPARENT:
         return KIND_PALETTE
     kind = KIND_BODY if material == 0 else KIND_RAMP if 3 <= material <= 6 else KIND_OTHER if material == 1 else KIND_PALETTE
     return kind if kind == KIND_PALETTE or paths[KIND_NAMES[kind]] is not None else KIND_PALETTE
@@ -190,12 +191,14 @@ def read_edits(path: pathlib.Path, groups: int) -> Edits:
 def corner_arrays(body: Body, mesh: Mesh, paths: dict, edits: Edits) -> dict[str, np.ndarray]:
     """Per triangle of `mesh` (build_mesh's order, which original.glb keeps):
     engine UVs front and back (3T, 2), front weight (T,), atlas kind (T,),
-    group (T,) and linear palette colour (T, 3)."""
+    whether it is the transparent material 2, polygon or sphere (T,), group (T,) and linear
+    palette colour (T, 3)."""
     rest = engine_rest_vertices(body)
     pmin, prange = projection(rest)
     count = mesh.triangle_count
     uv_front, uv_back = np.zeros((3 * count, 2)), np.zeros((3 * count, 2))
     weight, kind = np.ones(count), np.zeros(count, np.int64)
+    transparent = np.zeros(count, np.uint8)
     t = 0
     for pi, prim in enumerate(body.primitives):
         n = int(np.count_nonzero(mesh.prim_index == pi))
@@ -209,9 +212,10 @@ def corner_arrays(body: Body, mesh: Mesh, paths: dict, edits: Edits) -> dict[str
                 if k == KIND_RAMP:
                     a, b = mirror_uv(a), mirror_uv(b)
                 uv_front[3 * t:3 * t + 3], uv_back[3 * t:3 * t + 3] = a, b
-                weight[t], kind[t] = w, k
+                weight[t], kind[t], transparent[t] = w, k, prim.material == MATERIAL_TRANSPARENT
                 t += 1
         else:
+            transparent[t:t + n] = prim.type == PRIM_SPHERE and prim.material == MATERIAL_TRANSPARENT
             t += n
     if t != count:
         raise ValueError(f"{t} triangles placed, the mesh has {count}")
@@ -226,7 +230,7 @@ def corner_arrays(body: Body, mesh: Mesh, paths: dict, edits: Edits) -> dict[str
             kind[mine] = KIND_PALETTE
     colour = srgb_to_linear(mesh.colors.reshape(-1, 3, 3)[:, 0])
     return {"uv_front": uv_front, "uv_back": uv_back, "w_front": weight, "kind": kind,
-            "tri_group": group, "palette": colour}
+            "transparent": transparent, "tri_group": group, "palette": colour}
 
 
 def levels(groups: int, triangles: int, bridges: int, edits: Edits) -> list[int]:
@@ -236,13 +240,21 @@ def levels(groups: int, triangles: int, bridges: int, edits: Edits) -> list[int]
 
 
 AO_STRENGTH = 0.3
+TRANSLUCENT_ALPHA = 128  # the engine draws such a texel blended, as the transparent material 2 (mipChain.h)
 
 
-def composite(colour: np.ndarray, ao: np.ndarray, strength: float = AO_STRENGTH) -> np.ndarray:
+def composite(colour: np.ndarray, ao: np.ndarray, strength: float = AO_STRENGTH,
+              mask: np.ndarray | None = None) -> np.ndarray:
     """Linear (H, W, 3) colour and (H, W) ambient occlusion, rows bottom-up
-    as Blender stores them -> (H, W, 3) uint8 sRGB, rows top-down."""
+    as Blender stores them -> (H, W, 3) uint8 sRGB, rows top-down. With an
+    (H, W) transparency mask: (H, W, 4), alpha TRANSLUCENT_ALPHA where it is
+    at least 0.5, else opaque."""
     lit = np.asarray(colour, float) * (1.0 - strength * (1.0 - np.asarray(ao, float)[..., None]))
-    return (np.clip(linear_to_srgb(lit), 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8)[::-1]
+    rgb = (np.clip(linear_to_srgb(lit), 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8)
+    if mask is not None:
+        alpha = np.where(np.asarray(mask, float) >= 0.5, TRANSLUCENT_ALPHA, 255).astype(np.uint8)
+        rgb = np.dstack([rgb, alpha])
+    return rgb[::-1]
 
 
 def model_glb(positions: np.ndarray, loop_vertex: np.ndarray, loop_uv: np.ndarray, png: bytes) -> bytes:
@@ -280,9 +292,11 @@ def model_glb(positions: np.ndarray, loop_vertex: np.ndarray, loop_uv: np.ndarra
 
 
 def finish_glb(work: pathlib.Path) -> tuple[bytes, int]:
-    """model.glb from the stage's outputs in `work`, and its triangle count."""
+    """model.glb from the stage's outputs in `work` (mask.npy only for a body
+    with transparent triangles), and its triangle count."""
     refined = np.load(work / "refined.npz")
     colour = np.load(work / "color.npy")
     ao = np.load(work / "ao.npy")
-    png = png_bytes(composite(colour, ao))
+    mask = np.load(work / "mask.npy") if (work / "mask.npy").is_file() else None
+    png = png_bytes(composite(colour, ao, mask=mask))
     return model_glb(refined["positions"], refined["loop_vertex"], refined["loop_uv"], png), len(refined["loop_vertex"]) // 3

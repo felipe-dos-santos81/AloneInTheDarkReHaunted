@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
+from aitd_models.blender.remaster import TRANSLUCENT_ALPHA
 from aitd_models.blender.run import blender_stage, run_bodies
 from aitd_models.export import export_models
 from aitd_models.gltf import read_glb
@@ -21,6 +22,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 BLENDER = pathlib.Path(os.environ.get("BLENDER", "/Applications/Blender.app/Contents/MacOS/Blender"))
 KEY = "LISTBODY_011"
 DISTINCT = 1000  # colours the baked texture must hold
+OUTWARD = 0.6  # share of the surface, by area, facing away from the vertical axis
 GREEN = 1.1      # its mean green over the mean of red and blue: Carnby's suit is green
 
 
@@ -54,7 +56,21 @@ def test_carnby_passes_the_gate(gate):
     # the bake itself: a black, flat or unpainted texture would pass every check above
     glb = read_glb(delivery.read_bytes())
     view = glb.doc["bufferViews"][glb.doc["images"][0]["bufferView"]]
-    pixels = np.asarray(Image.open(io.BytesIO(glb.bin[view["byteOffset"]:view["byteOffset"] + view["byteLength"]])).convert("RGB"))
+    image = Image.open(io.BytesIO(glb.bin[view["byteOffset"]:view["byteOffset"] + view["byteLength"]]))
+    pixels = np.asarray(image.convert("RGB"))
+    # his lamp's 4 glass polygons are the transparent material: translucent texels, a sliver of the texture
+    translucent = (np.asarray(image.convert("RGBA"))[..., 3] == TRANSLUCENT_ALPHA).mean()
+    assert 0 < translucent < 0.05
     assert len(np.unique(pixels.reshape(-1, 3), axis=0)) > DISTINCT
     mean = pixels.reshape(-1, 3).mean(axis=0)
     assert mean[1] > GREEN * (mean[0] + mean[2]) / 2
+    # faces point out of the body (the originals mostly face in; measured 21 % unfixed, 79 % fixed), by area,
+    # away from the vertical axis: the engine lights the front only, and the AO bake reads a back face as occluded
+    prim = glb.doc["meshes"][0]["primitives"][0]
+    p = glb.accessor(prim["attributes"]["POSITION"]).astype(float)
+    tri = glb.accessor(prim["indices"]).astype(np.int64).reshape(-1, 3)
+    face = np.cross(p[tri[:, 1]] - p[tri[:, 0]], p[tri[:, 2]] - p[tri[:, 0]])
+    radial = p[tri].mean(axis=1) - p.mean(axis=0)
+    radial[:, 1] = 0
+    area = np.linalg.norm(face, axis=1)
+    assert area[(radial * face).sum(axis=1) > 0].sum() > OUTWARD * area.sum()
