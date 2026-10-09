@@ -80,12 +80,19 @@ def test_help_lists_the_asset_targets():
         assert target in out
 
 
+def test_run_copies_the_models_into_the_data_folder_off_macos():
+    out = make_n("run", "BUNDLE_RESOURCES=", "data=/d")
+    assert 'cd "/d" && cmake "-DDESTINATION=."' in out
+    assert "-DDESTINATION" not in make_n("run", "BUNDLE_RESOURCES=/b", "data=/d").split('cd "/d"')[-1]
+
+
 def test_models_install_mirrors_the_models_and_adds_the_atlases(tmp_path):
-    models, atlases, bundle = tmp_path / "m", tmp_path / "a", tmp_path / "bundle"
+    # Off macOS (no bundle) the game reads its files from the data folder.
+    models, atlases, bundle = tmp_path / "m", tmp_path / "a", tmp_path / "data"
     for f in (models / "new.hdm", models / "note.txt", atlases / "body_X.png", atlases / "Backups/old.png",
               bundle / "models_hd/stale.hdm", bundle / "models_hd/keep.txt", bundle / "atlases/point_X.png"):
         f.parent.mkdir(parents=True, exist_ok=True)
         f.write_text("x")
-    make_run("models-install", f"models_hd={models}", f"atlases={atlases}", f"BUNDLE_RESOURCES={bundle}")
+    make_run("models-install", f"models_hd={models}", f"atlases={atlases}", "BUNDLE_RESOURCES=", f"data={bundle}")
     assert sorted(p.name for p in (bundle / "models_hd").iterdir()) == ["keep.txt", "new.hdm"]
     assert sorted(p.name for p in (bundle / "atlases").iterdir()) == ["body_X.png", "point_X.png"]

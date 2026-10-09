@@ -96,23 +96,26 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES Darwin)
             "$<TARGET_BUNDLE_CONTENT_DIR:Fitd>/MacOS/Tatou"
         COMMENT "Copying game assets into Tatou.app/Contents/Resources"
     )
-
-    # The HD character models and their atlases, refreshed on every build of the game
-    # (graphics.hdModels is on by default). A plain path: a generator expression
-    # naming Fitd here would make the two targets depend on each other.
-    if(CMAKE_CONFIGURATION_TYPES)
-        set(_resources "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/Tatou.app/Contents/Resources")
-    else()
-        set(_resources "${CMAKE_CURRENT_BINARY_DIR}/Tatou.app/Contents/Resources")
-    endif()
-    add_custom_target(hd_models
-        COMMAND ${CMAKE_COMMAND} "-DDESTINATION=${_resources}"
-            "-DMODELS=${CMAKE_SOURCE_DIR}/../Assets/models_hd" "-DATLASES=${CMAKE_SOURCE_DIR}/../Assets/atlases"
-            -P "${CMAKE_SOURCE_DIR}/cmake/copy_hd_models.cmake"
-        COMMENT "Copying Assets/models_hd and Assets/atlases into Tatou.app/Contents/Resources"
-    )
-    add_dependencies(Fitd hd_models)
 endif()
+
+# The HD character models and their atlases, refreshed on every build of the game
+# (graphics.hdModels is on by default) where the game reads its files: the app's
+# Resources on macOS, the executable's folder elsewhere. A plain path: a generator
+# expression naming Fitd here would make the two targets depend on each other.
+set(_hd_dir "${CMAKE_CURRENT_BINARY_DIR}")
+if(CMAKE_CONFIGURATION_TYPES)
+    string(APPEND _hd_dir "/$<CONFIG>")
+endif()
+IF(${CMAKE_SYSTEM_NAME} MATCHES Darwin)
+    string(APPEND _hd_dir "/Tatou.app/Contents/Resources")
+endif()
+add_custom_target(hd_models
+    COMMAND ${CMAKE_COMMAND} "-DDESTINATION=${_hd_dir}"
+        "-DMODELS=${CMAKE_SOURCE_DIR}/../Assets/models_hd" "-DATLASES=${CMAKE_SOURCE_DIR}/../Assets/atlases"
+        -P "${CMAKE_SOURCE_DIR}/cmake/copy_hd_models.cmake"
+    COMMENT "Copying Assets/models_hd and Assets/atlases next to the game"
+)
+add_dependencies(Fitd hd_models)
 
 
 # Platform-specific linking
