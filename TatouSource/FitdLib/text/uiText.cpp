@@ -12,7 +12,8 @@ namespace text {
 
 // en, fr, it, es, de, pt. French, Italian, Spanish and German come word for
 // word from the menus' former if-chains; strings they never had stay "".
-// This file is UTF-8 (MSVC compiles it with /utf-8; see the CMake change above).
+// This file is UTF-8 (MSVC compiles it with /utf-8: FitdLib/CMakeLists.txt and
+// tests/engine/CMakeLists.txt).
 const UiRow kUiRows[] = {
     { "Please Wait...", "Veuillez Patienter...", "Attendere Prego...", "Por Favor Espere...", "Bitte Warten...", "Aguarde..." },
     { "Display: Fullscreen", "Affichage: Plein écran", "Schermo: Intero", "Pantalla: Completa", "Anzeige: Vollbild", "Tela: Cheia" },
@@ -156,6 +157,8 @@ const UiRow kUiRows[] = {
     { "Press Key...", "", "", "", "", "Pressione..." },
     { "Press...", "", "", "", "", "Pressione..." },
     { "No Preview", "", "", "", "", "Sem prévia" },
+    { "Return to macOS", "", "", "", "", "Voltar ao macOS" },
+    { "Return to Linux", "", "", "", "", "Voltar ao Linux" },
 };
 const size_t kUiRowCount = sizeof(kUiRows) / sizeof(kUiRows[0]);
 

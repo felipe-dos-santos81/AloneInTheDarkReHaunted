@@ -35,11 +35,15 @@ def entry_file(i: int) -> str:
     return "messages.txt" if i == 0 else f"doc{i:02d}.txt"
 
 
+def _body(entry: bytes) -> bytes:
+    """The entry up to its 0x1A end marker."""
+    end = entry.find(0x1A)
+    return entry if end < 0 else entry[:end]
+
+
 def decode(entry: bytes) -> str:
     """Entry bytes (up to 0x1A) -> text with '\\n' line ends."""
-    end = entry.find(0x1A)
-    body = entry if end < 0 else entry[:end]
-    chars = (_DECODE_OVERRIDES.get(b) or bytes([b]).decode("cp850") for b in body)
+    chars = (_DECODE_OVERRIDES.get(b) or bytes([b]).decode("cp850") for b in _body(entry))
     return "".join(chars).replace("\r\n", "\n")
 
 
@@ -139,9 +143,8 @@ def text_width(line: bytes, widths: list[int]) -> int:
 
 
 def _messages(entry: bytes) -> dict[int, bytes]:
-    body = entry[:entry.find(0x1A)] if 0x1A in entry else entry
     out = {}
-    for line in body.split(b"\r\n"):
+    for line in _body(entry).split(b"\r\n"):
         m = re.match(rb"@(\d+):(.*)", line)
         if m:
             out[int(m.group(1))] = m.group(2)

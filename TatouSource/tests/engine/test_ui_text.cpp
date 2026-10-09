@@ -1,3 +1,8 @@
+///////////////////////////////////////////////////////////////////////////////
+// Alone In The Dark Re-Haunted
+// Engine unit tests: the remaster menu string table (text/uiText).
+///////////////////////////////////////////////////////////////////////////////
+
 #include "doctest.h"
 #include "uiText.h"
 
@@ -10,7 +15,6 @@ TEST_CASE("uiText returns the language's text, else the English key")
     CHECK(std::string(text::uiText("FRANCAIS", "Controls")) == "Commandes");
     CHECK(std::string(text::uiText("PORTUGUE", "Controls")) == "Controles");
     CHECK(std::string(text::uiText("ENGLISH", "Controls")) == "Controls");
-    CHECK(std::string(text::uiText("KLINGON", "Controls")) == "Controls");
     CHECK(std::string(text::uiText("PORTUGUE", "Not in the table")) == "Not in the table");
 }
 

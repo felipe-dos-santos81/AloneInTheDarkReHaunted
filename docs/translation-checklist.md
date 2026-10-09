@@ -18,7 +18,7 @@ checks they fit.
 | 1 | Language menu: six rows, "Português" last; pick it by keyboard, then again by mouse | | |
 | 2 | Language menu: the five flags line up with English, Français, Italiano, Español and Deutsch (no flag for Português) | | |
 | 3 | Language menu with `graphics.hdBackgrounds = false` (no HD backgrounds, so the classic frame): the frame encloses all six rows | | |
-| 4 | Start menu and the loading screen ("Aguarde...") are in Portuguese | | |
+| 4 | Start menu (including "Voltar ao macOS/Linux" off Windows) and the loading screen ("Aguarde...") are in Portuguese, centred | | |
 | 5 | Picking up an object: the found-object box is in Portuguese and the name fits the box | | |
 | 6 | Inventory: object names and action names are in Portuguese | | |
 | 7 | Using and throwing an object: the messages are in Portuguese | | |
@@ -51,7 +51,7 @@ Not fixed on this branch:
 - In Portuguese the controls menu's key and button name column (SDL's key
   names, e.g. "Up", "Left") stays English.
 - On macOS and Linux, message 13 shows "Return to macOS/Linux" in English in
-  every language (`main.cpp`).
+  the original languages (`main.cpp`); Portuguese shows "Voltar ao macOS/Linux".
 - In TrueType mode the lantern-glow suppression matches the English "lamp has
   no oil" text, so it does not fire in French or Portuguese (`fontTTF.cpp`).
 - Documents 01-19 were checked as simulated pages only; only 05, 07, 20 and 21

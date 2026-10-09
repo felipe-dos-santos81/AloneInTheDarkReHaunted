@@ -501,7 +501,10 @@ void reloadLanguage(const char* langName)
     // Set the new language
     languageNameString = langName;
     if (s_originalFont)
+    {
         PtrFont = (char*)text::pickLanguageFont(languageNameString, s_originalFont, s_portugueseFont);
+        SetFont(PtrFont, 14);   // allocTextes caches each message's width with this font
+    }
 
     // Reload text data using allocTextes (it will use the pre-set languageNameString)
     allocTextes();
@@ -698,12 +701,13 @@ textEntryStruct* getTextFromIdx(int index)
     if (index == 13)
     {
 #if defined(__APPLE__)
-        static textEntryStruct platformReturnEntry = { 13, (u8*)"Return to macOS", 0 };
+        static textEntryStruct platformReturnEntry = { 13, (u8*)trDos("Return to macOS"), 0 };
+        platformReturnEntry.textPtr = (u8*)trDos("Return to macOS");
 #else
-        static textEntryStruct platformReturnEntry = { 13, (u8*)"Return to Linux", 0 };
+        static textEntryStruct platformReturnEntry = { 13, (u8*)trDos("Return to Linux"), 0 };
+        platformReturnEntry.textPtr = (u8*)trDos("Return to Linux");
 #endif
-        if (platformReturnEntry.width == 0)
-            platformReturnEntry.width = ExtGetSizeFont(platformReturnEntry.textPtr);
+        platformReturnEntry.width = ExtGetSizeFont(platformReturnEntry.textPtr);
         return &platformReturnEntry;
     }
 #endif
