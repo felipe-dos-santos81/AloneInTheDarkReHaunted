@@ -73,7 +73,7 @@ Rebind them in **Controls** in the system menu rather than by hand.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `font.enableTTF`, `font.path`, `font.size` | `false`, `"BLKCHCRY.TTF"`, `16` | Draw text with a TrueType font |
+| `font.enableTTF`, `font.path`, `font.size` | `false`, `"fonts/IMFellEnglish-Regular.ttf"`, `16` | Draw text with a TrueType font. Every build ships IM Fell English (`Assets/fonts`); a path that does not load falls back to it |
 | `font.hideOriginal` | `true` | With the TTF font on, hide the original bitmap text |
 | `interface.showOptionsAtStartup` | `true` | Open the options dialog at startup |
 

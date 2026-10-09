@@ -15,10 +15,13 @@
 #include "lanternLighting.h"
 #include <vector>
 #include <string>
+#include <SDL3/SDL_filesystem.h>
 #include <bgfx/bgfx.h>
 
 #ifdef USE_IMGUI
 #include "imgui.h"
+
+static const char* kShippedFont = "fonts/IMFellEnglish-Regular.ttf"; // configRemaster.cpp's default font.path
 
 static ImFont* g_ttfFont = nullptr;
 static ImFont* g_ttfFontCached = nullptr;  // Persists across shutdown/re-enable cycles
@@ -212,22 +215,26 @@ void initTTFFont()
     else
     {
         printf(TTF_WARN "Failed to load: %s" CON_RESET "\n", g_remasterConfig.font.fontPath);
-        printf(TTF_TAG "Trying system font fallbacks...\n");
+        printf(TTF_TAG "Trying the shipped font, then system fonts...\n");
 
-        // Try common Windows system fonts as fallback
-        const char* fallbackFonts[] = {
+        // The font every build copies (Assets/fonts) in the folder the game starts
+        // in or next to the executable, then common Windows system fonts.
+        std::vector<std::string> fallbackFonts = { kShippedFont };
+        if (const char* exe = SDL_GetBasePath())
+            fallbackFonts.push_back(std::string(exe) + kShippedFont);
+        fallbackFonts.insert(fallbackFonts.end(), {
             "C:/Windows/Fonts/arial.ttf",
             "C:/Windows/Fonts/times.ttf",
             "C:/Windows/Fonts/cour.ttf"
-        };
+        });
 
-        for (const char* fallback : fallbackFonts)
+        for (const std::string& fallback : fallbackFonts)
         {
-            printf(TTF_TAG CON_DIM "  Trying: %s" CON_RESET "\n", fallback);
-            g_ttfFont = io.Fonts->AddFontFromFileTTF(fallback, scaledFontSize, &config, ranges);
+            printf(TTF_TAG CON_DIM "  Trying: %s" CON_RESET "\n", fallback.c_str());
+            g_ttfFont = io.Fonts->AddFontFromFileTTF(fallback.c_str(), scaledFontSize, &config, ranges);
             if (g_ttfFont)
             {
-                printf(TTF_OK CON_GREEN "Fallback loaded: " CON_RESET "%s " CON_DIM "(ptr=%p)" CON_RESET "\n", fallback, g_ttfFont);
+                printf(TTF_OK CON_GREEN "Fallback loaded: " CON_RESET "%s " CON_DIM "(ptr=%p)" CON_RESET "\n", fallback.c_str(), g_ttfFont);
                 break;
             }
         }

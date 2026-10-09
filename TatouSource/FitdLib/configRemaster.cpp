@@ -85,7 +85,7 @@ void initDefaultRemasterConfig()
 
     // TTF font defaults
     g_remasterConfig.font.enableTTF = false;
-    strcpy(g_remasterConfig.font.fontPath, "BLKCHCRY.TTF");
+    strcpy(g_remasterConfig.font.fontPath, "fonts/IMFellEnglish-Regular.ttf"); // Assets/fonts, copied by every build
     g_remasterConfig.font.fontSize = 16;
     g_remasterConfig.font.hideOriginalText = true;
 
