@@ -8,12 +8,17 @@ and import what it delivers.
     tools/models.py identity [--models DIR] [--out DIR] --bodies KEY[,KEY...]
     tools/models.py import   [--data DIR] [--models DIR] [--src DIR] [--dest DIR]
                              [--debug DIR] [--report DIR] [--bodies KEY[,KEY...]] [--dry-run]
+    tools/models.py blender  [--models DIR] [--out DIR] [--work DIR] [--blender PATH]
+                             [--bodies KEY[,KEY...]]
 
 Defaults are relative to the repository root: data/aitd1, data/models,
 data/models-ai, Assets/models_hd and data/models-hd-debug; `identity` writes
-data/models-identity. Keys look like LISTBODY_011; an alias exports its
+data/models-identity, and `blender` data/models-ai (working files in
+data/models-blender). Keys look like LISTBODY_011; an alias exports its
 canonical body. `identity` turns exported original.glb files into contract
-deliveries (the import's end-to-end oracle). `import` without --data reads
+deliveries (the import's end-to-end oracle). `blender` refines every
+canonical character body in a headless Blender and textures it from
+Assets/atlases. `import` without --data reads
 the bodies and the palette the export carries (body.bin, palette.bin), and
 the game data only for an export written before it did. Exit codes: 0 done, 1 some
 bodies were skipped or failed, 2 usage or data error.
@@ -22,12 +27,14 @@ from __future__ import annotations
 
 import argparse
 import pathlib
+import shutil
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
+from aitd_models.blender.run import blender_stage, characters, run_bodies, write_report  # noqa: E402
 from aitd_models.export import PALETTE_NAME, REFERENCE_SIZE, export_models  # noqa: E402
 from aitd_models.gltf import GltfError  # noqa: E402
 from aitd_models.identity import identity_glb  # noqa: E402
@@ -41,7 +48,8 @@ EXIT_OK = 0
 EXIT_FINDINGS = 1
 EXIT_USAGE = 2
 DEFAULTS = {"data": "data/aitd1", "models": "data/models", "models_ai": "data/models-ai",
-            "identity": "data/models-identity", "dest": "Assets/models_hd", "debug": "data/models-hd-debug"}
+            "identity": "data/models-identity", "dest": "Assets/models_hd", "debug": "data/models-hd-debug",
+            "work": "data/models-blender", "blender": "/Applications/Blender.app/Contents/MacOS/Blender"}
 
 
 def default_root() -> pathlib.Path:
@@ -77,6 +85,13 @@ def build_parser() -> argparse.ArgumentParser:
                      help="--debug still gets the .glb, --report takes the body_<KEY>.json reports "
                           "here instead of beside it, even with --dry-run")
     imp.add_argument("--dry-run", action="store_true", help="check everything, write nothing but --report")
+
+    ble = sub.add_parser("blender", help="refine character bodies in Blender into contract deliveries")
+    ble.add_argument("--models", type=pathlib.Path, help=f"export folder (default {DEFAULTS['models']})")
+    ble.add_argument("--out", type=pathlib.Path, help=f"delivery tree to write (default {DEFAULTS['models_ai']})")
+    ble.add_argument("--work", type=pathlib.Path, help=f"working files (default {DEFAULTS['work']})")
+    ble.add_argument("--blender", type=pathlib.Path, help=f"Blender executable (default {DEFAULTS['blender']})")
+    ble.add_argument("--bodies", help="comma-separated canonical character keys (default: every one)")
     return parser
 
 
@@ -173,10 +188,40 @@ def cmd_import(args, root: pathlib.Path, log) -> int:
     return EXIT_FINDINGS if result.failed else EXIT_OK
 
 
+def cmd_blender(args, root: pathlib.Path, log) -> int:
+    models = args.models if args.models is not None else root / DEFAULTS["models"]
+    out = args.out if args.out is not None else root / DEFAULTS["models_ai"]
+    work = args.work if args.work is not None else root / DEFAULTS["work"]
+    blender = args.blender if args.blender is not None else pathlib.Path(DEFAULTS["blender"])
+    records = _manifest(models, log)
+    if records is None:
+        return EXIT_USAGE
+    bodies = characters(records)
+    only = _parse_keys(args.bodies)
+    if only is not None:
+        bad = sorted(only - {r.key for r in bodies})
+        if bad:
+            log(f"error: not canonical character bodies: {', '.join(bad)}")
+            return EXIT_USAGE
+        bodies = [r for r in bodies if r.key in only]
+    found = shutil.which(str(blender))  # a bare name (BLENDER=blender) is looked up on PATH
+    if found is None:
+        log(f"error: Blender not found at {blender} (give its executable with BLENDER=PATH)")
+        return EXIT_USAGE
+    blender = pathlib.Path(found)
+    runs = run_bodies(bodies, models, out, work, blender_stage(blender), log)
+    write_report(out / "run.md", runs)
+    failed = sum(r.status == "failed" for r in runs)
+    log(f"delivered {sum(r.status == 'delivered' for r in runs)}, skipped {sum(r.status == 'skipped' for r in runs)}, "
+        f"failed {failed}; report {out / 'run.md'}")
+    return EXIT_FINDINGS if failed else EXIT_OK
+
+
 def main(argv=None, root: pathlib.Path | None = None, log=print) -> int:
     args = build_parser().parse_args(argv)
     root = pathlib.Path(root) if root is not None else default_root()
-    command = {"export": cmd_export, "identity": cmd_identity, "import": cmd_import}[args.command]
+    command = {"export": cmd_export, "identity": cmd_identity, "import": cmd_import,
+               "blender": cmd_blender}[args.command]
     return command(args, root, log)
 
 

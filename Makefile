@@ -46,11 +46,15 @@ models      ?= data/models
 models_ai   ?= data/models-ai
 models_identity ?= data/models-identity
 models_hd   ?= Assets/models_hd
+models_blender ?= data/models-blender
+BLENDER     ?= /Applications/Blender.app/Contents/MacOS/Blender
 bodies      ?=
 report      ?=
 
 MODEL_IMPORT   = $(PYTHON) tools/models.py import --data "$(gamedata)" --models "$(models)" \
                  --src "$(models_ai)" --dest "$(models_hd)"$(if $(bodies), --bodies "$(bodies)")$(if $(report), --report "$(report)")
+BLENDER_MODELS = $(PYTHON) tools/models.py blender --models "$(models)" --out "$(models_ai)" --work "$(models_blender)" \
+                 --blender "$(BLENDER)"$(if $(bodies), --bodies "$(bodies)")
 TEXTURE_IMPORT = $(PYTHON) tools/textures.py import --src "$(textures_ai)" --dest "$(dest)" \
                  --originals "$(textures)" --dark "$(dark)"
 
@@ -69,7 +73,7 @@ require = @test -x "$(1)" || { echo "error: $(2) not found - $(3)"; exit 1; }
 .PHONY: help deps tools-deps configure build build-fitd build-tools run \
         test test-engine test-tools \
         export-textures check-textures import-textures hd-install hda-pack hda-unpack \
-        export-models identity-models check-models import-models \
+        export-models identity-models blender-models check-models import-models \
         clean distclean rebuild
 
 help: ## List the targets
@@ -151,6 +155,9 @@ export-models: ## Export animated bodies for the model generator [gamedata=DIR m
 
 identity-models: ## Write identity deliveries (each original as its own model) [models=DIR models_identity=DIR bodies=KEY,...]
 	$(PYTHON) tools/models.py identity --models "$(models)" --out "$(models_identity)" --bodies "$(bodies)"
+
+blender-models: ## Refine character bodies in Blender into data/models-ai [models=DIR models_ai=DIR bodies=KEY,... BLENDER=PATH]
+	$(BLENDER_MODELS)
 
 check-models: ## Check delivered models, write nothing (report=DIR writes reports only) [models_ai=DIR models_hd=DIR bodies=KEY,...]
 	$(MODEL_IMPORT) --dry-run

@@ -92,8 +92,14 @@ def test_identity_models_never_writes_into_the_delivery_tree_by_default():
     assert '--out "data/models-identity"' in out
 
 
+def test_blender_models_target():
+    out = make_n("blender-models", "models=/m", "models_ai=/a", "bodies=LISTBODY_011", "BLENDER=/b")
+    assert ('tools/models.py blender --models "/m" --out "/a" --work "data/models-blender" '
+            '--blender "/b" --bodies "LISTBODY_011"') in out
+
+
 def test_help_lists_the_texture_targets():
     out = make_run("help")
     for target in ("export-textures", "check-textures", "import-textures", "hd-install", "tools-deps", "test-tools",
-                   "export-models", "identity-models", "check-models", "import-models"):
+                   "export-models", "identity-models", "blender-models", "check-models", "import-models"):
         assert target in out
