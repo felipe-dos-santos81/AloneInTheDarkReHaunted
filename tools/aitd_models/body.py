@@ -14,6 +14,7 @@ PRIM_LINE, PRIM_POLY, PRIM_POINT, PRIM_SPHERE = 0, 1, 2, 3
 PRIM_BIG_POINT, PRIM_ZIXEL = 6, 7
 PRIM_POLY_TEX = (8, 9, 10)
 PRIM_POLY_UV = (9, 10)  # textured polygons that store per-point UVs
+MATERIAL_TRANSPARENT = 2  # the engine draws it blended, 50 %
 POINT_LIKE = (PRIM_POINT, PRIM_BIG_POINT, PRIM_ZIXEL)
 
 

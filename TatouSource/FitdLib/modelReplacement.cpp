@@ -341,10 +341,8 @@ bool drawModelReplacement(ModelReplacement* r, sBody* pBody, int x, int y, int z
         bgfx::setTexture(0, uniform("s_albedo", bgfx::UniformType::Sampler), r->texture, r->textureFlags);
         bgfx::setVertexBuffer(0, r->vb);
         bgfx::setIndexBuffer(r->ib);
-        bgfx::setState(pass == 0 ? BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z |
-                                       BGFX_STATE_DEPTH_TEST_LEQUAL | BGFX_STATE_MSAA
-                                 : BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_LEQUAL |
-                                       BGFX_STATE_MSAA | BGFX_STATE_BLEND_ALPHA | BGFX_STATE_CULL_CW);
+        const uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_LEQUAL | BGFX_STATE_MSAA;
+        bgfx::setState(pass == 0 ? state | BGFX_STATE_WRITE_Z : state | BGFX_STATE_BLEND_ALPHA | BGFX_STATE_CULL_CW);
         bgfx::submit(gameViewId, modelProgram());
     }
     return true;

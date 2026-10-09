@@ -19,13 +19,12 @@ import numpy as np
 
 from aitd_data.files import png_bytes
 
-from ..body import PRIM_POLY, PRIM_SPHERE, Body
+from ..body import MATERIAL_TRANSPARENT, PRIM_POLY, PRIM_SPHERE, Body
 from ..gltf import ARRAY_BUFFER, UNSIGNED_INT, GlbBuilder
 from ..mesh import Mesh
 
 KIND_PALETTE, KIND_BODY, KIND_RAMP, KIND_OTHER = 0, 1, 2, 3
 KIND_NAMES = ("palette", "body", "ramp", "other")
-MATERIAL_TRANSPARENT = 2  # the engine draws it blended, 50 %
 TRIANGLE_TARGET = 30000  # import warns above it
 MAX_LEVEL = 4
 
