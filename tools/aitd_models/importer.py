@@ -34,7 +34,7 @@ from .body import parse_body
 from .delivery import Delivery, DeliveryError, read_delivery
 from .export import BODY_NAME, PALETTE_NAME
 from .gltf import ARRAY_BUFFER, UNSIGNED_INT, GlbBuilder, read_glb
-from .hdm import TEXTURE_MIME, VERTEX, HdmError, HdmMesh, write_hdm
+from .hdm import TEXTURE_MIME, VERTEX, HdmError, HdmMesh, has_translucent_texels, write_hdm
 from .manifest import BodyRecord
 from .mesh import Surface
 from .original import rest_mesh, to_gltf_points
@@ -169,7 +169,7 @@ def build_hdm(record: BodyRecord, body, palette, delivery: Delivery, export_dir)
     try:
         outcome.hdm = write_hdm(HdmMesh(len(body.groups), int(record.skeleton_hash, 16), vertices,
                                         fitted.triangles.reshape(-1).astype(np.uint32), delivery.texture,
-                                        delivery.texture_kind))
+                                        delivery.texture_kind, has_translucent_texels(delivery.texture)))
     except HdmError as exc:
         outcome.failure = f"packed mesh rejected: {exc}"
         return outcome

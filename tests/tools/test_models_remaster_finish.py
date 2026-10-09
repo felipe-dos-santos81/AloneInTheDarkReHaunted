@@ -1,7 +1,7 @@
 import numpy as np
-
-from aitd_models.blender.remaster import TRANSLUCENT_ALPHA, composite, linear_to_srgb, model_glb
+from aitd_models.blender.remaster import composite, linear_to_srgb, model_glb
 from aitd_models.delivery import read_delivery
+from aitd_models.hdm import TRANSLUCENT_ALPHA
 from model_helpers import TINY_PNG
 
 

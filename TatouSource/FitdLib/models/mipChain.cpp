@@ -68,12 +68,4 @@ std::vector<uint8_t> rgba8MipChain(const uint8_t* rgba, int width, int height, i
     return out;
 }
 
-bool hasTranslucentTexels(const uint8_t* rgba, int width, int height)
-{
-    for (size_t i = 3; i < (size_t)width * height * 4; i += 4)
-        if (alphaClass(rgba[i]) == 1)
-            return true;
-    return false;
-}
-
 } // namespace models

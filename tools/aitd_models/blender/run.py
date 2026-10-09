@@ -28,7 +28,7 @@ STAGE = HERE / "stage.py"
 EDITS = HERE / "edits"
 ATLASES = HERE.parents[2] / "Assets" / "atlases"
 DELIVERY = "model.glb"
-BAKES = ("color.npy", "ao.npy", "mask.npy")  # the stage's bakes; mask.npy only for a translucent body
+BAKES = ("color.npy", "ao.npy")  # the stage's bakes, beside refined.npz
 STAGE_SETTINGS = {"merge_distance": 0.0005, "crease_angle": 1.0, "cage": 0.02, "ray": 0.06,
                   "bake_size": 2048, "samples_emit": 8, "samples_ao": 64}
 STAGE_TIMEOUT_S = 900

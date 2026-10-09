@@ -180,7 +180,7 @@ bool upload(ModelReplacement& r, const models::HdmMesh& mesh, std::string* why)
         *why = std::string("texture does not decode: ") + stbi_failure_reason();
         return false;
     }
-    r.translucent = models::hasTranslucentTexels(rgba, w, h);
+    r.translucent = mesh.translucent;
     const bool swatch = w <= models::kSwatchSide && h <= models::kSwatchSide;
     if (swatch)
     {
@@ -329,21 +329,23 @@ bool drawModelReplacement(ModelReplacement* r, sBody* pBody, int x, int y, int z
     // The opaque texels, then the translucent ones as the classic path draws the
     // transparent material: blended, writing no depth. That pass culls back faces
     // (CW in this projection, measured against classic's 50 % blend; the stage faces
-    // every triangle outward). bgfx consumes the state per submit.
-    for (int pass = 0; pass < (r->translucent ? 2 : 1); ++pass)
+    // every triangle outward). Bindings stay for the second pass; the state and
+    // uniforms go with each submit.
+    bgfx::setTransform(matrices, (uint16_t)groups);
+    bgfx::setTexture(0, uniform("s_albedo", bgfx::UniformType::Sampler), r->texture, r->textureFlags);
+    bgfx::setTexture(1, uniform("s_alphaClass", bgfx::UniformType::Sampler), r->texture, r->textureFlags | BGFX_SAMPLER_POINT);
+    bgfx::setVertexBuffer(0, r->vb);
+    bgfx::setIndexBuffer(r->ib);
+    const int passes = r->translucent ? 2 : 1;
+    const uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_LEQUAL | BGFX_STATE_MSAA;
+    for (int pass = 0; pass < passes; ++pass)
     {
-        bgfx::setTransform(matrices, (uint16_t)groups);
         bgfx::setUniform(uniform("u_camProj", bgfx::UniformType::Vec4), proj);
-        const float tint[4] = { g_fadeLevel, g_roomIsDark ? kDarkRoomBrightness : 1.0f, r->translucent ? (float)pass : -1.0f,
-                                hdCompareUnlit() ? 1.0f : 0.0f };
+        const float tint[4] = { g_fadeLevel, g_roomIsDark ? kDarkRoomBrightness : 1.0f, (float)pass, hdCompareUnlit() ? 1.0f : 0.0f };
         bgfx::setUniform(uniform("u_tint", bgfx::UniformType::Vec4), tint);
         setLightUniforms(cam);
-        bgfx::setTexture(0, uniform("s_albedo", bgfx::UniformType::Sampler), r->texture, r->textureFlags);
-        bgfx::setVertexBuffer(0, r->vb);
-        bgfx::setIndexBuffer(r->ib);
-        const uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_LEQUAL | BGFX_STATE_MSAA;
         bgfx::setState(pass == 0 ? state | BGFX_STATE_WRITE_Z : state | BGFX_STATE_BLEND_ALPHA | BGFX_STATE_CULL_CW);
-        bgfx::submit(gameViewId, modelProgram());
+        bgfx::submit(gameViewId, modelProgram(), 0, pass + 1 < passes ? BGFX_DISCARD_STATE : BGFX_DISCARD_ALL);
     }
     return true;
 }

@@ -70,7 +70,7 @@ bool parseHdm(const uint8_t* data, size_t size, HdmMesh* out, std::string* why)
     const uint16_t version = readLE<uint16_t>(data + 4);
     if (version != kHdmVersion)
         return fail(why, "unsupported version " + std::to_string(version));
-    if (data[29] || data[30] || data[31])
+    if ((data[29] & ~kHdmFlagTranslucent) || data[30] || data[31])
         return fail(why, "reserved header bytes are not zero");
     const uint16_t groups = readLE<uint16_t>(data + 6);
     const uint64_t hash = readLE<uint64_t>(data + 8);
@@ -102,6 +102,7 @@ bool parseHdm(const uint8_t* data, size_t size, HdmMesh* out, std::string* why)
     mesh.groupCount = groups;
     mesh.skeletonHash = hash;
     mesh.textureKind = kind;
+    mesh.translucent = (data[29] & kHdmFlagTranslucent) != 0;
     mesh.vertices.resize(nv);
     const uint8_t* p = data + kHeaderSize;
     for (uint32_t v = 0; v < nv; ++v, p += sizeof(HdmVertex))

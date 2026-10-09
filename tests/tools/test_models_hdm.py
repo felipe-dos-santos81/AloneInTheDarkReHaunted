@@ -1,11 +1,24 @@
+import io
+import pathlib
 import struct
 import zlib
 
 import numpy as np
 import pytest
-
-from aitd_models.hdm import HEADER, VERTEX, HdmError, read_hdm, write_hdm
+from aitd_models.hdm import (
+    HEADER,
+    OPAQUE_ALPHA,
+    TRANSLUCENT_ALPHA,
+    VERTEX,
+    HdmError,
+    has_translucent_texels,
+    read_hdm,
+    write_hdm,
+)
 from model_helpers import TINY_HDM, TINY_PNG, tiny_hdm
+from PIL import Image
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 # Byte offsets in the tiny fixture: 32-byte header, 4 x 40-byte vertices,
 # 6 x u32 indices, 69 texture bytes, CRC.
@@ -36,7 +49,7 @@ def test_writer_reproduces_the_shared_fixture():
 def test_layout():
     data = TINY_HDM.read_bytes()
     assert len(data) == 32 + 4 * 40 + 6 * 4 + len(TINY_PNG) + 4 == 289
-    assert HEADER.unpack_from(data) == (b"AHDM", 1, 2, 0x0123456789ABCDEF, 4, 6, len(TINY_PNG), 1, b"\0\0\0")
+    assert HEADER.unpack_from(data) == (b"AHDM", 1, 2, 0x0123456789ABCDEF, 4, 6, len(TINY_PNG), 1, 0, b"\0\0")
     assert struct.unpack_from("<3f3f2f4B4B", data, VERTS + 40) == (100, 0, 0, 0, 0, -1, 1, 0, 0, 1, 0, 0, 128, 127, 0, 0)
     assert struct.unpack_from("<6I", data, INDICES) == (0, 1, 2, 2, 1, 3)
     assert data[TEXTURE:TEXTURE + len(TINY_PNG)] == TINY_PNG
@@ -50,13 +63,30 @@ def test_round_trip():
            (want.group_count, want.skeleton_hash, want.texture, want.texture_kind)
     assert mesh.vertices.tobytes() == want.vertices.tobytes()
     assert mesh.indices.tolist() == want.indices.tolist()
+    assert not mesh.translucent
+    want.translucent = True
+    assert read_hdm(write_hdm(want)).translucent
+
+
+@pytest.mark.parametrize("alpha, translucent", [(255, False), (253, False), (252, True), (128, True), (127, False)])
+def test_translucent_texels_are_alpha_128_to_252(alpha, translucent):
+    png = io.BytesIO()
+    Image.fromarray(np.array([[[9, 9, 9, 255], [9, 9, 9, alpha]]], np.uint8), "RGBA").save(png, "PNG")
+    assert has_translucent_texels(png.getvalue()) == translucent
+
+
+def test_the_engine_uses_the_same_alpha_classes():
+    header = (ROOT / "TatouSource/FitdLib/models/mipChain.h").read_text()
+    shader = (ROOT / "TatouSource/FitdLib/shaders/model_ps.sc").read_text()
+    assert f"kTranslucentAlpha = {TRANSLUCENT_ALPHA};" in header and f"kOpaqueAlpha = {OPAQUE_ALPHA};" in header
+    assert f"{TRANSLUCENT_ALPHA - 0.5} / 255.0" in shader and f"{OPAQUE_ALPHA - 0.5} / 255.0" in shader
 
 
 @pytest.mark.parametrize("mutate, message", [
     (lambda d: d[:30], "too short"),
     (lambda d: resign(b"XHDM" + d[4:]), "bad magic"),
     (lambda d: patch(d, 4, "<H", 2), "unsupported version 2"),
-    (lambda d: patch(d, 29, "<B", 1), "reserved"),
+    (lambda d: patch(d, 29, "<B", 2), "reserved"),  # a flag bit with no meaning
     (lambda d: resign(d[:-4] + b"\0" + d[-4:]), "header says"),
     (lambda d: d[:TEXTURE] + bytes([d[TEXTURE] ^ 1]) + d[TEXTURE + 1:], "CRC mismatch"),
     (lambda d: patch(d, 6, "<H", 0), "group count 0"),

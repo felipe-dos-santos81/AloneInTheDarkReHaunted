@@ -3,7 +3,7 @@ import json
 import pytest
 
 from aitd_models.blender import remaster
-from aitd_models.blender.remaster import (BRIDGE, KIND_BODY, KIND_PALETTE, KIND_RAMP, EditError, Edits, corner_arrays,
+from aitd_models.blender.remaster import (BRIDGE, KIND_BODY, KIND_GLASS, KIND_PALETTE, KIND_RAMP, EditError, Edits, corner_arrays,
                                           corner_uv, engine_rest_vertices, levels, projection, read_edits,
                                           srgb_to_linear)
 from aitd_models.body import parse_body
@@ -68,14 +68,14 @@ def test_corner_arrays_on_the_chain():
 
 
 def test_projection_edits_change_their_group_and_leave_bridges_alone():
-    # triangle 0 lies in group 0 alone; triangle 1 spans groups 0 and 3
-    body = parse_body(body_bytes(prims=[(1, 0, 10, [0, 1, 2], 0), (1, 0, 20, [2, 7, 8], 0)]))
+    # triangles 0 and 2 (glass) lie in group 0 alone; triangle 1 spans groups 0 and 3
+    body = parse_body(body_bytes(prims=[(1, 0, 10, [0, 1, 2], 0), (1, 0, 20, [2, 7, 8], 0), (1, 2, 30, [0, 1, 2], 0)]))
     _rest, mesh = rest_mesh(body, synthetic_palette_rgb())
     paths = {"body": "b", "ramp": None, "other": None}
     plain = corner_arrays(body, mesh, paths, Edits())
-    assert plain["tri_group"].tolist() == [0, BRIDGE]
+    assert plain["tri_group"].tolist() == [0, BRIDGE, 0]
     palette = corner_arrays(body, mesh, paths, Edits(projection={0: "palette"}))
-    assert palette["kind"].tolist() == [KIND_PALETTE, KIND_BODY]
+    assert palette["kind"].tolist() == [KIND_PALETTE, KIND_BODY, KIND_GLASS]  # glass stays glass
     front = corner_arrays(body, mesh, paths, Edits(projection={0: "front"}))
     assert front["w_front"][0] == 1.0 and front["w_front"][1] == plain["w_front"][1]
 
@@ -91,9 +91,8 @@ def test_corner_arrays_keep_the_order_past_odd_polygons(monkeypatch):
     body = parse_body(body_bytes(prims=prims))
     _rest, mesh = rest_mesh(body, synthetic_palette_rgb())
     arrays = corner_arrays(body, mesh, {"body": "b", "ramp": "r", "other": None}, Edits())
-    assert arrays["kind"][:4].tolist() == [KIND_PALETTE, KIND_BODY, KIND_RAMP, KIND_PALETTE]
-    assert arrays["transparent"][:4].tolist() == [0, 0, 0, 1] and arrays["transparent"][4:].all()
-    assert len(arrays["transparent"]) > 4
+    assert arrays["kind"][:4].tolist() == [KIND_PALETTE, KIND_BODY, KIND_RAMP, KIND_GLASS]
+    assert len(arrays["kind"]) > 4 and (arrays["kind"][4:] == KIND_GLASS).all()
     rest = engine_rest_vertices(body)
     pmin, prange = projection(rest)
     corners = rest[[2, 7, 8], :2]
