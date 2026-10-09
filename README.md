@@ -146,8 +146,8 @@ Controllers are hot-pluggable; rebind their buttons in the **Controls** menu.
 **F1** opens the options dialog, which also shows at startup. Settings are
 saved in `aitd_remaster.cfg` next to the game data;
 [docs/configuration.md](docs/configuration.md) lists every key and its default.
-HD backgrounds are off and HD character models on by default
-(`graphics.hdBackgrounds`, `graphics.hdModels`).
+Every graphics enhancement is on by default: HD backgrounds, HD character
+models, every post effect and TrueType text.
 [docs/REMASTER.md](docs/REMASTER.md) describes the remaster features.
 
 ## HD assets

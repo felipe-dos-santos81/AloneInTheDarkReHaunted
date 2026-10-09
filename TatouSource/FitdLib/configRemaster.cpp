@@ -34,11 +34,11 @@ void initDefaultRemasterConfig()
     g_remasterConfig.controller.enableController = true;
 
     // HD Graphics defaults (for future)
-    g_remasterConfig.graphics.enableHDBackgrounds = false;
+    g_remasterConfig.graphics.enableHDBackgrounds = true; // draws the original art when backgrounds_hd.hda is missing
     g_remasterConfig.graphics.enableHDModels = true; // Assets/models_hd; a body without one draws classic
     g_remasterConfig.graphics.backgroundScale = 2;
     g_remasterConfig.graphics.enableFiltering = true;
-    g_remasterConfig.graphics.enableBlurredMenu = false;
+    g_remasterConfig.graphics.enableBlurredMenu = true;
     g_remasterConfig.graphics.menuBlurAmount = 5.0f;
     g_remasterConfig.graphics.enableHints = true;
     g_remasterConfig.graphics.enableArtwork = true;
@@ -57,16 +57,16 @@ void initDefaultRemasterConfig()
     g_remasterConfig.postProcessing.ssaoRadius = 400.0f;
     g_remasterConfig.postProcessing.ssaoIntensity = 0.8f;
     g_remasterConfig.postProcessing.bloomPasses = 2;
-    g_remasterConfig.postProcessing.enableVignette = false;
+    g_remasterConfig.postProcessing.enableVignette = true;
     g_remasterConfig.postProcessing.vignetteIntensity = 0.35f;
     g_remasterConfig.postProcessing.vignetteRadius = 0.75f;
     // SSGI defaults
-    g_remasterConfig.postProcessing.enableSSGI = false;
+    g_remasterConfig.postProcessing.enableSSGI = true;
     g_remasterConfig.postProcessing.ssgiRadius = 300.0f;
     g_remasterConfig.postProcessing.ssgiIntensity = 0.6f;
     g_remasterConfig.postProcessing.ssgiNumSamples = 16;
     // Light Probe defaults
-    g_remasterConfig.postProcessing.enableLightProbes = false;
+    g_remasterConfig.postProcessing.enableLightProbes = true;
     g_remasterConfig.postProcessing.lightProbeIntensity = 0.5f;
     g_remasterConfig.postProcessing.enableColorGrading = true;
     g_remasterConfig.postProcessing.exposure = 0.05f;
@@ -84,7 +84,7 @@ void initDefaultRemasterConfig()
     strcpy(g_remasterConfig.music.musicFolder, "music");
 
     // TTF font defaults
-    g_remasterConfig.font.enableTTF = false;
+    g_remasterConfig.font.enableTTF = true;
     strcpy(g_remasterConfig.font.fontPath, "fonts/IMFellEnglish-Regular.ttf"); // Assets/fonts, copied by every build
     g_remasterConfig.font.fontSize = 16;
     g_remasterConfig.font.hideOriginalText = true;

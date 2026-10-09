@@ -16,13 +16,13 @@ loading one changes them once and saves the file: before version 2 it turns
 
 | Key | Default | Meaning |
 |---|---|---|
-| `graphics.hdBackgrounds` | `false` | Draw the HD camera views from `backgrounds_hd.hda` (`make hd-install`) |
+| `graphics.hdBackgrounds` | `true` | Draw the HD camera views from `backgrounds_hd.hda` (`make hd-install`) |
 | `graphics.backgroundScale` | `2` | Size of the HD art, as a multiple of 320x200 (1–4). The shipped art is 4 |
 | `graphics.hdModels` | `true` | Draw the HD character models from `models_hd/` in the game data folder, or else next to the executable. Each build copies them next to the executable (into the app on macOS). A body without a model draws classic, and a missing folder logs one line |
 | `graphics.msaa` | `4` | Anti-aliasing for 3D models: 0, 2, 4, 8 or 16 |
 | `graphics.renderer` | `auto` | `auto`, `d3d11`, `d3d12`, `opengl`, `vulkan` or `metal` |
 | `graphics.fullscreen` | `false` | Start in fullscreen (**F11** toggles it) |
-| `graphics.blurredMenu`, `graphics.menuBlurAmount` | `false`, `5.0` | Blur the scene behind menus |
+| `graphics.blurredMenu`, `graphics.menuBlurAmount` | `true`, `5.0` | Blur the scene behind menus |
 | `graphics.useArtwork` | `true` | Artwork behind the start and system menus |
 | `gameplay.hints` | `true` | Highlight objects you can interact with |
 
@@ -33,9 +33,9 @@ loading one changes them once and saves the file: before version 2 it turns
 | `postprocessing.bloom` | `true` | Glow around bright areas: `bloomThreshold` 0.45, `bloomIntensity` 0.55, `bloomPasses` 2 |
 | `postprocessing.filmGrain` | `true` | Film grain: `filmGrainIntensity` 0.025 |
 | `postprocessing.ssao` | `true` | Ambient occlusion: `ssaoRadius` 400, `ssaoIntensity` 0.8 |
-| `postprocessing.ssgi` | `false` | Screen-space bounce light: `ssgiRadius` 300, `ssgiIntensity` 0.6, `ssgiNumSamples` 16 |
-| `postprocessing.lightProbes` | `false` | Ambient light from probes: `lightProbeIntensity` 0.5 |
-| `postprocessing.vignette` | `false` | Darker corners: `vignetteIntensity` 0.35, `vignetteRadius` 0.75 |
+| `postprocessing.ssgi` | `true` | Screen-space bounce light: `ssgiRadius` 300, `ssgiIntensity` 0.6, `ssgiNumSamples` 16 |
+| `postprocessing.lightProbes` | `true` | Ambient light from probes: `lightProbeIntensity` 0.5 |
+| `postprocessing.vignette` | `true` | Darker corners: `vignetteIntensity` 0.35, `vignetteRadius` 0.75 |
 | `postprocessing.colorGrading` | `true` | `exposure` 0.05, `contrast` 1.06, `saturation` 0.96, `temperature` −0.02, `shadowLift` 0.012, `highlightRolloff` 0.18 |
 
 The values after each switch are its own keys (`postprocessing.bloomThreshold = 0.45`).
@@ -73,7 +73,7 @@ Rebind them in **Controls** in the system menu rather than by hand.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `font.enableTTF`, `font.path`, `font.size` | `false`, `"fonts/IMFellEnglish-Regular.ttf"`, `16` | Draw text with a TrueType font. Every build ships IM Fell English (`Assets/fonts`); a path that does not load falls back to it |
+| `font.enableTTF`, `font.path`, `font.size` | `true`, `"fonts/IMFellEnglish-Regular.ttf"`, `16` | Draw text with a TrueType font. Every build ships IM Fell English (`Assets/fonts`); a path that does not load falls back to it |
 | `font.hideOriginal` | `true` | With the TTF font on, hide the original bitmap text |
 | `interface.showOptionsAtStartup` | `true` | Open the options dialog at startup |
 
