@@ -8,9 +8,9 @@
 
 #Cdo Exército
 #Cda União
-#P17 de junho de 1862. O Sul
-desmoronava. A Luisiana estava aberta
-para nós. Cabia-me, a cada dia,
+#P17 de junho de 1862.
+#TO Sul desmoronava. A Luisiana estava
+aberta para nós. Cabia-me, a cada dia,
 requisitar víveres para nossas tropas, e
 nessa empresa contava com o auxílio de
 uma vintena de bravos. Os rebeldes ainda
