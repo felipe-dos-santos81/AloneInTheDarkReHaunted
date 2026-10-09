@@ -96,6 +96,7 @@ def test_a_skipped_body_never_reaches_blender_and_a_bad_edit_fails_it(export):
                                                      ("failed", "LISTBOD2_001.json: unknown field smooth")]
     assert calls == []
     assert not (tmp / "ai/bodies/LISTBODY_000/model.glb").exists()
+    assert not (tmp / "work/LISTBODY_000/corners.npz").exists() and not (tmp / "work/LISTBODY_000/job.json").exists()
 
 
 def test_the_report_has_a_line_per_body(export):

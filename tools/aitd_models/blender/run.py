@@ -59,11 +59,16 @@ def texture_source(key: str, paths: dict) -> str:
 
 def prepare(record: BodyRecord, models: pathlib.Path, work: pathlib.Path,
             atlas_dir: pathlib.Path = ATLASES, edits_dir: pathlib.Path = EDITS):
-    """Write work/job.json and work/corners.npz; returns (edits, atlas paths)."""
+    """Write work/job.json and work/corners.npz; returns (edits, atlas paths).
+    A skipped body writes nothing and returns no paths."""
+    edits_file = edits_dir / f"{record.key}.json"
+    peek = read_edits(edits_file, 100)  # the group names run g00..g99; the real count is checked below
+    if peek.skip:
+        return peek, {}
     folder = models / record.dir
     body = parse_body((folder / "body.bin").read_bytes())
     palette = decode_palette((models / PALETTE_NAME).read_bytes())
-    edits = read_edits(edits_dir / f"{record.key}.json", len(body.groups))
+    edits = read_edits(edits_file, len(body.groups))
     paths = atlas_paths(record.key, record.aliases, atlas_dir)
     _rest, mesh = rest_mesh(body, palette)
     arrays = corner_arrays(body, mesh, paths, edits)
@@ -115,8 +120,12 @@ def run_bodies(records: list[BodyRecord], models: pathlib.Path, out: pathlib.Pat
                           time.monotonic() - start)
             log(f"delivered {record.key}: {triangles} triangles, {run.texture}, {run.seconds:.0f} s")
         except Exception as exc:  # a body fails alone, whatever went wrong; Ctrl-C still stops the run
-            delivery.unlink(missing_ok=True)  # never leave an earlier delivery for import-models
-            run = BodyRun(record.key, "failed", str(exc), seconds=time.monotonic() - start)
+            detail = str(exc)
+            try:
+                delivery.unlink(missing_ok=True)  # never leave an earlier delivery for import-models
+            except OSError as gone:
+                detail += f" (and the earlier delivery could not be removed: {gone})"
+            run = BodyRun(record.key, "failed", detail, seconds=time.monotonic() - start)
             log(f"error: {record.key}: {exc}")
         runs.append(run)
     return runs

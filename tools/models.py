@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import pathlib
+import shutil
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -203,9 +204,11 @@ def cmd_blender(args, root: pathlib.Path, log) -> int:
             log(f"error: not canonical character bodies: {', '.join(bad)}")
             return EXIT_USAGE
         bodies = [r for r in bodies if r.key in only]
-    if not blender.is_file():
+    found = shutil.which(str(blender))  # a bare name (BLENDER=blender) is looked up on PATH
+    if found is None:
         log(f"error: Blender not found at {blender} (give its executable with BLENDER=PATH)")
         return EXIT_USAGE
+    blender = pathlib.Path(found)
     runs = run_bodies(bodies, models, out, work, blender_stage(blender), log)
     write_report(out / "run.md", runs)
     failed = sum(r.status == "failed" for r in runs)
