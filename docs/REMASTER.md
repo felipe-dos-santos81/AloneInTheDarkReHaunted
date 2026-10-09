@@ -1,325 +1,108 @@
-# Alone In The Dark: Re-Haunted — Remaster Features
-
-This document covers all the enhancements added by the Re-Haunted fork on top of the original FITD engine. Every `aitd_remaster.cfg` key, with its default, is in [configuration.md](configuration.md); mouse gameplay and the combat assists are in the [README](../README.md#mouse-left-button-only).
-
----
-
-## Controller Support
-
-### Overview
-Re-Haunted supports modern game controllers through SDL3's gamepad API. This includes Xbox controllers, PlayStation controllers, Nintendo Switch Pro controllers, and any other controller supported by SDL3.
-
-### Features
-- **Analog Stick Movement**: Use the left analog stick for smooth character movement
-- **D-Pad Support**: Traditional D-pad input is fully supported
-- **Button Mapping**: Intuitive button layout, fully rebindable via the in-game Controls menu
-- **Hot-Plugging**: Controllers can be connected/disconnected during gameplay
-- **Configurable Settings**: Customize deadzone, sensitivity, and axis inversion
-
-### Default Button Mapping
-
-#### Movement
-- **Left Analog Stick**: Character movement (analog)
-- **D-Pad**: Character movement (digital)
-
-#### Actions  
-- **A Button** (Xbox) / **Cross** (PlayStation): Action/Confirm/Click
-- **B Button** (Xbox) / **Circle** (PlayStation): Cancel/Escape
-- **Start Button**: Enter/Menu select
-- **LB / RB** (Xbox) / **L1 / R1** (PlayStation): Quick turn left / right
-
-### Configuration
-
-Controller settings in `aitd_remaster.cfg`:
-
-```ini
-controller.enable = true          # Enable/disable controller support
-controller.deadzone = 0.15        # Stick deadzone (0.0–0.9)
-controller.sensitivity = 1.0      # Stick sensitivity (0.1–5.0)
-controller.invertY = false        # Invert Y-axis
-controller.analogMovement = true  # Enable analog stick movement
-```
-
-### Troubleshooting
-
-- **Controller not detected?** — Ensure your controller is connected before starting the game, or reconnect it (hot-plug is supported). Check that SDL3 supports your controller type.
-- **Stick drift?** — Increase `controller.deadzone` to 0.20–0.25.
-- **Movement too sensitive?** — Reduce `controller.sensitivity` to 0.7–0.9.
-
-### Technical Details
-
-- SDL3 gamepad subsystem with configurable deadzone and sensitivity
-- Digital threshold for analog-to-digital conversion: 0.3
-- Frame-based input polling
-- Three input modes: Analog (smooth), Digital (8-direction), Hybrid (both simultaneously)
-
----
-
-## Fullscreen Mode
-
-Toggle fullscreen at any time using:
-
-- **F11** key
-- **Alt + Enter**
-- **Double-click** empty space outside gameplay
-- **Display** option in the in-game system menu (Escape → Display: Windowed/Fullscreen)
-
-The fullscreen setting is persisted in `aitd_remaster.cfg` as `graphics.fullscreen`. When the game starts, it reads this setting and automatically enters fullscreen if enabled. The game window is also raised to the foreground at startup to ensure the console window does not cover it.
-
-```ini
-graphics.fullscreen = true   # Start in fullscreen mode
-```
-
----
-
-## HD Graphics
-
-### HD Backgrounds
-- Load upscaled camera backgrounds at 2×, 4×, or 8× resolution (PNG/TGA format via bimg/stb_image)
-- Animated HD backgrounds supported (e.g., flickering lights, moving elements)
-- Automatic fallback to original PAK images when HD versions are unavailable
-- Toggle between original and HD graphics via the **Detail** option in the system menu
-
-### HD Depth Masks
-- Hand-edited masks for correct 3D object occlusion with HD backgrounds
-- Load from `masks_hd/` directory (enabled by default)
-- Optional mask dumping for artists: set `masks.dump = true` to export generated masks as PNG
-
-### Textured 3D Models
-- High-quality textured replacements for core 3D models via texture atlas system
-- Per-floor animation caching prevents incorrect model loading between game areas
-
-### HD Character Models
-- Refined, textured meshes replace all 42 classic bodies (`graphics.hdModels`, on by default)
-- Skinned to the original bones, so every animation plays unchanged; translucent parts (the ghost, the insect's wings, lamp glass) draw blended
-- Every build copies `Assets/models_hd` next to the game; a body without a model draws classic
-- Made with `make blender-models` and `make import-models`: see [model-contract.md](model-contract.md) and [hd-models-checklist.md](hd-models-checklist.md)
-
-### Configuration
-
-```ini
-graphics.hdBackgrounds = true     # Enable HD backgrounds
-graphics.backgroundScale = 2     # Size of the HD art, as a multiple of 320x200
-graphics.hdModels = true         # HD character models
-graphics.useArtwork = true       # Use replacement artwork assets
-
-masks.dump = false                # Dump generated masks to PNG for editing
-masks.load = true                 # Load hand-edited HD masks
-```
-
----
-
-## Post-Processing Effects
-
-All post-processing effects are configurable and can be toggled independently.
-
-### Bloom
-Multi-pass bloom with configurable threshold, intensity, and number of passes.
-
-```ini
-postprocessing.bloom = true
-postprocessing.bloomThreshold = 0.45
-postprocessing.bloomIntensity = 0.55
-postprocessing.bloomPasses = 2
-```
-
-### Film Grain
-Subtle film grain overlay for a cinematic look.
-
-```ini
-postprocessing.filmGrain = true
-postprocessing.filmGrainIntensity = 0.025
-```
-
-### Screen-Space Ambient Occlusion (SSAO)
-Adds depth-aware shadow contact to corners and crevices.
-
-```ini
-postprocessing.ssao = true
-postprocessing.ssaoRadius = 400.0
-postprocessing.ssaoIntensity = 0.8
-```
-
-### Vignette
-Darkens the edges of the screen for a horror/cinematic effect.
-
-```ini
-postprocessing.vignette = false
-postprocessing.vignetteIntensity = 0.35
-postprocessing.vignetteRadius = 0.75
-```
-
-### Screen-Space Global Illumination (SSGI)
-Approximates indirect lighting by sampling nearby surfaces in screen space. Renders at half resolution for performance.
-
-```ini
-postprocessing.ssgi = false
-postprocessing.ssgiRadius = 300.0
-postprocessing.ssgiIntensity = 0.6
-postprocessing.ssgiNumSamples = 16    # 8–32
-```
-
-### Light Probes
-Provides ambient lighting using Spherical Harmonics at strategic world positions. Loaded per-floor and per-camera.
-
-```ini
-postprocessing.lightProbes = false
-postprocessing.lightProbeIntensity = 0.5
-```
-
----
-
-## TTF Font Rendering
-
-Smooth TrueType font overlay on top of the original bitmap fonts, rendered via ImGui with anti-aliasing.
-
-```ini
-font.enableTTF = true
-font.path = "BLKCHCRY.TTF"    # Gothic font (place in game directory)
-font.size = 16                 # Font size in pixels (14–18 recommended)
-font.hideOriginal = true       # Hide original bitmap font when TTF is active
-```
-
-Recommended fonts: **BLKCHCRY.TTF** (Black Chancery), **MORPHEUS.TTF**, or any gothic/horror TTF.
-
----
-
-## Transparent Menus
-
-The system menu can use a blurred, semi-transparent overlay instead of opaque frames:
-
-```ini
-graphics.blurredMenu = true
-graphics.menuBlurAmount = 5.0   # Blur strength (higher = darker)
-```
-
----
-
-## In-Game Maps
-
-Interactive maps accessible from the system menu (press **Tab** / **Select** during the pause menu):
-
-- **Mansion Map** — All floors of Derceto Manor
-- **Underground Map** — Caverns and underground areas
-- Real-time position tracking
-- Full room and area labelling
-
----
-
-## Interactive Hints
-
-When enabled, interactable objects in the game world are highlighted:
-
-```ini
-gameplay.hints = true
-```
-
-Toggle via the **Hints** option in the system menu.
-
----
-
-## Atmospheric Particles
-
-Dust mote particles float in the attic (floor 7) for atmospheric effect. The system uses up to 150 particles with individual physics, size, transparency, and lifetime.
-
----
-
-## Voice-Over Playback (AITD1 CD Edition)
-
-Full support for CD voice-over during book, letter, and notebook reading in AITD1:
-
-- Per-page VOC audio concatenation and playback via SoLoud
-- VOC files are searched in priority order: HDA archive → CD-ROM drive (ALONECD volume) → local filesystem
-- Automatic cleanup when exiting reading screens
-- Page-turn sound effects during voiced reading
-
----
-
-## External Music (Not Used Yet)
-
-Meant to play custom music tracks instead of the original ADLIB music. The game reads and saves these keys, but nothing acts on them yet:
-
-```ini
-music.external = false
-music.folder = "music"     # Folder containing MUSIC_XX.ogg or MUSIC_XX.mp3
-```
-
----
-
-## Key Bindings
-
-All keyboard and gamepad bindings are rebindable via the in-game **Controls** menu, or by editing `aitd_remaster.cfg`:
-
-```ini
-# Keyboard (SDL scancodes)
-controls.key.up = 82
-controls.key.down = 81
-controls.key.left = 80
-controls.key.right = 79
-controls.key.action = 44          # Space
-controls.key.confirm = 40         # Enter
-controls.key.cancel = 41          # Escape
-controls.key.quickturnleft = 20   # Q
-controls.key.quickturnright = 8   # E
-controls.key.run = 225            # Left Shift
-
-# Gamepad (SDL_GamepadButton values)
-controls.pad.up = 11
-controls.pad.down = 12
-controls.pad.left = 13
-controls.pad.right = 14
-controls.pad.action = 0           # A / Cross
-controls.pad.confirm = 6          # Start
-controls.pad.cancel = 1           # B / Circle
-controls.pad.quickturnleft = 9    # LB / L1
-controls.pad.quickturnright = 10  # RB / R1
-controls.pad.run = 7              # L3
-```
-
----
-
-## Crash Recovery
-
-On Windows, an exception handler catches unhandled crashes and writes detailed logs to `crash_log.txt`. The game attempts to continue after non-fatal exceptions.
-
----
-
-## Auto-Update Checker
-
-At startup, a non-blocking background thread checks GitHub for newer releases. If a new version is available, a notification is printed to the console.
-
----
-
-## Development
-
-### Building
-Remaster features are automatically included in every build — no special flags needed:
-
-```bash
-cmake --build . --config Release
-```
-
-### Configuration System
-- `configRemaster.h` — `RemasterConfig` struct definition
-- `configRemaster.cpp` — Config file parser and writer (`loadRemasterConfig()` / `saveRemasterConfig()`)
-- `aitd_remaster.cfg` — User configuration file (created automatically on first save)
-
-### Adding New Controller Mappings
-Edit `controlsMenu.cpp` to add new actions, or use the in-game Controls menu for runtime rebinding.
-
----
+# Remaster Features
+
+What Re-Haunted adds to the original FITD engine. Every `aitd_remaster.cfg`
+key, with its default, is in [configuration.md](configuration.md); mouse
+gameplay and the combat assists are in the
+[README](../README.md#mouse-left-button-only).
+
+## Controllers
+
+Xbox, PlayStation, Switch Pro and any other SDL3 gamepad. Controllers are
+hot-pluggable, and every button can be rebound in the **Controls** menu.
+
+- **Move:** left stick (analog) or D-pad. A stick reads as a direction past 0.3.
+- **A / Cross:** action, confirm. **B / Circle:** cancel. **Start:** menu
+  select. **LB / RB (L1 / R1):** quick turn. **L3:** run.
+- **Settings** (`controller.*`): dead zone (0.0–0.9, default 0.15),
+  sensitivity (0.1–5.0, default 1.0), invert Y, analog movement.
+- **Stick drift:** raise the dead zone to 0.20–0.25. **Too sensitive:** lower
+  sensitivity to 0.7–0.9.
+
+## Fullscreen
+
+**F11**, **Alt+Enter**, a double-click on empty space outside gameplay, or
+**Display** in the system menu. `graphics.fullscreen` is saved and applied at
+startup, and the game window is raised above the console.
+
+## HD graphics
+
+- **HD backgrounds** (`graphics.hdBackgrounds`): upscaled camera views from
+  `backgrounds_hd.hda`, including animated ones, with the original image where
+  no HD one exists. **Detail** in the system menu switches between original and
+  HD.
+- **HD depth masks** (`masks.load`): hand-edited masks from `masks_hd/` so 3D
+  objects hide correctly behind HD scenery. `masks.dump` writes the generated
+  masks as PNG for editing.
+- **Textured models:** texture atlases on the classic bodies, cached per floor.
+- **HD character models** (`graphics.hdModels`, on by default): refined,
+  textured meshes for all 42 classic bodies, skinned to the original bones so
+  every animation plays unchanged. Translucent parts (the ghost, the insect's
+  wings, lamp glass) draw blended, and a body without a model draws classic.
+  Every build copies `Assets/models_hd` next to the game. They are made with
+  `make blender-models` and `make import-models`: see
+  [model-contract.md](model-contract.md) and
+  [hd-models-checklist.md](hd-models-checklist.md).
+
+## Post-processing
+
+Each effect has its own switch and settings under `postprocessing.*`:
+
+- **Bloom:** glow around bright areas, in several passes.
+- **Film grain.**
+- **SSAO:** contact shadows in corners and creases.
+- **Vignette:** darker screen edges.
+- **SSGI:** bounce light from nearby surfaces, rendered at half resolution.
+- **Light probes:** spherical-harmonics ambient light, loaded per floor and
+  camera.
+
+## Text and menus
+
+- **TrueType text** (`font.*`): anti-aliased text drawn through ImGui over or
+  instead of the bitmap font. Put the font (default `BLKCHCRY.TTF`, Black
+  Chancery) in the game folder; 14–18 px reads best.
+- **Blurred menus** (`graphics.blurredMenu`): a blurred, see-through system
+  menu instead of opaque frames.
+
+## Maps and hints
+
+- **Maps:** press **Tab** (gamepad **Select**) in the system menu for the
+  mansion and underground maps, with room labels and your position.
+- **Hints** (`gameplay.hints`, or **Hints** in the system menu): highlights the
+  objects you can interact with.
+
+## Atmosphere and sound
+
+- **Dust:** up to 150 particles in the attic and in the intro.
+- **Voice-over (AITD1 CD):** books, letters and notebooks are read aloud, page
+  by page, with page-turn sounds. The VOC files are looked up in the HDA
+  archive, then on the CD (volume `ALONECD`), then on disk.
+- **External music:** `music.external` and `music.folder` are read and saved,
+  but nothing plays them yet.
+
+## Key bindings
+
+Rebind keys and buttons in the **Controls** menu. The file stores SDL
+scancodes (`controls.key.*`) and SDL gamepad buttons (`controls.pad.*`) for
+up, down, left, right, action, confirm, cancel, quick turn left and right, and
+run; the defaults are in [configuration.md](configuration.md#controls).
+
+## Windows only
+
+- **Crash log:** unhandled exceptions are written to `crash_log.txt`, and the
+  game tries to carry on after non-fatal ones.
+- **Update check:** at startup a background thread asks GitHub for a newer
+  release of the original project and prints a note to the console.
+
+## For developers
+
+- Every build includes the remaster features; there are no special flags.
+- `configRemaster.h` defines `RemasterConfig`; `configRemaster.cpp` reads and
+  writes `aitd_remaster.cfg` (`loadRemasterConfig`, `saveRemasterConfig`).
+- New input actions go in `controlsMenu.cpp`.
 
 ## Credits
 
-**Original Game**: Alone in the Dark (Infogrames, 1992)  
-**Original FITD Engine**: yaz0r  
-**Controller / Input**: SDL3 Gamepad API  
-**Audio**: SoLoud  
-**Rendering**: bgfx  
-**UI**: Dear ImGui
+Alone in the Dark (Infogrames, 1992). FITD engine by yaz0r. SDL3 (input and
+windowing), SoLoud (audio), bgfx (rendering) and Dear ImGui (UI).
 
----
-
-## License
-
-This is a fan project. All original game assets remain property of their respective copyright holders.
+All original game assets remain the property of their copyright holders.
