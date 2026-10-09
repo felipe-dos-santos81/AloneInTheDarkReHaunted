@@ -188,6 +188,23 @@ make models-install   # copy the models and atlases into the app
 
 ## Screenshots and videos
 
+**Original graphics (left) and HD (right)**, from seven saved games: HD backgrounds,
+HD character models (`graphics.hdBackgrounds`, `graphics.hdModels`) and the post effects.
+
+![Save 0: original graphics, then HD](docs/screenshots/save0-original-vs-hd.jpg)
+
+![Save 1: original graphics, then HD](docs/screenshots/save1-original-vs-hd.jpg)
+
+![Save 2: original graphics, then HD](docs/screenshots/save2-original-vs-hd.jpg)
+
+![Save 3: original graphics, then HD](docs/screenshots/save3-original-vs-hd.jpg)
+
+![Save 4: original graphics, then HD](docs/screenshots/save4-original-vs-hd.jpg)
+
+![Save 5: original graphics, then HD](docs/screenshots/save5-original-vs-hd.jpg)
+
+![Save 6: original graphics, then HD](docs/screenshots/save6-original-vs-hd.jpg)
+
 ![573227923-7d49eb5a-8d31-4474-a939-ff9876fdc9df](https://github.com/user-attachments/assets/63ea6028-5b75-4003-9db5-a0e3c9040d87)
 
 ![573228488-b0206b5f-8026-46d0-89a6-b5dc6b7ba73e](https://github.com/user-attachments/assets/e7fa702a-6d17-4ce2-afc4-573c3be5340e)
