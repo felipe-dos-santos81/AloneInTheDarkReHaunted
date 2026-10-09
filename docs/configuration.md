@@ -18,7 +18,7 @@ turns HD models on once; the next save writes version 2.
 |---|---|---|
 | `graphics.hdBackgrounds` | `false` | Draw the HD camera views from `backgrounds_hd.hda` (`make hd-install`) |
 | `graphics.backgroundScale` | `2` | Size of the HD art, as a multiple of 320x200 (1–4). The shipped art is 4 |
-| `graphics.hdModels` | `true` | Draw the HD character models from `models_hd/` next to the game data. Each build copies them next to the game (into the app on macOS) and `make run` into the data folder. A body without a model draws classic, and a missing folder logs one line |
+| `graphics.hdModels` | `true` | Draw the HD character models from `models_hd/` in the game data folder, or else next to the executable. Each build copies them next to the executable (into the app on macOS) and `make run` into the data folder. A body without a model draws classic, and a missing folder logs one line |
 | `graphics.msaa` | `4` | Anti-aliasing for 3D models: 0, 2, 4, 8 or 16 |
 | `graphics.renderer` | `auto` | `auto`, `d3d11`, `d3d12`, `opengl`, `vulkan` or `metal` |
 | `graphics.fullscreen` | `false` | Start in fullscreen (**F11** toggles it) |
