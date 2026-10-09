@@ -38,14 +38,15 @@ Guidance for anyone (human or agent) changing this repository.
 - `TatouSource/FitdLib/physics/` — collision rules, engine-free and header-only,
   unit-tested in `TatouSource/tests/engine/`: `collisionEscape.h` (how an
   actor already inside a blocker may move, used by `GereCollision`).
-- `tools/` + `tests/tools/` — the Python HD model export and import
-  (reading the game data through `tools/aitd_textures/`) (`tools/aitd_models/`, `make export-models`,
-  `make import-models`; contract in `docs/model-contract.md`, sign-off in
-  `docs/hd-models-checklist.md`), and the in-repo model generator
-  (`tools/aitd_models/blender/`, `make blender-models`: Blender refines the
-  original bodies and bakes the hand-made `Assets/atlases` onto them; its
-  `stage.py` runs inside Blender and imports only `bpy`, `bmesh`, `mathutils` and numpy);
-  `make test-tools` runs their tests.
+- `tools/` + `tests/tools/` — the Python HD model tools, tested by
+  `make test-tools`. `tools/aitd_data/` reads the game data (PAKs,
+  palette); `tools/aitd_models/` exports the bodies and imports the
+  replacements (`make export-models`, `make import-models`; contract in
+  `docs/model-contract.md`, sign-off in `docs/hd-models-checklist.md`);
+  `tools/aitd_models/blender/` is the in-repo generator (`make
+  blender-models`: Blender refines the original bodies and bakes the
+  hand-made `Assets/atlases` onto them; its `stage.py` runs inside Blender
+  and imports only `bpy`, `bmesh`, `mathutils` and numpy).
 - `docs/` — contracts and checklists (`docs/mouse-gameplay-checklist.md`).
 - `graphify-out/` (any depth) — generated knowledge graph (`/graphify`);
   git-ignored, never commit it.

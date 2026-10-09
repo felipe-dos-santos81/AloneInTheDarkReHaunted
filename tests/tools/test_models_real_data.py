@@ -10,8 +10,8 @@ import pytest
 from aitd_models.body import parse_anim, parse_body
 from aitd_models.pose import pose_exact, pose_float, pose_int, skin
 from aitd_models.skeleton import skeleton_hash, validate
-from aitd_textures.decode import DataNotFound, find_data_dir
-from aitd_textures.pak import Pak
+from aitd_data.decode import DataNotFound, find_data_dir
+from aitd_data.pak import Pak
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 PAIRS = (("LISTBODY", "LISTANIM"), ("LISTBOD2", "LISTANI2"))

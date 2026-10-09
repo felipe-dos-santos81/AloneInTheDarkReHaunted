@@ -24,9 +24,9 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from aitd_textures.decode import PALETTE_ENTRY, PALETTE_PAK, decode_palette
-from aitd_textures.files import atomic_write_bytes
-from aitd_textures.pak import Pak
+from aitd_data.decode import PALETTE_ENTRY, PALETTE_PAK, decode_palette
+from aitd_data.files import atomic_write_bytes
+from aitd_data.pak import Pak
 
 from .align import align
 from .bind import bind

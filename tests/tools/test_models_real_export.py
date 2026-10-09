@@ -12,8 +12,8 @@ from aitd_models.gltf import read_glb
 from aitd_models.mesh import build_mesh
 from aitd_models.original import to_gltf_points
 from aitd_models.pose import pose_float, skin
-from aitd_textures.decode import DataNotFound, decode_palette, find_data_dir
-from aitd_textures.pak import Pak
+from aitd_data.decode import DataNotFound, decode_palette, find_data_dir
+from aitd_data.pak import Pak
 from model_helpers import gltf_skinned_positions
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]

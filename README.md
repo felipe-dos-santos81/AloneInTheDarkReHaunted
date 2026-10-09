@@ -143,21 +143,21 @@ Settings are saved in `aitd_remaster.cfg` next to the game data:
 
 ## HD assets
 
-**Backgrounds.** The upscaled camera views and screens live in
-`Assets/backgrounds_hd` (the pipeline that made them was retired; it is in git
-history). The engine loads them from `backgrounds_hd.hda` when
-`graphics.hdBackgrounds = true`.
+**Backgrounds** are finished art in `Assets/backgrounds_hd`. They show when
+`graphics.hdBackgrounds = true`; `make hd-install` packs them into the app.
+
+**Character models** replace the classic bodies when `graphics.hdModels = true`:
 
 ```bash
-make hd-install       # pack backgrounds_hd.hda into the app
+make tools-deps       # once: the Python venv for the tools
+make export-models    # original bodies -> data/models
+make blender-models   # refine them in Blender -> data/models-ai
+make import-models    # check them and pack them into Assets/models_hd
+make models-install   # copy the models and atlases into the app
 ```
 
-**Character models.** `make export-models` writes the animated bodies for a
-model generator. `make check-models` and `make import-models` validate the
-replacements and install them into `Assets/models_hd`; `make models-install`
-copies them and the atlases into the app bundle. They draw when
-`graphics.hdModels = true`. The details are in
-[docs/model-contract.md](docs/model-contract.md) and
+`make check-models` runs the checks without importing. The format is in
+[docs/model-contract.md](docs/model-contract.md), the in-game sign-off in
 [docs/hd-models-checklist.md](docs/hd-models-checklist.md).
 
 ## Remaster features
@@ -207,9 +207,9 @@ AloneInTheDarkReHaunted/
 │   ├── ThirdParty/      # SDL3, bgfx, ImGui, SoLoud, zlib, doctest
 │   ├── tests/engine/    # doctest unit tests (make test-engine)
 │   └── tools/           # .hda archive tools
-├── tools/               # Python texture and model pipeline
+├── tools/               # Python HD model tools
 ├── tests/tools/         # its pytest suite (make test-tools)
-├── Assets/              # HD backgrounds, masks, atlases
+├── Assets/              # HD backgrounds, masks, atlases and models
 ├── docs/                # contracts and in-game checklists
 └── data/                # your game files and exports (git-ignored)
 ```

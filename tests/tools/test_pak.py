@@ -1,7 +1,7 @@
 import pytest
 
-from aitd_textures.explode import ExplodeError, explode
-from aitd_textures.pak import FLAG_RAW, Pak, PakError
+from aitd_data.explode import ExplodeError, explode
+from aitd_data.pak import FLAG_RAW, Pak, PakError
 
 
 def test_count_info_and_read_raw_entries(tmp_path, pak_bytes):

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from aitd_textures.decode import DataNotFound, decode_palette, find_data_dir
+from aitd_data.decode import DataNotFound, decode_palette, find_data_dir
 
 
 def test_find_data_dir_accepts_the_indark_folder_itself(tmp_path):

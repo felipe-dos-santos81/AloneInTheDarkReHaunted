@@ -18,10 +18,10 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from aitd_textures.decode import PALETTE_ENTRY, PALETTE_PAK, decode_palette
-from aitd_textures.explode import ExplodeError
-from aitd_textures.files import atomic_write_bytes, save_png
-from aitd_textures.pak import Pak, PakError
+from aitd_data.decode import PALETTE_ENTRY, PALETTE_PAK, decode_palette
+from aitd_data.explode import ExplodeError
+from aitd_data.files import atomic_write_bytes, save_png
+from aitd_data.pak import Pak, PakError
 
 from .body import Animation, BodyError, parse_anim, parse_body
 from .manifest import MANIFEST_NAME, BodyRecord, write_manifest
