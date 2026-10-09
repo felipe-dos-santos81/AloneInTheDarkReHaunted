@@ -30,7 +30,7 @@ void initDefaultRemasterConfig()
 
     // HD Graphics defaults (for future)
     g_remasterConfig.graphics.enableHDBackgrounds = false;
-    g_remasterConfig.graphics.enableHDModels = false;
+    g_remasterConfig.graphics.enableHDModels = true; // Assets/models_hd; a body without one draws classic
     g_remasterConfig.graphics.backgroundScale = 2;
     g_remasterConfig.graphics.enableFiltering = true;
     g_remasterConfig.graphics.enableBlurredMenu = false;
