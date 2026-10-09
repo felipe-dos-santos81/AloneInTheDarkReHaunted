@@ -101,5 +101,17 @@ def test_blender_models_target():
 def test_help_lists_the_texture_targets():
     out = make_run("help")
     for target in ("export-textures", "check-textures", "import-textures", "hd-install", "tools-deps", "test-tools",
-                   "export-models", "identity-models", "blender-models", "check-models", "import-models"):
+                   "export-models", "identity-models", "blender-models", "check-models", "import-models",
+                   "models-install"):
         assert target in out
+
+
+def test_models_install_mirrors_the_models_and_adds_the_atlases(tmp_path):
+    models, atlases, bundle = tmp_path / "m", tmp_path / "a", tmp_path / "bundle"
+    for f in (models / "new.hdm", models / "note.txt", atlases / "body_X.png", atlases / "Backups/old.png",
+              bundle / "models_hd/stale.hdm", bundle / "models_hd/keep.txt", bundle / "atlases/point_X.png"):
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text("x")
+    make_run("models-install", f"models_hd={models}", f"atlases={atlases}", f"BUNDLE_RESOURCES={bundle}")
+    assert sorted(p.name for p in (bundle / "models_hd").iterdir()) == ["keep.txt", "new.hdm"]
+    assert sorted(p.name for p in (bundle / "atlases").iterdir()) == ["body_X.png", "point_X.png"]

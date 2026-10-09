@@ -32,7 +32,11 @@ from dataclasses import dataclass
 import numpy as np
 from PIL import Image
 
-SILHOUETTE_THRESHOLD = 24  # largest channel difference from the hidden frame that is still background
+# Largest channel difference from the hidden frame that is still background. The
+# frames are bit-identical outside the bodies (clock held still); inside a box,
+# pixels differ by up to 2 levels from frame to frame. A higher value loses a
+# dark body on a dark wall.
+SILHOUETTE_THRESHOLD = 3
 DEFAULT_LIMIT = 0.85
 SCREEN_W, SCREEN_H = 320, 200
 FRAMES = ("lit", "unlit", "hidden", "classic")

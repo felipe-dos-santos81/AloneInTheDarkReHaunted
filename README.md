@@ -166,7 +166,8 @@ The upscaler contract is in [docs/texture-contract.md](docs/texture-contract.md)
 
 **Character models.** `make export-models` writes the animated bodies for a
 model generator. `make check-models` and `make import-models` validate the
-replacements and install them into `Assets/models_hd`. They draw when
+replacements and install them into `Assets/models_hd`; `make models-install`
+copies them and the atlases into the app bundle. They draw when
 `graphics.hdModels = true`. The details are in
 [docs/model-contract.md](docs/model-contract.md) and
 [docs/hd-models-checklist.md](docs/hd-models-checklist.md).

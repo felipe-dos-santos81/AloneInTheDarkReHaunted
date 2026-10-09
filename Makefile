@@ -46,6 +46,7 @@ models      ?= data/models
 models_ai   ?= data/models-ai
 models_identity ?= data/models-identity
 models_hd   ?= Assets/models_hd
+atlases     ?= Assets/atlases
 models_blender ?= data/models-blender
 BLENDER     ?= /Applications/Blender.app/Contents/MacOS/Blender
 bodies      ?=
@@ -73,7 +74,7 @@ require = @test -x "$(1)" || { echo "error: $(2) not found - $(3)"; exit 1; }
 .PHONY: help deps tools-deps configure build build-fitd build-tools run \
         test test-engine test-tools \
         export-textures check-textures import-textures hd-install hda-pack hda-unpack \
-        export-models identity-models blender-models check-models import-models \
+        export-models identity-models blender-models check-models import-models models-install \
         clean distclean rebuild
 
 help: ## List the targets
@@ -164,6 +165,17 @@ check-models: ## Check delivered models, write nothing (report=DIR writes report
 
 import-models: ## Import delivered models into Assets/models_hd [models_ai=DIR models_hd=DIR bodies=KEY,...]
 	$(MODEL_IMPORT)
+
+# The bundle's models_hd mirrors models_hd (a stale .hdm would still draw); atlases are added, never removed.
+models-install: ## Copy Assets/models_hd and Assets/atlases into the app bundle [models_hd=DIR atlases=DIR]
+	@ls "$(models_hd)"/*.hdm > /dev/null 2>&1 || { echo "error: no .hdm in $(models_hd) - run 'make import-models'"; exit 1; }
+	@if [ -n "$(BUNDLE_RESOURCES)" ] && [ -d "$(BUNDLE_RESOURCES)" ]; then \
+		rsync -a --delete --include '*.hdm' --exclude '*' "$(models_hd)/" "$(BUNDLE_RESOURCES)/models_hd/" && \
+		rsync -a --exclude Backups "$(atlases)/" "$(BUNDLE_RESOURCES)/atlases/" && \
+		echo "installed $(models_hd) and $(atlases) -> $(BUNDLE_RESOURCES)/"; \
+	else \
+		echo "note: no built app bundle found; run 'make build-fitd' first"; \
+	fi
 
 ##@ Clean
 
