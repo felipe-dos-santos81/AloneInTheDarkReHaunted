@@ -69,8 +69,8 @@ The game reads its files from the folder it starts in and writes
 **macOS and Linux**
 
 ```bash
-git clone https://github.com/felipe-dos-santos81/AloneInTheDarkReHaunted.git
-cd AloneInTheDarkReHaunted
+git clone https://github.com/felipe-dos-santos81/alone-in-the-dark-re-haunted-v2.git
+cd alone-in-the-dark-re-haunted-v2
 make deps        # Linux only: build dependencies (apt, dnf or pacman)
 make run         # build the game and play from data/aitd1
 ```
@@ -192,7 +192,7 @@ make build-fitd       # the build copies the models next to the game
 ## Repository layout
 
 ```
-AloneInTheDarkReHaunted/
+alone-in-the-dark-re-haunted-v2/
 ├── TatouSource/         # CMake project
 │   ├── Fitd/            # executable (Tatou)
 │   ├── FitdLib/         # engine library: mouse/, models/, assist/, physics/, shaders/
