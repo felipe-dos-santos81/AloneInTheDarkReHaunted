@@ -12,9 +12,12 @@ import json
 import pathlib
 import sys
 
+import math
+
 import bmesh
 import bpy
 import numpy as np
+from mathutils.bvhtree import BVHTree
 
 KINDS = ("palette", "body", "ramp", "other")
 
@@ -133,6 +136,37 @@ def _piece(src: bpy.types.Object, faces: np.ndarray, level: int, flat: bool, job
     return done
 
 
+# Directions a face looks along to see which of its sides is open: its normal,
+# and six more 45 degrees off it (along, tangent, bitangent).
+RAYS = [(1.0, 0.0, 0.0)] + [(math.cos(math.pi / 4), math.sin(math.pi / 4) * math.cos(a),
+                             math.sin(math.pi / 4) * math.sin(a)) for a in (k * math.pi / 3 for k in range(6))]
+
+
+def _orient_outward(model: bpy.types.Object) -> int:
+    """The originals mix both windings (most of a body faces inward), and the
+    engine lights an HD face on its front only, as the AO bake does. Flip each
+    face whose front sees more of the body than its back; returns how many."""
+    bm = bmesh.new()
+    bm.from_mesh(model.data)
+    bm.normal_update()
+    tree = BVHTree.FromBMesh(bm)
+    flip = []
+    for face in bm.faces:
+        n = face.normal
+        if n.length == 0:
+            continue
+        centre, t = face.calc_center_median(), n.orthogonal().normalized()
+        b = n.cross(t)
+        hits = [sum(tree.ray_cast(centre + n * (side * 1e-5), (n * a + t * u + b * v) * side)[0] is not None
+                    for a, u, v in RAYS) for side in (1, -1)]
+        if hits[0] > hits[1]:
+            flip.append(face)
+    bmesh.ops.reverse_faces(bm, faces=flip)
+    bm.to_mesh(model.data)
+    bm.free()
+    return len(flip)
+
+
 def _refined(src: bpy.types.Object, corners, job: dict) -> bpy.types.Object:
     groups = corners["tri_group"]
     # a bridge (group -1) spans groups and stays the original triangles: the engine stretches it
@@ -145,6 +179,7 @@ def _refined(src: bpy.types.Object, corners, job: dict) -> bpy.types.Object:
     bpy.ops.object.join()  # one object; its pieces stay unconnected
     model = bpy.context.view_layer.objects.active
     model.name = "model"
+    print(f"oriented {_orient_outward(model)} faces outward", flush=True)
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
     bpy.ops.mesh.quads_convert_to_tris()
