@@ -9,6 +9,25 @@ here called Tatou), with modern rendering (bgfx), audio (SoLoud) and input
 (SDL3). It runs on Windows, Linux and macOS 11.3+, and is licensed under the
 **GNU GPL v2**.
 
+## Original vs HD
+
+Seven saved games, with the original graphics on the left and the HD
+backgrounds, HD character models and post effects on the right.
+
+![Save 0: original graphics, then HD](docs/screenshots/save0-original-vs-hd.jpg)
+
+![Save 1: original graphics, then HD](docs/screenshots/save1-original-vs-hd.jpg)
+
+![Save 2: original graphics, then HD](docs/screenshots/save2-original-vs-hd.jpg)
+
+![Save 3: original graphics, then HD](docs/screenshots/save3-original-vs-hd.jpg)
+
+![Save 4: original graphics, then HD](docs/screenshots/save4-original-vs-hd.jpg)
+
+![Save 5: original graphics, then HD](docs/screenshots/save5-original-vs-hd.jpg)
+
+![Save 6: original graphics, then HD](docs/screenshots/save6-original-vs-hd.jpg)
+
 ## This fork
 
 This is a fork of
@@ -186,24 +205,7 @@ make models-install   # copy the models and atlases into the app
 | Alone in the Dark 2 | In progress, as [a separate fork](https://github.com/spacefarergames/AloneInTheDarkJackIsBackAgain/) |
 | Alone in the Dark 3 | Planned |
 
-## Screenshots and videos
-
-**Original graphics (left) and HD (right)**, from seven saved games: HD backgrounds,
-HD character models (`graphics.hdBackgrounds`, `graphics.hdModels`) and the post effects.
-
-![Save 0: original graphics, then HD](docs/screenshots/save0-original-vs-hd.jpg)
-
-![Save 1: original graphics, then HD](docs/screenshots/save1-original-vs-hd.jpg)
-
-![Save 2: original graphics, then HD](docs/screenshots/save2-original-vs-hd.jpg)
-
-![Save 3: original graphics, then HD](docs/screenshots/save3-original-vs-hd.jpg)
-
-![Save 4: original graphics, then HD](docs/screenshots/save4-original-vs-hd.jpg)
-
-![Save 5: original graphics, then HD](docs/screenshots/save5-original-vs-hd.jpg)
-
-![Save 6: original graphics, then HD](docs/screenshots/save6-original-vs-hd.jpg)
+## More screenshots and videos
 
 ![573227923-7d49eb5a-8d31-4474-a939-ff9876fdc9df](https://github.com/user-attachments/assets/63ea6028-5b75-4003-9db5-a0e3c9040d87)
 
@@ -227,7 +229,7 @@ AloneInTheDarkReHaunted/
 ├── tools/               # Python HD model tools
 ├── tests/tools/         # its pytest suite (make test-tools)
 ├── Assets/              # HD backgrounds, masks, atlases and models
-├── docs/                # contracts and in-game checklists
+├── docs/                # contracts, in-game checklists, screenshots
 └── data/                # your game files and exports (git-ignored)
 ```
 
