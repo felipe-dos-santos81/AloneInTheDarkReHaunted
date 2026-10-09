@@ -44,7 +44,7 @@ def decode(entry: bytes) -> str:
 
 
 def _normalise(text: str) -> str:
-    return text.removeprefix("﻿").replace("\r\n", "\n")
+    return text.removeprefix("\ufeff").replace("\r\n", "\n")
 
 
 def encode(text: str) -> bytes:
@@ -59,7 +59,7 @@ def bad_chars(text: str) -> list[tuple[int, str]]:
     """(line number, character) for every character the bitmap font cannot draw."""
     found = []
     for n, line in enumerate(_normalise(text).split("\n"), start=1):
-        found += [(n, ch) for ch in line if ch not in ALLOWED and (n, ch) not in found]
+        found += [(n, ch) for ch in dict.fromkeys(line) if ch not in ALLOWED]
     return found
 
 

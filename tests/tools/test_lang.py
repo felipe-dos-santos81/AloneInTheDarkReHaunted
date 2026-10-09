@@ -15,17 +15,17 @@ def test_encode_decode_round_trip_keeps_bytes():
     assert lang.encode(text) == raw
 
 
-@pytest.mark.parametrize("variant", ["\r\n", "﻿"])
+@pytest.mark.parametrize("variant", ["\r\n", "\ufeff"])
 def test_windows_line_ends_and_bom_pack_identically(variant):
     text = "@1:não\n@2:mão\n"
-    edited = ("﻿" + text) if variant == "﻿" else text.replace("\n", "\r\n")
+    edited = ("\ufeff" + text) if variant == "\ufeff" else text.replace("\n", "\r\n")
     assert lang.encode(edited) == lang.encode(text)
 
 
 def test_bad_chars_reports_unencodable_and_missing_glyphs():
     # ã composes, Á draws as A; ñ exists in CP850 but the Portuguese set excludes it,
-    # and the em dash is not in CP850 at all.
-    assert lang.bad_chars("@1:não Á\n@2:niño — x\n") == [(2, "ñ"), (2, "—")]
+    # and the em dash is not in CP850 at all. Repeats on one line report once.
+    assert lang.bad_chars("@1:não Á\n@2:niño ññ — x —\n") == [(2, "ñ"), (2, "—")]
 
 
 def test_validate_message_numbers_and_image_codes():
