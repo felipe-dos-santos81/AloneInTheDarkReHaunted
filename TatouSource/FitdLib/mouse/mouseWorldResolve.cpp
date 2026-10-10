@@ -250,6 +250,8 @@ mouse::Hand heldHand()
     return w && isAitd1WeaponFoundLife(w->foundLife) ? mouse::Hand::Weapon : mouse::Hand::Object;
 }
 
+} // namespace
+
 // The inventory action armed for the Action key (AITD1 only).
 int armedAction()
 {
@@ -257,6 +259,9 @@ int armedAction()
         return mouse::kArmedNothing;
     return mouse::armedActionFor(heldHand(), vars[kAitd1ArmedActionVar]);
 }
+
+namespace
+{
 
 // Furniture painted into the background (a type-9 hard col) whose outline holds
 // p, while an action other than push is armed: walk beside it, touch it and send

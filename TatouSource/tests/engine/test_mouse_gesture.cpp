@@ -83,7 +83,11 @@ TEST_CASE("HUD, attack and push presses spend the hold")
         Decision d = pressDecision(s, kAt, 1, 0, r.fn(), false);
         CHECK(d.type == DecisionType::Attack);
         CHECK(d.payload.actor == 7);
+        CHECK_FALSE(d.run);
         CHECK(s.spent);
+        // the second press of a double press says so: fists kick
+        onPress(s, kAt);
+        CHECK(pressDecision(s, kAt, 2, 0, r.fn(), false).run);
     }
     SUBCASE("push")
     {
@@ -394,4 +398,17 @@ TEST_CASE("payloads to different furniture differ, so a held pointer re-aims bet
     shelf.zone = 1;
     CHECK_FALSE(piano == shelf);
     CHECK(Payload{}.zone == -1); // walks and objects name no furniture
+}
+
+TEST_CASE("a click on an enemy punches, a double press kicks, and only with fists")
+{
+    struct Row { int armed; bool doublePress; int stick; };
+    const Row rows[] = {
+        { kArmedFight, false, kStickLeft },  // fists: the punch
+        { kArmedFight, true, kStickUp },     // fists: the kick
+        { kArmedNothing, false, kStickUp },  // a weapon: guns fire on up alone
+        { kArmedPush, false, kStickUp },     // Actions with another choice: as before
+    };
+    for (const Row& row : rows)
+        CHECK(strikeStick(row.armed, row.doublePress) == row.stick);
 }
