@@ -407,7 +407,7 @@ TEST_CASE("a click on an enemy punches, a double press kicks, and only with fist
         { kArmedFight, false, kStickLeft },  // fists: the punch
         { kArmedFight, true, kStickUp },     // fists: the kick
         { kArmedNothing, false, kStickUp },  // a weapon: guns fire on up alone
-        { kArmedPush, false, kStickUp },     // Actions with another choice: as before
+        { kArmedNothing, true, kStickUp },   // a weapon: a double press strikes as one press does
     };
     for (const Row& row : rows)
         CHECK(strikeStick(row.armed, row.doublePress) == row.stick);

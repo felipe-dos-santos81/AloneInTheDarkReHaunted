@@ -22,27 +22,25 @@ void clearAttack()
     g_world.attackFrames = 0;
 }
 
+// A punch at this enemy is under way: a double press on it turns it into the kick.
+bool punchAimedAt(int actorIdx)
+{
+    return g_world.attackTarget == actorIdx && g_world.attackStick == mouse::kStickLeft;
+}
+
 // Accept a click on an enemy: stop, face it, and hold Action until the swing ends.
+// The first press of a double press already started the punch; the second
+// swaps the held direction, and the swing's budget starts again.
 void armAttack(int actorIdx, bool doublePress)
 {
-    if (!isCombatTarget(actorIdx) || !canStrike(true))
+    const bool kickTakesOver = doublePress && punchAimedAt(actorIdx);
+    if (!isCombatTarget(actorIdx) || !canStrike(!kickTakesOver))
         return;
     cancelIntent();
     faceActorToward(hero(), ListObjets[actorIdx]);
     g_world.attackTarget = actorIdx;
     g_world.attackStick = mouse::strikeStick(armedAction(), doublePress);
     g_world.attackStartMs = (uint32_t)SDL_GetTicks();
-    g_world.attackFrames = 0;
-}
-
-// The first press of a double press already started the punch; the second
-// swaps the held direction, and the swing's budget starts again.
-void kickTakesOver(int clicks, uint32_t now)
-{
-    if (clicks < 2 || g_world.attackTarget < 0 || g_world.attackStick != mouse::kStickLeft)
-        return;
-    g_world.attackStick = mouse::kStickUp;
-    g_world.attackStartMs = now;
     g_world.attackFrames = 0;
 }
 
