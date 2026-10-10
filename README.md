@@ -209,6 +209,13 @@ With `music.external = true` (the default) each song plays from a file in
 `01.ogg`, and so on (`.flac`, `.mp3` and `.wav` also work). A song with no
 file plays as it did before, which on a plain data folder is silence.
 
+The song numbers are the ones your data's scripts call, and they differ by
+release: the CD version calls songs 2 to 17, the floppy version only the
+eight chip tunes 0 to 7. A soundtrack made for one release is misplaced on
+the other. The brief for the AI soundtrack,
+[docs/music-generation-guide.md](docs/music-generation-guide.md), targets
+the CD data.
+
 The macOS app reads its files from its bundle, so `make run` links the folder
 there (`make music-install` does only that).
 

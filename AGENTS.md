@@ -88,6 +88,8 @@ Guidance for anyone (human or agent) changing this repository.
   `CONTRIBUTING.md`), contracts, checklists (one per feature, such as
   `docs/mouse-gameplay-checklist.md`) and the `aitd_remaster.cfg` manual
   (`docs/configuration.md`: a new key goes there);
+  `docs/music-generation-guide.md` is the brief for the AI soundtrack (which
+  song numbers the scripts call, lengths, the text fragment per piece);
   `docs/screenshots/` holds the README's original, upscaled and HD screenshots.
 - `graphify-out/` (any depth) — generated knowledge graph (`/graphify`);
   git-ignored, never commit it.

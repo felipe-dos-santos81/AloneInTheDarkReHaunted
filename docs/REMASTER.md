@@ -107,6 +107,9 @@ languages, with its Brazilian flag painted into the menu art like the others.
   an audio file in the `music` folder, named by the game's song number
   (`00.ogg`; also `.flac`, `.mp3`, `.wav`). The game's scripts fade the file,
   stop it and start the next song, and a song with no file plays as before.
+  The numbers differ by release (CD: songs 2 to 17; floppy: the chip tunes
+  0 to 7); the soundtrack brief
+  [music-generation-guide.md](music-generation-guide.md) targets the CD data.
   Keys and file names: [configuration.md](configuration.md#music); in-game
   sign-off: [external-music-checklist.md](external-music-checklist.md).
 
