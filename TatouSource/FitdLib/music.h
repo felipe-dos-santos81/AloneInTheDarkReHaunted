@@ -21,4 +21,5 @@ extern bool g_gameUseCDA;
 void callMusicUpdate(void);
 void destroyMusicDriver(void);
 int fadeMusic(int param1, int param2, int param3);
+void musicAmbientFrame(void); // the floor's ambient loop while no scripted song plays (PlayWorld, once a frame)
 #endif
