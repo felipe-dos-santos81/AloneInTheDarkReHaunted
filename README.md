@@ -12,10 +12,28 @@ A fork of
 [spacefarergames/AloneInTheDarkReHaunted](https://github.com/spacefarergames/AloneInTheDarkReHaunted)
 focused on *Alone in the Dark 1*. It adds:
 
-- **Accessibility.** The whole game plays with the mouse's left button alone
-  ([Mouse](#mouse-left-button-only)). Optional assists (automatic
-  counter-attack, slower enemy attacks) make fights easier. Keyboard and
-  gamepad play are unchanged.
+- **Accessibility.** The whole game plays with the mouse's left button alone;
+  keyboard and gamepad play are unchanged.
+  - **Mouse gameplay.** The left button alone walks, runs, uses and pushes
+    objects, and works every menu ([Mouse](#mouse-left-button-only)). The
+    cursor shape shows what a click would do, and the game never locks or
+    confines the cursor. On by default (`controls.mouseGameplay`).
+  - **Fighting with a left-click.** A click on an enemy turns the hero to face
+    it and strikes or fires with what is in hand. With fists a click punches
+    and a double-click kicks.
+  - **Combat assists.** Two options in **F1 → Controls → Combat**, both off by
+    default: the hero hits back once after an enemy's blow
+    (`controls.autoCounterAttack`), and enemies attack slower or much slower
+    (`controls.enemyAttackPace`).
+  - **A HUD for the mouse.** Icons at the top left open the inventory, the map
+    and the system menu, so no key is needed.
+- **Brazilian Portuguese.** The game text and the remaster's menus are
+  translated; pick **Português** in the language menu
+  ([docs/REMASTER.md](docs/REMASTER.md#languages)).
+- **HD character models.** Smooth-shaded, textured meshes replace the classic
+  bodies and play every original animation; joints bend smoothly and a curve
+  through the keyframes keeps the motion fluid. On by default
+  (`graphics.hdModels`).
 - **A native macOS port** for Apple Silicon (arm64)
   ([docs/BUILDING.md](docs/BUILDING.md#macos-apple-silicon)).
 - **HD asset tools** to pack the HD backgrounds and to generate, check and
