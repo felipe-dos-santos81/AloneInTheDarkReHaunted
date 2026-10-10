@@ -16,7 +16,8 @@ and the `music.*` keys in [configuration.md](configuration.md#music).
   track `n`. Songs 0, 1 and 6 are never called: **do not produce them.**
   A floppy release has its own scripts and only the eight chip tunes;
   with that data, redo the scan below before trusting this table.
-- A song plays once and never loops. A script's `NEXT_MUSIC` queues what
+- A scripted song plays once and never loops (only the remaster's own 18 to
+  21 loop). A script's `NEXT_MUSIC` queues what
   plays when the current song ends; a scripted fade is 3 s. So a piece
   should run about as long as the original; when a script cuts it short
   (a fight ends, a cinematic ends) the cut is the engine's and needs no

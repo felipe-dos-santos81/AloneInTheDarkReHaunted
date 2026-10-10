@@ -91,16 +91,22 @@ Rebind them in **Controls** in the system menu rather than by hand.
 | `music.volume` | `1.0` | Volume of the song files, 0 to 1. The game reads it when a song starts |
 
 - **File names.** A file is named by the game's song number as two digits,
-  with a lowercase extension: `00.ogg`, `01.ogg`, and so on. AITD1 has songs
-  `00` to `07`.
+  with a lowercase extension: `02.ogg`, `03.ogg`, and so on. The numbers are
+  the ones the data's scripts call: AITD1's CD release calls `02` to `17`,
+  the floppy release the chip tunes `00` to `07`
+  ([music-generation-guide.md](music-generation-guide.md) lists what each
+  one scores). `18` to `21` are the remaster's own: the title theme under the
+  startup menu and the ambient loops of the house, the underground and the
+  dance hall, heard while no scripted song plays. They loop; a scripted song
+  plays once, and the game's scripts fade it, stop it and start the next one.
 - **Formats.** `.ogg`, `.flac`, `.mp3` and `.wav`. When a song has several
   files, the first in that order plays.
 - **A song with no file** plays as it did before this option: from the CD
   (Windows), from `audio.hda`, or from `NN.ogg`, `NN.wav` or `NN.mp3` in the
   folder the game starts in (there `NN` is the song number minus 1). With none
   of these the song is silent.
-- **One play.** A song plays once and does not loop. The game's scripts fade
-  it, stop it and start the next one.
+- **Music ON/OFF** in the system menu silences every file, loops included,
+  and ON brings the loop back at once and the next scripted song at its cue.
 - **Older files.** A file saved before this option worked holds
   `music.external = false`. Set it to `true`, or tick **External music** in
   the F1 dialog.

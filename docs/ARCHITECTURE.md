@@ -225,8 +225,10 @@ main() / WinMain()                     Fitd/fitd.cpp
 
 Music plays outside the tick. SoLoud streams each song from a file on its own
 thread (`osystem_playMusicFile`, `osystemAL.cpp`), and `updatePendingEvents`
-starts the queued song when the file ends. `music.cpp` still programs the OPL
-chip from `LISTMUS.PAK`, but nothing renders it: no code calls `musicUpdate()`.
+starts the queued song when the file ends, then lets `musicAmbientFrame`
+(`music.cpp`) keep the floor's ambient loop playing while no song does.
+`music.cpp` still programs the OPL chip from `LISTMUS.PAK`, but nothing
+renders it: no code calls `musicUpdate()`.
 
 ### Rendering
 

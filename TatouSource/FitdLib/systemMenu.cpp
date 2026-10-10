@@ -209,7 +209,7 @@ void AffOptionList(int selectedStringNumber, bool hdPreview)
     AffOption(0,48,selectedStringNumber);
     AffOption(1,45,selectedStringNumber);
     AffOption(2,46,selectedStringNumber);
-    AffOption(3,42-musicEnabled,selectedStringNumber);
+    AffOption(3,41+musicEnabled,selectedStringNumber); // the state, "Music ON" while on, like the sound line below
     AffOption(4,43+soundEnabled,selectedStringNumber);
     AffOption(5,49+detailLevel,selectedStringNumber);
 
