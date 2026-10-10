@@ -551,11 +551,9 @@ void OpenProgram(void)
 
 //	srand(ltime);
 
-    if (!initMusicDriver())
-    {
-        musicConfigured = 0;
-        musicEnabled = 0;
-    }
+    // The emulated chip never reports a signature, so the result says nothing; the
+    // player's Music ON/OFF (musicEnabled) stays on by default and nothing else reads it.
+    initMusicDriver();
 
     // Initialize controller support
     initController();

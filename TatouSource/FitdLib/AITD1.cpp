@@ -682,7 +682,7 @@ void startAITD1()
             // played directly so the chip driver never sees a number beyond its tunes, and
             // currentMusic stays -1 so the intro's own song starts as usual. It loops while
             // the menu is up and fades on every way out: new game, continue, the idle timeout.
-            if (g_remasterConfig.music.enableExternalMusic)
+            if (g_remasterConfig.music.enableExternalMusic && musicEnabled)
                 osystem_playMusicFile(18, true);
             startupMenuResult = MainMenu();
             osystem_fadeMusicFile(1.0f);

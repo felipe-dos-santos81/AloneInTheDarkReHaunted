@@ -1277,6 +1277,13 @@ void musicAmbientFrame(void)
 {
     static int s_ambient = -1;    // the loop last started, or -1
     static bool s_loaded = false; // its file opened, so a silence means something stopped it
+    if (!musicEnabled)
+    {
+        if (s_ambient != -1)
+            osystem_fadeMusicFile(0.0f); // Music OFF while the loop sounds; ON resumes it next frame
+        s_ambient = -1;
+        return;
+    }
     if (!g_remasterConfig.music.enableExternalMusic || g_gameId != AITD1 || currentMusic != -1)
     {
         s_ambient = -1;
@@ -1291,6 +1298,13 @@ void musicAmbientFrame(void)
 
 void playMusic(int musicNumber)
 {
+	if (!musicEnabled) // the system menu's Music OFF: every cue lands here, nothing starts.
+	{                  // Before the same-number return: the menu's own playMusic(-1) must
+		osystem_stopTrack(); // still silence the ambient loop, which plays at -1. The full
+		currentMusic = -1;   // teardown, so a CD or archive track stops as well as a file.
+		return;
+	}
+
 	if(currentMusic == musicNumber)
 		return;
 
