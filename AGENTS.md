@@ -219,7 +219,7 @@ skipped as redundant or trivial, so the reviewer can disagree.
    - A click on an enemy holds a direction and Action until the swing ends:
      up, the only direction a gun fires on; with fists (Actions with Fight
      chosen) left, the punch, and on a double press up, the kick, which takes
-     over a punch still under way (`strikeStick`).
+     over a punch still under way at that enemy (`strikeStick`).
    - While a script owns the hero (`trackMode != 1`) world clicks resolve to
      blocked (the HUD still works) and a held button is spent.
    - SDL cursor calls happen only in `mouseInputEndMainFrame()` (main thread),

@@ -439,7 +439,6 @@ void mouseWorldFrame(int allowSystemMenu)
         case mouse::EventType::Down:
             g_world.lastInputMouse = true;
             mouse::onPress(g_world.pointer, e.pos);
-            kickTakesOver(e.clicks, now); // before the resolver: mid-swing it answers blocked
             if (e.pos)
                 applyDecision(mouse::pressDecision(g_world.pointer, *e.pos, e.clicks, camera, resolve, latchedPush()));
             break;

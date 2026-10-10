@@ -520,7 +520,7 @@ mouse::ClickResult resolveAt(mouse::Point p)
     if (actor >= 0 && isCombatTarget(actor))
     {
         MTRACE("  -> combat target %d (canStrike=%d)\n", actor, (int)canStrike(true));
-        if (!canStrike(true))
+        if (!canStrike(true) && !punchAimedAt(actor))
             return {}; // aimed at the enemy: never a fall-through to a walk
         return mouse::ClickResult{ mouse::ClickKind::Attack, mouse::Payload{ 0, 0, -1, -1, actor } };
     }

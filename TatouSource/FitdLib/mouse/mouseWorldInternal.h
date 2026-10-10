@@ -181,7 +181,7 @@ void clearAttack();
 // Accept a click on an enemy: stop, face it, and hold Action until the swing ends.
 void armAttack(int actorIdx, bool doublePress);
 // A double press while a punch is under way: the kick takes over.
-void kickTakesOver(int clicks, uint32_t now);
+bool punchAimedAt(int actorIdx);
 // One frame of FITD's own melee input for an accepted click. False when none.
 bool tickAttack(uint32_t now);
 
