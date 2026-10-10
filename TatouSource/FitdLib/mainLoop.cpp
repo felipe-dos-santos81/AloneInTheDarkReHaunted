@@ -36,6 +36,7 @@ void updatePendingEvents(void)
             if(evalChrono(&musicChrono)>180)
             {
                 playMusic(nextMusic);
+                nextMusic = -1; // played: the end of this song must not start it again
             }
         }
         else if (osystem_musicFileEnded())
