@@ -360,7 +360,7 @@ inline void life_Body(int bodyNum)
             {
                 sAnimation* pAnim = HQR_Get(HQ_Anims, currentProcessedActorPtr->ANIM);
                 sBody* pBody = HQR_Get(HQ_Bodys, currentProcessedActorPtr->bodyNum);
-                SetInterAnimObjet(currentProcessedActorPtr->frame, pAnim, pBody);
+                SetInterAnimObjet(currentProcessedActorPtr->frame, pAnim, pBody, (currentProcessedActorPtr->animType & ANIM_REPEAT) != 0);
             }
         }
         else

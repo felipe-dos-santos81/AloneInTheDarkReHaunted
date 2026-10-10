@@ -32,7 +32,7 @@ extern std::vector<sFrame> BufferAnim;
 
 int InitAnim(int animNum,int animType, int animInfo);
 int SetAnimObjet(int frame, sAnimation* anim, sBody* body);
-s16 SetInterAnimObjet(int frame, sAnimation* animPtr, sBody* bodyPtr);
+s16 SetInterAnimObjet(int frame, sAnimation* animPtr, sBody* bodyPtr, bool loops);
 s16 GetNbFramesAnim(sAnimation* animPtr);
 void StockInterAnim(sFrame& animBuffer, sBody* bodyPtr);
 void ResetStartAnim(sBody* bodyPtr);

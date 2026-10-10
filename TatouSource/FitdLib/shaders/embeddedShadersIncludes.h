@@ -165,6 +165,11 @@ SHADER_DATA_FALLBACK
 #else
 SHADER_DATA_FALLBACK
 #endif
+#if __has_include("shaders/generated/spirv/skinned_dq_vs.sc.bin.h")
+#include "shaders/generated/spirv/skinned_dq_vs.sc.bin.h"
+#else
+SHADER_DATA_FALLBACK
+#endif
 #if __has_include("shaders/generated/spirv/model_ps.sc.bin.h")
 #include "shaders/generated/spirv/model_ps.sc.bin.h"
 #else
@@ -330,6 +335,11 @@ SHADER_DATA_FALLBACK
 #endif
 #if __has_include("shaders/generated/metal/skinned_vs.sc.bin.h")
 #include "shaders/generated/metal/skinned_vs.sc.bin.h"
+#else
+SHADER_DATA_FALLBACK
+#endif
+#if __has_include("shaders/generated/metal/skinned_dq_vs.sc.bin.h")
+#include "shaders/generated/metal/skinned_dq_vs.sc.bin.h"
 #else
 SHADER_DATA_FALLBACK
 #endif
@@ -501,6 +511,11 @@ SHADER_DATA_FALLBACK
 #else
 SHADER_DATA_FALLBACK
 #endif
+#if __has_include("shaders/generated/glsl/skinned_dq_vs.sc.bin.h")
+#include "shaders/generated/glsl/skinned_dq_vs.sc.bin.h"
+#else
+SHADER_DATA_FALLBACK
+#endif
 #if __has_include("shaders/generated/glsl/model_ps.sc.bin.h")
 #include "shaders/generated/glsl/model_ps.sc.bin.h"
 #else
@@ -666,6 +681,11 @@ SHADER_DATA_FALLBACK
 #endif
 #if __has_include("shaders/generated/dx11/skinned_vs.sc.bin.h")
 #include "shaders/generated/dx11/skinned_vs.sc.bin.h"
+#else
+SHADER_DATA_FALLBACK
+#endif
+#if __has_include("shaders/generated/dx11/skinned_dq_vs.sc.bin.h")
+#include "shaders/generated/dx11/skinned_dq_vs.sc.bin.h"
 #else
 SHADER_DATA_FALLBACK
 #endif

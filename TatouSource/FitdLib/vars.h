@@ -569,6 +569,7 @@ struct sGroup
     s8 m_numGroup; // 7
     sGroupState m_state;//8
     // 0x16 / 0x22 (AITD2+) if Info_optimise
+    point3dStruct m_displayOffset = { 0, 0, 0 }; // the HD display's curve on top of m_state (anim/poseCurve.h)
 };
 
 enum primTypeEnum
@@ -617,6 +618,10 @@ struct sBody
     std::vector<uint16> m_groupOrder; // size u16 * 2
     std::vector<sGroup> m_groups; // size u16 
     std::vector<sPrimitive> m_primitives;
+    // The groups' m_displayOffset holds this tick's curve when m_displayValid
+    // and m_displayTick is the timer it was computed at (SetInterAnimObjet).
+    bool m_displayValid = false;
+    u16 m_displayTick = 0;
 
     // Protection against double-delete heap corruption
     mutable bool m_isDeleted = false;
