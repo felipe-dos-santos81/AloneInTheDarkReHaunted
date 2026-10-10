@@ -340,6 +340,7 @@ int loadSave(int saveNumber)
     NumCamera = -1;
     ChangeSalle(currentRoom);
     var_16 = currentMusic;
+    osystem_fadeMusicFile(0.0f); // a save made in silence must not keep the last scene's song
     currentMusic = -1;
     playMusic(var_16);
 
