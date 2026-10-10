@@ -195,6 +195,10 @@ to the game.
 rebuilds the copy compiled into the game. In-game sign-off:
 [docs/translation-checklist.md](docs/translation-checklist.md).
 
+**Music** plays from `<music.folder>/NN.ogg` (`.flac`, `.mp3`, `.wav`), one
+file per song number (`docs/configuration.md`, "Music"). In-game sign-off:
+[docs/external-music-checklist.md](docs/external-music-checklist.md).
+
 ## Remaster features
 
 | Feature | Details |

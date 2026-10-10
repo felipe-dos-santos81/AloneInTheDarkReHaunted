@@ -75,7 +75,8 @@ Guidance for anyone (human or agent) changing this repository.
   hand-made `Assets/atlases` onto them; its `stage.py` runs inside Blender
   and imports only `bpy`, `bmesh`, `mathutils` and numpy).
 - `docs/` — the guides (`BUILDING.md`, `ARCHITECTURE.md`, `REMASTER.md`,
-  `CONTRIBUTING.md`), contracts, checklists (`docs/mouse-gameplay-checklist.md`)
+  `CONTRIBUTING.md`), contracts, checklists (`docs/mouse-gameplay-checklist.md`,
+  `docs/external-music-checklist.md`)
   and the `aitd_remaster.cfg` manual (`docs/configuration.md`: a new key goes there);
   `docs/screenshots/` holds the README's original, upscaled and HD screenshots.
 - `graphify-out/` (any depth) — generated knowledge graph (`/graphify`);
