@@ -21,6 +21,8 @@ RemasterConfig g_remasterConfig;
 // once and saves it. 2: graphics.hdModels became on by default. 3: backgrounds.dump
 // became off by default.
 static const int kConfigVersion = 4;
+// HD display curve; measured: planted feet drift within 5 % of linear
+static const float kPoseSmoothingStrength = 0.5f;
 
 void initDefaultRemasterConfig()
 {
@@ -78,7 +80,7 @@ void initDefaultRemasterConfig()
     g_remasterConfig.postProcessing.highlightRolloff = 0.18f;
 
     g_remasterConfig.animation.enablePoseSmoothing = true;
-    g_remasterConfig.animation.poseSmoothingStrength = 0.5f; // HD display curve; measured: planted feet drift within 5 % of linear
+    g_remasterConfig.animation.poseSmoothingStrength = kPoseSmoothingStrength;
 
     // External music defaults
     g_remasterConfig.music.enableExternalMusic = false;
@@ -418,8 +420,8 @@ void loadRemasterConfig()
     }
     if (version < 4 && std::fabs(g_remasterConfig.animation.poseSmoothingStrength - 0.72f) < 0.005f)
     {
-        g_remasterConfig.animation.poseSmoothingStrength = 0.5f; // the old smoothstep's default: the curve's is 0.5
-        printf(CFG_TAG "animation.poseSmoothingStrength now sets the HD models' curve through keyframes; set it to its default 0.5\n");
+        g_remasterConfig.animation.poseSmoothingStrength = kPoseSmoothingStrength; // 0.72 was the old smoothstep's default
+        printf(CFG_TAG "animation.poseSmoothingStrength now sets the HD models' curve through keyframes; set it to its default %.1f\n", kPoseSmoothingStrength);
     }
 
     // Validate and clamp numeric config values to safe ranges
