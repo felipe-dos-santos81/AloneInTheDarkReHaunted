@@ -64,6 +64,16 @@ Guidance for anyone (human or agent) changing this repository.
 - `TatouSource/FitdLib/physics/` — collision rules, engine-free and header-only,
   unit-tested in `TatouSource/tests/engine/`: `collisionEscape.h` (how an
   actor already inside a blocker may move, used by `GereCollision`).
+- `TatouSource/FitdLib/music.cpp` + `osystemAL.cpp` — music. With
+  `music.external` on, `playMusic` first plays a file,
+  `<music.folder>/NN.{ogg,flac,mp3,wav}` (`osystem_playMusicFile`), `NN` the
+  script's song number; `fadeMusic` fades or stops that file, and
+  `updatePendingEvents` (`mainLoop.cpp`) starts the queued song when it ends.
+  Only `osystem_playMusicFile` sets the file's voice handle, and only
+  `osystem_stopTrack` destroys the stream, so with the option off the game
+  behaves exactly as before. The OPL chip is programmed but not rendered. The
+  macOS app reads `music/` from its bundle (`make music-install`, run by
+  `make run`). In-game sign-off: `docs/external-music-checklist.md`.
 - `tools/` + `tests/tools/` — the Python tools (game data, HD models,
   translation), tested by `make test-tools`. `tools/aitd_data/` reads the game data (PAKs,
   palette; `lang.py` the game text, via `make lang-extract` and `make
@@ -75,9 +85,9 @@ Guidance for anyone (human or agent) changing this repository.
   hand-made `Assets/atlases` onto them; its `stage.py` runs inside Blender
   and imports only `bpy`, `bmesh`, `mathutils` and numpy).
 - `docs/` — the guides (`BUILDING.md`, `ARCHITECTURE.md`, `REMASTER.md`,
-  `CONTRIBUTING.md`), contracts, checklists (`docs/mouse-gameplay-checklist.md`,
-  `docs/external-music-checklist.md`)
-  and the `aitd_remaster.cfg` manual (`docs/configuration.md`: a new key goes there);
+  `CONTRIBUTING.md`), contracts, checklists (one per feature, such as
+  `docs/mouse-gameplay-checklist.md`) and the `aitd_remaster.cfg` manual
+  (`docs/configuration.md`: a new key goes there);
   `docs/screenshots/` holds the README's original, upscaled and HD screenshots.
 - `graphify-out/` (any depth) — generated knowledge graph (`/graphify`);
   git-ignored, never commit it.

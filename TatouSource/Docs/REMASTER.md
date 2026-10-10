@@ -229,13 +229,15 @@ Full support for CD voice-over during book, letter, and notebook reading in AITD
 
 ---
 
-## External Music (In Progress)
+## External Music
 
-Play custom music tracks instead of the original ADLIB music:
+Play each song from an audio file instead of the original AdLib music. See
+`docs/configuration.md` ("Music") at the repository root.
 
 ```ini
-music.external = false
-music.folder = "music"     # Folder containing MUSIC_XX.ogg or MUSIC_XX.mp3
+music.external = true
+music.folder = "music"     # Folder containing 00.ogg, 01.ogg, ... (also .flac, .mp3, .wav)
+music.volume = 1.00
 ```
 
 ---

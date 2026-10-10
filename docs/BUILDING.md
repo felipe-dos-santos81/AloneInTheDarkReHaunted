@@ -141,7 +141,7 @@ make build-fitd                       # configure and build the game
 make run data=/path/to/writable/dir   # build, then launch windowed
 ```
 
-The app bundle is `TatouSource/build/macos-arm64/Fitd/Tatou.app`. On Darwin,
+The app bundle is `TatouSource/build/macos-arm64/Fitd/Tatou.app`. On macOS,
 CMake also compiles the Objective-C++ file `Fitd/bgfxPatch.mm`. To check the
 architecture:
 
@@ -209,6 +209,7 @@ The platform rules the workflow depends on are in
 | PipeWire warning `can't load config client.conf` | Harmless. Audio falls back to PulseAudio or ALSA |
 | Build dies with `Terminated` (exit 143) on Linux | Too many jobs for the memory. Use `--parallel 2` |
 | Game data not found | Start the game from the folder that holds the game data |
+| No music | Put one audio file per song in `music/` in the game data folder and check `music.external = true` ([configuration.md](configuration.md#music)). On macOS, `make run` links the folder into the app |
 | Controller not detected | Check `controller.enable = true` in `aitd_remaster.cfg` and that SDL3 supports the gamepad |
 | Fullscreen does not persist | Set `graphics.fullscreen = true` in `aitd_remaster.cfg`. Closing the system menu saves it |
 | Console window covers the game | The game window comes to the front at startup. **F11** or **Alt+Enter** toggles fullscreen |

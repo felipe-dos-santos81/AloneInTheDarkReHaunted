@@ -14,10 +14,9 @@ focused on *Alone in the Dark 1*. It adds:
 
 - **Accessibility.** The whole game plays with the mouse's left button alone;
   keyboard and gamepad play are unchanged.
-  - **Mouse gameplay.** The left button alone walks, runs, uses and pushes
-    objects, and works every menu ([Mouse](#mouse-left-button-only)). The
-    cursor shape shows what a click would do, and the game never locks or
-    confines the cursor. On by default (`controls.mouseGameplay`).
+  - **Mouse gameplay.** The left button walks, runs, uses and pushes objects,
+    and works every menu ([Mouse](#mouse-left-button-only)). On by default
+    (`controls.mouseGameplay`).
   - **Fighting with a left-click.** A click on an enemy turns the hero to face
     it and strikes or fires with what is in hand. With fists a click punches
     and a double-click kicks.
@@ -34,6 +33,9 @@ focused on *Alone in the Dark 1*. It adds:
   bodies and play every original animation; joints bend smoothly and a curve
   through the keyframes keeps the motion fluid. On by default
   (`graphics.hdModels`).
+- **External music.** Each song plays from an audio file in a `music` folder,
+  so any soundtrack can replace the original ([Music](#music)). On by default
+  (`music.external`).
 - **A native macOS port** for Apple Silicon (arm64)
   ([docs/BUILDING.md](docs/BUILDING.md#macos-apple-silicon)).
 - **HD asset tools** to pack the HD backgrounds and to generate, check and
@@ -86,7 +88,8 @@ files itself (`gamedata.steamless = true` turns this off). macOS and Linux
 builds do not search.
 
 The game reads its files from the folder it starts in and writes
-`aitd_remaster.cfg` there, so that folder must be writable.
+`aitd_remaster.cfg` there, so that folder must be writable. The macOS app
+uses its own `Tatou.app/Contents/Resources` instead.
 
 ## Build and run
 
@@ -95,7 +98,7 @@ The game reads its files from the folder it starts in and writes
 ```bash
 git clone https://github.com/felipe-dos-santos81/alone-in-the-dark-re-haunted-v2.git
 cd alone-in-the-dark-re-haunted-v2
-make deps        # Linux only: build dependencies (apt, dnf or pacman)
+make deps        # build dependencies (apt, dnf, pacman or Homebrew)
 make run         # build the game and play from data/aitd1
 ```
 
@@ -139,9 +142,10 @@ Rebind keys under **Controls** in the system menu.
 | Fight | **Click** an enemy. With fists a click punches and a **double-click** kicks |
 | Inventory / map / menu | **Click** the icons at the top left; every screen also works by click |
 
-- The cursor shape shows what a click would do; "not allowed" means nothing.
+- The cursor shape shows what a click would do; "not allowed" means a click
+  does nothing.
 - The game never locks or confines the cursor.
-- Any key or gamepad button takes the hero back from the mouse.
+- Any key or gamepad button takes control of the hero back from the mouse.
 - Turn mouse play off in **F1 → Controls → Mouse gameplay**
   (`controls.mouseGameplay = false`).
 - Outside gameplay, a double-click on empty space toggles fullscreen.
@@ -161,12 +165,15 @@ Controllers are hot-pluggable; rebind their buttons in the **Controls** menu.
 
 ## Configuration
 
-**F1** opens the options dialog, which also shows at startup. Settings are
-saved in `aitd_remaster.cfg` next to the game data;
-[docs/configuration.md](docs/configuration.md) lists every key and its default.
+**F1** opens the options dialog, which also shows at startup. The game saves
+the settings in `aitd_remaster.cfg` next to the game data.
+
+- [docs/configuration.md](docs/configuration.md) lists every key and its
+  default.
+- [docs/REMASTER.md](docs/REMASTER.md) describes the remaster features.
+
 Every graphics enhancement is on by default: HD backgrounds, HD character
 models, every post effect and TrueType text.
-[docs/REMASTER.md](docs/REMASTER.md) describes the remaster features.
 
 ## HD assets
 
@@ -195,9 +202,18 @@ to the game.
 rebuilds the copy compiled into the game. In-game sign-off:
 [docs/translation-checklist.md](docs/translation-checklist.md).
 
-**Music** plays from `<music.folder>/NN.ogg` (`.flac`, `.mp3`, `.wav`), one
-file per song number (`docs/configuration.md`, "Music"). In-game sign-off:
-[docs/external-music-checklist.md](docs/external-music-checklist.md).
+## Music
+
+With `music.external = true` (the default) each song plays from a file in
+`data/aitd1/music`. Name each file by the game's song number: `00.ogg`,
+`01.ogg`, and so on (`.flac`, `.mp3` and `.wav` also work). A song with no
+file plays as it did before, which on a plain data folder is silence.
+
+The macOS app reads its files from its bundle, so `make run` links the folder
+there (`make music-install` does only that).
+
+The keys are in [docs/configuration.md](docs/configuration.md#music); in-game
+sign-off: [docs/external-music-checklist.md](docs/external-music-checklist.md).
 
 ## Remaster features
 
@@ -214,6 +230,7 @@ file per song number (`docs/configuration.md`, "Music"). In-game sign-off:
 | Combat assists | Automatic counter-attack and slower enemy attacks (AITD1) |
 | Maps and hints | Interactive mansion maps; highlighted interactable objects |
 | Voice-over | CD voice-over for books and letters |
+| External music | One audio file per song (ogg, flac, mp3 or wav) in a `music` folder |
 | Languages | English, French, Italian, Spanish, German, and Brazilian Portuguese (this fork) |
 | Quality of life | Fullscreen toggle, transparent menus, crash log (`crash_log.txt`), update check |
 
@@ -232,13 +249,13 @@ file per song number (`docs/configuration.md`, "Music"). In-game sign-off:
 alone-in-the-dark-re-haunted-v2/
 ├── TatouSource/         # CMake project
 │   ├── Fitd/            # executable (Tatou)
-│   ├── FitdLib/         # engine library: mouse/, models/, assist/, physics/, shaders/
+│   ├── FitdLib/         # engine library: mouse/, models/, assist/, text/, anim/, physics/, shaders/
 │   ├── ThirdParty/      # SDL3, bgfx, ImGui, SoLoud, zlib, doctest
 │   ├── tests/engine/    # doctest unit tests (make test-engine)
 │   └── tools/           # .hda archive tools
-├── tools/               # Python HD model tools
-├── tests/tools/         # its pytest suite (make test-tools)
-├── Assets/              # HD backgrounds, masks, atlases, models and the TTF font
+├── tools/               # Python tools: game data, HD models, translation
+├── tests/tools/         # their pytest suite (make test-tools)
+├── Assets/              # HD backgrounds, masks, atlases, models, the TTF font and the Portuguese text
 ├── docs/                # guides, contracts, in-game checklists, screenshots
 └── data/                # your game files and exports (git-ignored)
 ```

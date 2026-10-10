@@ -64,12 +64,15 @@ or press Cmd+Shift+4, then Space, and click the game window. Save them as
 The game checks by itself that HD models draw where the classic bodies do;
 no screen capture is needed.
 
-The game reads `models_hd/` from the folder it starts in (where the saves
-are), else from next to the executable. Every build copies `Assets/models_hd`
-next to the executable (into `Tatou.app/Contents/Resources/` on macOS).
-`make models-install models_hd=DIR` mirrors `DIR/*.hdm` into the game's
-folder: the app's Resources on macOS, else `data=DIR`. A models_hd/ there
-wins over the build's copy.
+Where the models come from:
+
+- The game reads `models_hd/` from the folder it starts in (where the saves
+  are), else from next to the executable.
+- Every build copies `Assets/models_hd` next to the executable (into
+  `Tatou.app/Contents/Resources/` on macOS).
+- `make models-install models_hd=DIR` mirrors `DIR/*.hdm` into the game's
+  folder: the app's Resources on macOS, else `data=DIR`. A `models_hd/` there
+  wins over the build's copy.
 
 1. Build identity models for every body and install them:
 

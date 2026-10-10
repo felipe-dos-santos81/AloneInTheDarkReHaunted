@@ -1,12 +1,15 @@
-# Automatic counter-attack checklist
+# Combat assist checklist
 
-Manual sign-off for the "Hit back automatically when an enemy strikes you"
-option (spec: `docs/superpowers/specs/2026-10-01-auto-counter-attack-design.md`,
-local only), Alone in the Dark 1. Build with `make build-fitd`, run with
-`make run data=DIR`. Run every row as **Emily** and as **Carnby**. Mark each
-cell `pass`, or `fail:` with a one-line note. Unless a row says otherwise, the
-option is on (F1 → Controls → Combat) and you do not touch the controls after
-the enemy's blow lands.
+Manual sign-off for the two combat assists of Alone in the Dark 1. Build with
+`make build-fitd`, run with `make run data=DIR`. Run every row as **Emily**
+and as **Carnby**. Mark each cell `pass`, or `fail:` with a one-line note.
+
+## Automatic counter-attack
+
+The "Hit back automatically when an enemy strikes you" option (spec:
+`docs/superpowers/specs/2026-10-01-auto-counter-attack-design.md`, local
+only). Unless a row says otherwise, the option is on (F1 → Controls → Combat)
+and you do not touch the controls after the enemy's blow lands.
 
 | # | Check | Emily | Carnby |
 |---|---|---|---|
@@ -43,11 +46,11 @@ the enemy's blow lands.
 
 ## Enemy attack pace
 
-Manual sign-off for the "Enemy attack pace" option (spec:
-`docs/superpowers/specs/2026-10-01-enemy-attack-pace-design.md`, local only),
-Alone in the Dark 1. Set the pace in F1 → Controls → Combat. Keep
-`debug.mouseNavOverlay` off. Unless a row says otherwise, use the bedroom
-window creature (floor 1, room 4): stand still and let it attack.
+The "Enemy attack pace" option (spec:
+`docs/superpowers/specs/2026-10-01-enemy-attack-pace-design.md`, local only).
+Set the pace in F1 → Controls → Combat. Keep `debug.mouseNavOverlay` off.
+Unless a row says otherwise, use the bedroom window creature (floor 1,
+room 4): stand still and let it attack.
 
 | # | Check | Emily | Carnby |
 |---|---|---|---|

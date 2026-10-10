@@ -21,9 +21,10 @@ hot-pluggable, and every button can be rebound in the **Controls** menu.
 
 ## Fullscreen
 
-**F11**, **Alt+Enter**, a double-click on empty space outside gameplay, or
-**Display** in the system menu. `graphics.fullscreen` is saved and applied at
-startup, and the game window is raised above the console.
+Toggle it with **F11**, **Alt+Enter**, a double-click on empty space outside
+gameplay, or **Display** in the system menu. The game saves
+`graphics.fullscreen` and applies it at startup, when it also raises its
+window above the console.
 
 ## HD graphics
 
@@ -31,21 +32,24 @@ startup, and the game window is raised above the console.
   `backgrounds_hd.hda`, including animated ones, with the original image where
   no HD one exists. **Detail** in the system menu switches between original and
   HD.
-- **HD depth masks** (`masks.load`): hand-edited masks from `masks_hd/` so 3D
-  objects hide correctly behind HD scenery. `masks.dump` writes the generated
-  masks as PNG for editing.
+- **HD depth masks** (`masks.load`): hand-edited masks from `masks_hd/`, so
+  that HD scenery hides 3D objects correctly. `masks.dump` writes the
+  generated masks as PNG for editing.
 - **Textured models:** texture atlases on the classic bodies, cached per floor.
 - **HD character models** (`graphics.hdModels`, on by default): refined,
-  textured meshes for all 42 classic bodies, shaded as rounded forms with
-  the atlases' painted facets softened, and skinned to the original bones so
-  every animation plays unchanged; joints bend smoothly (dual-quaternion
-  skinning) and a curve through the keyframes keeps the motion fluid
-  (`animation.poseSmoothing`). Translucent parts (the ghost, the insect's
-  wings, lamp glass) draw blended, and a body without a model draws classic.
-  Every build copies `Assets/models_hd` next to the game. They are made with
-  `make blender-models` and `make import-models`: see
-  [model-contract.md](model-contract.md) and
-  [hd-models-checklist.md](hd-models-checklist.md).
+  textured meshes for all 42 classic bodies.
+  - **Shading:** rounded forms, with the atlases' painted facets softened.
+  - **Motion:** the meshes are skinned to the original bones, so every
+    animation plays unchanged. Joints bend smoothly (dual-quaternion
+    skinning), and a curve through the keyframes keeps the motion fluid
+    (`animation.poseSmoothing`).
+  - **Translucent parts** (the ghost, the insect's wings, lamp glass) draw
+    blended.
+  - **Fallback:** a body without a model draws classic.
+  - **Files:** every build copies `Assets/models_hd` next to the game.
+    `make blender-models` and `make import-models` make them: see
+    [model-contract.md](model-contract.md) and
+    [hd-models-checklist.md](hd-models-checklist.md).
 
 ## Post-processing
 
@@ -99,11 +103,12 @@ languages, with its Brazilian flag painted into the menu art like the others.
 - **Voice-over (AITD1 CD):** books, letters and notebooks are read aloud, page
   by page, with page-turn sounds. The VOC files are looked up in the HDA
   archive, then on the CD (volume `ALONECD`), then on disk.
-- **External music:** each song plays from `<music.folder>/NN.ogg` (else
-  `.flac`, `.mp3`, `.wav`), `NN` the game's song number, at `music.volume`;
-  the script's fade, stop and queued next song act on the file. A song
-  with no file plays as before. In-game sign-off:
-  [external-music-checklist.md](external-music-checklist.md).
+- **External music** (`music.external`, on by default): each song plays from
+  an audio file in the `music` folder, named by the game's song number
+  (`00.ogg`; also `.flac`, `.mp3`, `.wav`). The game's scripts fade the file,
+  stop it and start the next song, and a song with no file plays as before.
+  Keys and file names: [configuration.md](configuration.md#music); in-game
+  sign-off: [external-music-checklist.md](external-music-checklist.md).
 
 ## Key bindings
 
@@ -114,8 +119,8 @@ run; the defaults are in [configuration.md](configuration.md#controls).
 
 ## Windows only
 
-- **Crash log:** unhandled exceptions are written to `crash_log.txt`, and the
-  game tries to carry on after non-fatal ones.
+- **Crash log:** the game writes unhandled exceptions to `crash_log.txt` and
+  tries to carry on after non-fatal ones.
 - **Update check:** at startup a background thread asks GitHub for a newer
   release of the original project and prints a note to the console.
 

@@ -8,7 +8,7 @@
 
 Improve how actors look in AloneInTheDarkReHaunted. Keep the original game's
 identity, animation and gameplay. Work in this repository and follow its
-AGENTS.md. Choose the changes with the smallest blast radius.
+AGENTS.md. Choose the changes that touch the least code.
 
 ## Visual direction
 
