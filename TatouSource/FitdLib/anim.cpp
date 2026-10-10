@@ -10,6 +10,7 @@
 #include "common.h"
 #include "hybrid.h"
 #include "configRemaster.h"
+#include "anim/poseCurve.h"
 
 hqrEntryStruct<sAnimation>* HQ_Anims = nullptr;
 
@@ -34,6 +35,7 @@ int SetAnimObjet(int frame, sAnimation* pAnimation, sBody* body)
     }
 
     body->startAnim = &keyframe;
+    body->m_displayValid = false;
     *(u16*)(body->m_scratchBuffer.data() + 4) = timer;
 
     if(numGroupsInAnimation > body->m_groupOrder.size())
@@ -363,7 +365,8 @@ void GereAnim(void)
 			sBody* pBody = HQR_Get(HQ_Bodys, currentProcessedActorPtr->bodyNum);
 			if (pAnim && pBody)
 			{
-				currentProcessedActorPtr->END_FRAME = SetInterAnimObjet(currentProcessedActorPtr->frame, pAnim, pBody);
+				currentProcessedActorPtr->END_FRAME = SetInterAnimObjet(currentProcessedActorPtr->frame, pAnim, pBody,
+					(currentProcessedActorPtr->animType & ANIM_REPEAT) != 0);
 			}
 		}
 
@@ -827,26 +830,50 @@ void PatchInterStep(s16* value, s16 previousValue, s16 nextValue, int bp, int bx
     }
 }
 
-// Blend authored linear keyframes toward smoothstep for the displayed pose.
-// Keeping root translation on the original linear clock is important: collision,
-// hit timing and track movement must remain byte-for-byte gameplay compatible.
-static int getSmoothedPoseTime(int elapsed, int duration)
+// The HD display's curve through the keyframes around this segment
+// (anim/poseCurve.h): an offset per group on top of the linear pose in
+// m_state, which the classic bodies and all of gameplay (the hot point
+// included) read unchanged. Only drawModelReplacement adds it.
+static void storeDisplayCurve(int frame, sAnimation* pAnim, sBody* pBody, const sFrame* pStart, int numGroups, int elapsed,
+                              int length, bool loops)
 {
-    if (!g_remasterConfig.animation.enablePoseSmoothing || duration <= 1)
-        return elapsed;
-
-    float t = (float)elapsed / (float)duration;
-    if (t < 0.0f) t = 0.0f;
-    if (t > 1.0f) t = 1.0f;
-    const float eased = t * t * (3.0f - 2.0f * t);
-    float strength = g_remasterConfig.animation.poseSmoothingStrength;
-    if (strength < 0.0f) strength = 0.0f;
-    if (strength > 1.0f) strength = 1.0f;
-    const float blended = t + (eased - t) * strength;
-    return (int)(blended * (float)duration + 0.5f);
+    pBody->m_displayValid = false;
+    const float strength = g_remasterConfig.animation.poseSmoothingStrength;
+    if (!g_remasterConfig.animation.enablePoseSmoothing || strength <= 0.0f)
+        return;
+    const int numFrames = pAnim->m_numFrames;
+    const sFrame* frames = pAnim->m_frames.data();
+    const int startIndex = (pStart >= frames && pStart < frames + numFrames) ? (int)(pStart - frames) : anim::kReuse;
+    const anim::Neighbours n = anim::neighbours(startIndex, frame, numFrames, loops);
+    const sFrame* before = n.before == anim::kReuse ? nullptr : &frames[n.before];
+    const sFrame* after = n.after == anim::kReuse ? nullptr : &frames[n.after];
+    const sFrame& target = frames[frame];
+    for (size_t i = 0; i < pBody->m_groups.size(); i++)
+    {
+        point3dStruct& o = pBody->m_groups[i].m_displayOffset;
+        o = { 0, 0, 0 };
+        if ((int)i >= numGroups)
+            continue;
+        const int type = target.m_groups[i].m_type;
+        // a neighbour whose group does something else (rotate, translate, zoom) is no neighbour
+        const bool useBefore = before && before->m_groups[i].m_type == type;
+        const bool useAfter = after && after->m_groups[i].m_type == type;
+        const point3dStruct& p1 = pStart->m_groups[i].m_delta;
+        const point3dStruct& p2 = target.m_groups[i].m_delta;
+        const point3dStruct& p0 = useBefore ? before->m_groups[i].m_delta : p1;
+        const point3dStruct& p3 = useAfter ? after->m_groups[i].m_delta : p2;
+        const int beforeLength = useBefore ? pStart->m_timestamp : 0;
+        const int afterLength = useAfter ? after->m_timestamp : 0;
+        auto curve = type == 0 ? anim::angleCurveOffset : anim::curveOffset;
+        o.x = (s16)curve(p0.x, p1.x, p2.x, p3.x, beforeLength, length, afterLength, elapsed, strength);
+        o.y = (s16)curve(p0.y, p1.y, p2.y, p3.y, beforeLength, length, afterLength, elapsed, strength);
+        o.z = (s16)curve(p0.z, p1.z, p2.z, p3.z, beforeLength, length, afterLength, elapsed, strength);
+    }
+    pBody->m_displayTick = (u16)timer;
+    pBody->m_displayValid = true;
 }
 
-s16 SetInterAnimObjet(int frame, sAnimation* pAnim, sBody* pBody)
+s16 SetInterAnimObjet(int frame, sAnimation* pAnim, sBody* pBody, bool loops)
 {
     int numOfBonesInAnim = pAnim->m_numGroups;
     u16 keyframeLength;
@@ -889,7 +916,6 @@ s16 SetInterAnimObjet(int frame, sAnimation* pAnim, sBody* pBody)
 
     if(time<keyframeLength) // interpolate keyframe
     {
-        const int poseBp = getSmoothedPoseTime(bp, bx);
         if(!(flag&INFO_OPTIMISE))
         {
             for (int i = 0; i < numOfBonesInAnim; i++)
@@ -900,15 +926,15 @@ s16 SetInterAnimObjet(int frame, sAnimation* pAnim, sBody* pBody)
                 switch(PatchType(&pBody->m_groups[i].m_state, pKeyframe->m_groups[i].m_type))
                 {
                 case 0: // rotate
-                    PatchInterAngle(&state.x, previousState.x, nextState.x, poseBp, bx);
-                    PatchInterAngle(&state.y, previousState.y, nextState.y, poseBp, bx);
-                    PatchInterAngle(&state.z, previousState.z, nextState.z, poseBp, bx);
+                    PatchInterAngle(&state.x, previousState.x, nextState.x, bp, bx);
+                    PatchInterAngle(&state.y, previousState.y, nextState.y, bp, bx);
+                    PatchInterAngle(&state.z, previousState.z, nextState.z, bp, bx);
                     break;
                 case 1: // translate
                 case 2: // zoom
-                    PatchInterStep(&state.x, previousState.x, nextState.x, poseBp, bx);
-                    PatchInterStep(&state.y, previousState.y, nextState.y, poseBp, bx);
-                    PatchInterStep(&state.z, previousState.z, nextState.z, poseBp, bx);
+                    PatchInterStep(&state.x, previousState.x, nextState.x, bp, bx);
+                    PatchInterStep(&state.y, previousState.y, nextState.y, bp, bx);
+                    PatchInterStep(&state.z, previousState.z, nextState.z, bp, bx);
                     break;
                 }
             }
@@ -926,9 +952,9 @@ s16 SetInterAnimObjet(int frame, sAnimation* pAnim, sBody* pBody)
                         break;
                 case 1:
                 case 2:
-                    PatchInterStep(&state.x, previousState.x, nextState.x, poseBp, bx);
-                    PatchInterStep(&state.y, previousState.y, nextState.y, poseBp, bx);
-                    PatchInterStep(&state.z, previousState.z, nextState.z, poseBp, bx);
+                    PatchInterStep(&state.x, previousState.x, nextState.x, bp, bx);
+                    PatchInterStep(&state.y, previousState.y, nextState.y, bp, bx);
+                    PatchInterStep(&state.z, previousState.z, nextState.z, bp, bx);
                     break;
                 }
 
@@ -937,12 +963,17 @@ s16 SetInterAnimObjet(int frame, sAnimation* pAnim, sBody* pBody)
                     point3dStruct& previousState = pPreviousKeyframe->m_groups[i].m_rotateDelta.value();
                     point3dStruct& nextState = pKeyframe->m_groups[i].m_rotateDelta.value();
 
-                    PatchInterAngle(&state.x, previousState.x, nextState.x, poseBp, bx);
-                    PatchInterAngle(&state.y, previousState.y, nextState.y, poseBp, bx);
-                    PatchInterAngle(&state.z, previousState.z, nextState.z, poseBp, bx);
+                    PatchInterAngle(&state.x, previousState.x, nextState.x, bp, bx);
+                    PatchInterAngle(&state.y, previousState.y, nextState.y, bp, bx);
+                    PatchInterAngle(&state.z, previousState.z, nextState.z, bp, bx);
                 }
             }
         }
+
+        if (!(flag & INFO_OPTIMISE))
+            storeDisplayCurve(frame, pAnim, pBody, pPreviousKeyframe, numOfBonesInAnim, bp, bx, loops);
+        else
+            pBody->m_displayValid = false;
 
         animStepX = (pKeyframe->m_animStep.x * bp) / bx;
         animStepY = (pKeyframe->m_animStep.y * bp) / bx;
@@ -961,6 +992,7 @@ s16 SetInterAnimObjet(int frame, sAnimation* pAnim, sBody* pBody)
         };
 
         pBody->startAnim = pKeyframe;
+        pBody->m_displayValid = false; // at a keyframe the curve meets the linear pose
 
         *(u16*)(pBody->m_scratchBuffer.data()+4) = (u16)timer;
 

@@ -54,7 +54,11 @@ def test_identity_round_trip(imported, key):
     pos = hdm.vertices["position"].astype(float)
     height = np.ptp(mesh.positions[:, 1])
     assert np.linalg.norm(pos - mesh.positions, axis=1).max() < 5e-3 * height
-    assert (hdm.vertices["joints"][:, 0] == mesh.groups).mean() >= 0.99
+    # every vertex keeps at least half its weight on its own group: a joint's band (bind.JOINT_BAND)
+    # blends its two groups half and half on the joint and less away from it
+    joints, weights = hdm.vertices["joints"].astype(int), hdm.vertices["weights"].astype(float) / 255.0
+    own = (weights * (joints == mesh.groups[:, None])).sum(axis=1)
+    assert (own >= 0.49).mean() >= 0.99
 
     anims = Pak(data_dir / f"{ANIMS[hqr]}.PAK")
     frames = []
@@ -75,7 +79,10 @@ def test_identity_round_trip(imported, key):
                       for j in range(4))
         rigid = np.einsum("vij,vj->vi", skin[mesh.groups], hom)[:, :3]
         moved.append(np.linalg.norm(blended - rigid, axis=1))
-    assert np.percentile(np.array(moved), 99) < 1e-2 * height
+    # away from the joints' bands a vertex moves exactly as the engine moves its group
+    outside = own >= 0.99
+    assert outside.mean() > 0.3  # measured 0.43 (Carnby, Emily) to 0.91 (the window creature)
+    assert np.percentile(np.array(moved)[:, outside], 99) < 1e-2 * height
 
 
 def test_the_export_alone_imports_the_same_files(imported):

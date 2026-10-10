@@ -1,5 +1,5 @@
 import numpy as np
-from aitd_models.blender.remaster import LUMA, composite, linear_to_srgb, model_glb, soften
+from aitd_models.blender.remaster import LUMA, SEAM_DISTANCE, close_seams, composite, linear_to_srgb, model_glb, soften
 from aitd_models.delivery import read_delivery
 from aitd_models.hdm import TRANSLUCENT_ALPHA
 from model_helpers import TINY_PNG
@@ -65,3 +65,41 @@ def test_soften_evens_out_painted_facets_and_keeps_strong_detail():
     flat = np.tile(cloth, (16, 16, 1))
     flat[:, :4] = 0.0
     assert np.allclose(soften(flat, 8), flat)   # and never darkens the texels beside it
+
+
+def test_close_seams_shares_the_vertices_where_pieces_meet():
+    # piece A, a triangle whose open edge 0-1 has piece B's corner (1, 0, 0) on it, and piece C,
+    # whose corner sits a hair (under SEAM_DISTANCE) from A's corner (0, 2, 0)
+    hair = SEAM_DISTANCE * 0.6
+    positions = np.array([[0, 0, 0], [2, 0, 0], [0, 2, 0],          # A
+                          [1, 0, 0], [2, -1, 0], [1, -1, 0],        # B
+                          [hair, 2, 0], [-1, 3, 0], [-1, 2, 0]], float)  # C
+    loops = np.arange(9)
+    uvs = np.array([[0, 0], [1, 0], [0, 1]] * 3, float)
+    p, round_p, lv, uv = close_seams(positions, positions, loops, uvs)
+    tri = lv.reshape(-1, 3)
+    assert len(tri) == 4                                   # A split in two at B's corner
+    at = np.flatnonzero((p == [1, 0, 0]).all(axis=1))
+    assert len(at) == 2                                    # B's corner and A's new one, at one position
+    a_corner = [k for k, v in enumerate(lv) if v in at and v >= 9]
+    assert np.allclose(uv[a_corner], [0.5, 0.0])           # the new corner's UV halfway along A's edge
+    assert np.array_equal(p[6], p[2])                      # C's corner moved onto A's (by less than SEAM_DISTANCE)
+    assert np.allclose(np.delete(p[:9], 6, axis=0), np.delete(positions, 6, axis=0))  # nothing else moved
+
+
+def test_pieces_meeting_at_a_seam_share_a_normal_but_a_thin_plate_keeps_two():
+    # two pieces folded 30 degrees along the edge (0,0,0)-(0,1,0), and a plate: one triangle twice, wound both ways
+    c, s = np.cos(np.radians(30)), np.sin(np.radians(30))
+    fold = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 0], [0, 1, 0], [-c, 0, s]], float)
+    plate = np.array([[5, 0, 0], [6, 0, 0], [5, 1, 0], [5, 0, 0], [5, 1, 0], [6, 0, 0]], float)
+    positions = np.concatenate([fold, plate])
+    loops = np.arange(12)
+    uvs = np.tile([[0, 0], [1, 0], [0, 1]], (4, 1)).astype(float)
+    d = read_delivery(model_glb(positions, positions, loops, uvs, TINY_PNG))
+    def normals_at(blender_xyz):
+        engine = np.array([blender_xyz[0], -blender_xyz[2], blender_xyz[1]]) * 1000.0  # glTF (x, z, -y), engine (x, -y, -z)
+        return d.normals[np.flatnonzero(np.isclose(d.positions, engine).all(axis=1))]
+    shared = normals_at([0, 1, 0])
+    assert len(shared) == 2 and np.allclose(shared[0], shared[1])   # the fold shades as one surface
+    sides = normals_at([5, 1, 0])
+    assert len(sides) == 2 and float(sides[0] @ sides[1]) < -0.99  # the plate's two sides stay apart

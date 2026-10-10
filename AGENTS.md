@@ -26,7 +26,9 @@ Guidance for anyone (human or agent) changing this repository.
   body draws as its replacement), `mipChain.*` (mip levels that keep each
   texel's alpha class: hole, translucent or opaque; the same 128/253 limits
   are in `hdm.py` and `model_ps.sc`, and `tests/tools/test_models_hdm.py`
-  checks they agree) and `modelLight.*`. Their
+  checks they agree), `modelLight.*` and `dualQuat.*` (bone matrices as
+  dual quaternions for `skinned_dq_vs.sc`; a body with a zooming bone draws
+  with `skinned_vs.sc`). Their
   engine adapter is `modelReplacement.*` (loads `models_hd/*.hdm`, draws in
   `AffObjet` instead of the classic primitives, behind `graphics.hdModels`);
   `hdCompare.*` is its developer check (`debug.hdModelsCompare`, scored by
@@ -53,6 +55,12 @@ Guidance for anyone (human or agent) changing this repository.
   checks they agree. The Portuguese text
   is in `Assets/lang/pt-BR` (`make lang-pack`); in-game sign-off:
   `docs/translation-checklist.md`.
+- `TatouSource/FitdLib/anim/` — `poseCurve.*`, engine-free and unit-tested
+  in `TatouSource/tests/engine/`: the HD display's curve through an
+  animation's keyframes (a timed cubic Hermite curve, added as an offset to
+  the engine's linear pose). `anim.cpp` stores it beside `m_state` for the HD
+  draw path only: the classic bodies and all of gameplay, the hot point
+  included, read the linear pose.
 - `TatouSource/FitdLib/physics/` — collision rules, engine-free and header-only,
   unit-tested in `TatouSource/tests/engine/`: `collisionEscape.h` (how an
   actor already inside a blocker may move, used by `GereCollision`).

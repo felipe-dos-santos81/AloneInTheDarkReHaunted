@@ -38,7 +38,9 @@ startup, and the game window is raised above the console.
 - **HD character models** (`graphics.hdModels`, on by default): refined,
   textured meshes for all 42 classic bodies, shaded as rounded forms with
   the atlases' painted facets softened, and skinned to the original bones so
-  every animation plays unchanged. Translucent parts (the ghost, the insect's
+  every animation plays unchanged; joints bend smoothly (dual-quaternion
+  skinning) and a curve through the keyframes keeps the motion fluid
+  (`animation.poseSmoothing`). Translucent parts (the ghost, the insect's
   wings, lamp glass) draw blended, and a body without a model draws classic.
   Every build copies `Assets/models_hd` next to the game. They are made with
   `make blender-models` and `make import-models`: see

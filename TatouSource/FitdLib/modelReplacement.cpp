@@ -20,6 +20,7 @@
 #include "hdCompare.h"
 #include "lanternLighting.h"
 #include "models/bodyPose.h"
+#include "models/dualQuat.h"
 #include "models/hdmMesh.h"
 #include "models/mipChain.h"
 #include "models/modelLight.h"
@@ -92,12 +93,27 @@ bgfx::ProgramHandle modelProgram()
     return program;
 }
 
-bgfx::UniformHandle uniform(const char* name, bgfx::UniformType::Enum type)
+// The dual-quaternion twin of modelProgram (skinned_dq_vs.sc), for bodies
+// none of whose bones zooms. Invalid on a backend without it: modelProgram
+// then draws every body.
+bgfx::ProgramHandle modelProgramDq()
+{
+    static bool tried = false;
+    static bgfx::ProgramHandle program = BGFX_INVALID_HANDLE;
+    if (!tried)
+    {
+        tried = true;
+        program = loadBgfxProgram("skinned_dq_vs", "model_ps");
+    }
+    return program;
+}
+
+bgfx::UniformHandle uniform(const char* name, bgfx::UniformType::Enum type, uint16_t count = 1)
 {
     static std::unordered_map<std::string, bgfx::UniformHandle> handles;
     auto it = handles.find(name);
     if (it == handles.end())
-        it = handles.emplace(name, bgfx::createUniform(name, type)).first;
+        it = handles.emplace(name, bgfx::createUniform(name, type, count)).first;
     return it->second;
 }
 
@@ -324,11 +340,14 @@ bool drawModelReplacement(ModelReplacement* r, sBody* pBody, int x, int y, int z
     const size_t groups = r->pose.groups.size();
     if (pBody->m_groups.size() != groups)
         return false;
+    // The pose gameplay reads, plus this tick's display curve (anim.cpp, storeDisplayCurve).
+    const bool curve = pBody->m_displayValid && pBody->m_displayTick == (u16)timer;
     std::vector<models::GroupState> states(groups);
     for (size_t g = 0; g < groups; ++g)
     {
         const sGroupState& s = pBody->m_groups[g].m_state;
-        states[g] = { s.m_type, s.m_delta.x, s.m_delta.y, s.m_delta.z };
+        const point3dStruct o = curve ? pBody->m_groups[g].m_displayOffset : point3dStruct{ 0, 0, 0 };
+        states[g] = { s.m_type, (int16_t)(s.m_delta.x + o.x), (int16_t)(s.m_delta.y + o.y), (int16_t)(s.m_delta.z + o.z) };
     }
     const models::RenderCamera cam = engineCamera();
     models::Affine3 bones[models::kMaxPoseGroups];
@@ -348,8 +367,28 @@ bool drawModelReplacement(ModelReplacement* r, sBody* pBody, int x, int y, int z
         return true; // compare mode's hidden frame: neither the replacement nor the classic body
 
     float matrices[models::kMaxPoseGroups][16];
+    bool anyZoom = false;
     for (size_t g = 0; g < groups; ++g)
+    {
         models::columnMajor(bones[g], matrices[g]);
+        anyZoom = anyZoom || models::zooms(bones[g]);
+    }
+    // Dual quaternions keep the joints' volume; a zooming bone is not a rigid
+    // transform, so such a frame blends matrices as before.
+    const bool dq = !anyZoom && bgfx::isValid(modelProgramDq());
+    float boneDq[models::kMaxPoseGroups * 2][4];
+    if (dq)
+    {
+        for (size_t g = 0; g < groups; ++g)
+        {
+            const models::DualQuat q = models::dualQuat(bones[g]);
+            for (int i = 0; i < 4; ++i)
+            {
+                boneDq[2 * g][i] = q.real[i];
+                boneDq[2 * g + 1][i] = q.dual[i];
+            }
+        }
+    }
     const float proj[4] = { p.px, p.py, p.pz, p.pw };
     // The opaque texels, then the translucent ones as the classic path draws the
     // transparent material: blended, writing no depth. That pass culls back faces
@@ -366,11 +405,13 @@ bool drawModelReplacement(ModelReplacement* r, sBody* pBody, int x, int y, int z
     for (int pass = 0; pass < passes; ++pass)
     {
         bgfx::setUniform(uniform("u_camProj", bgfx::UniformType::Vec4), proj);
+        if (dq)
+            bgfx::setUniform(uniform("u_boneDq", bgfx::UniformType::Vec4, models::kMaxPoseGroups * 2), boneDq, (uint16_t)(2 * groups));
         const float tint[4] = { g_fadeLevel, g_roomIsDark ? kDarkRoomBrightness : 1.0f, (float)pass, hdCompareUnlit() ? 1.0f : 0.0f };
         bgfx::setUniform(uniform("u_tint", bgfx::UniformType::Vec4), tint);
         setLightUniforms(cam);
         bgfx::setState(pass == 0 ? state | BGFX_STATE_WRITE_Z : state | BGFX_STATE_BLEND_ALPHA | BGFX_STATE_CULL_CW);
-        bgfx::submit(gameViewId, modelProgram(), 0, pass + 1 < passes ? BGFX_DISCARD_STATE : BGFX_DISCARD_ALL);
+        bgfx::submit(gameViewId, dq ? modelProgramDq() : modelProgram(), 0, pass + 1 < passes ? BGFX_DISCARD_STATE : BGFX_DISCARD_ALL);
     }
     return true;
 }

@@ -10,7 +10,9 @@ are `true` or `false`, and strings are quoted. Unknown keys are ignored.
 
 `config.version` is the file's format. Older files saved the old defaults, so
 loading one changes them once and saves the file: before version 2 it turns
-`graphics.hdModels` on, before version 3 it turns `backgrounds.dump` off.
+`graphics.hdModels` on, before version 3 it turns `backgrounds.dump` off,
+before version 4 it sets `animation.poseSmoothingStrength` from the old
+default 0.72 to the new 0.5.
 
 ## Graphics
 
@@ -44,8 +46,8 @@ The values after each switch are its own keys (`postprocessing.bloomThreshold = 
 
 | Key | Default | Meaning |
 |---|---|---|
-| `animation.poseSmoothing` | `true` | Blend skeletal poses between keyframes |
-| `animation.poseSmoothingStrength` | `0.72` | How much, 0–1 |
+| `animation.poseSmoothing` | `true` | HD models only: a curve through the keyframes, so limbs keep their speed through each pose. Classic bodies and gameplay (hits included) keep the original linear motion |
+| `animation.poseSmoothingStrength` | `0.5` | 0 is linear, 1 the full curve; 0.5 keeps planted feet within 5 % of the original's drift |
 
 ## Controls
 

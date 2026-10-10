@@ -1117,7 +1117,7 @@ void processLife(int lifeNum, bool callFoundLife)
                             }
                             else */
                             {
-                                SetInterAnimObjet(currentProcessedActorPtr->frame, pAnim, pBody);
+                                SetInterAnimObjet(currentProcessedActorPtr->frame, pAnim, pBody, (currentProcessedActorPtr->animType & ANIM_REPEAT) != 0);
                             }
                         }
                     }
