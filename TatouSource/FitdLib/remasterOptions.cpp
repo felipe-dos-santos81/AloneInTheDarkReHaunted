@@ -356,6 +356,7 @@ static void drawInterfaceAudioTab()
     ImGui::Checkbox(tr("External music"), &g_remasterConfig.music.enableExternalMusic);
     ImGui::BeginDisabled(!g_remasterConfig.music.enableExternalMusic);
     ImGui::InputText(tr("Music folder"), g_remasterConfig.music.musicFolder, sizeof(g_remasterConfig.music.musicFolder));
+    ImGui::SliderFloat(tr("Music volume"), &g_remasterConfig.music.volume, 0.0f, 1.0f, "%.2f");
     ImGui::EndDisabled();
     helpMarker(tr("External music source changes take effect when a track is next loaded or after restart."));
 }
