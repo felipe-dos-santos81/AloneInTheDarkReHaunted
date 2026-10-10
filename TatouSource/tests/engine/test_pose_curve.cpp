@@ -7,8 +7,9 @@
 #include "poseCurve.h"
 
 #include <cstdlib>
+#include <initializer_list>
 
-using anim::kReuse;
+using anim::kNoKeyframe;
 
 namespace
 {
@@ -56,11 +57,13 @@ TEST_CASE("neighbours: within an animation, after an animation change, around a 
     struct Row { int start, target, frames; bool loops; int before, after; };
     const Row rows[] = {
         { 2, 3, 6, false, 1, 4 },            // inside the animation
-        { kReuse, 0, 6, false, kReuse, 1 },  // the start is a snapshot of the previous animation's pose
+        { kNoKeyframe, 0, 6, true, kNoKeyframe, 1 },   // the start is a snapshot of the previous animation's pose
         { 5, 0, 6, true, 4, 1 },             // a loop wrapping from the last keyframe to the first
         { 0, 1, 6, true, 5, 2 },             // the keyframe before the first is the last
-        { 4, 5, 6, false, 3, kReuse },       // a one-shot animation's end
+        { 4, 5, 6, false, 3, kNoKeyframe },       // a one-shot animation's end
         { 4, 5, 6, true, 3, 0 },             // a looping animation's end
+        { 3, 3, 6, true, kNoKeyframe, kNoKeyframe },   // a hold: the start is the target itself (a reset or a fresh animation)
+        { 1, 3, 6, false, kNoKeyframe, 4 },       // a start that is not the keyframe before the target
     };
     for (const Row& r : rows)
     {

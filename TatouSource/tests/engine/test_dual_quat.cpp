@@ -37,7 +37,7 @@ TEST_CASE("a rigid bone matrix survives as a dual quaternion")
     CHECK(distance(models::blendApply(&q, &one, 1, p), apply(m, p)) < 0.05f);
 }
 
-TEST_CASE("blending two bones keeps a bent joint's thickness, where blending matrices thins it")
+TEST_CASE("blending two bones keeps a bent joint's thickness")
 {
     // a point 100 units from the joint, half on a straight bone and half on one bent 90 degrees
     const Affine3 straight = rotZ(0.0f), bent = rotZ(90.0f);
@@ -45,10 +45,8 @@ TEST_CASE("blending two bones keeps a bent joint's thickness, where blending mat
     const float w[2] = { 0.5f, 0.5f };
     const Vec3 p{ 100.0f, 0.0f, 0.0f };
     const Vec3 dq = models::blendApply(q, w, 2, p);
-    const Vec3 a = apply(straight, p), b = apply(bent, p);
-    const Vec3 linear{ (a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2 };
-    CHECK(distance(dq, { 0, 0, 0 }) == doctest::Approx(100.0f).epsilon(0.001)); // on the circle
-    CHECK(distance(linear, { 0, 0, 0 }) == doctest::Approx(70.7f).epsilon(0.01)); // cut across it: 29 % thinner
+    // on the circle; blending the matrices would cut across it at 70.7 (29 % thinner)
+    CHECK(distance(dq, { 0, 0, 0 }) == doctest::Approx(100.0f).epsilon(0.001));
 }
 
 TEST_CASE("a quaternion and its negation blend as the same rotation")

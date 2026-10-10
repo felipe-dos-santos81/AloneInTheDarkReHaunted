@@ -843,10 +843,10 @@ static void storeDisplayCurve(int frame, sAnimation* pAnim, sBody* pBody, const 
         return;
     const int numFrames = pAnim->m_numFrames;
     const sFrame* frames = pAnim->m_frames.data();
-    const int startIndex = (pStart >= frames && pStart < frames + numFrames) ? (int)(pStart - frames) : anim::kReuse;
+    const int startIndex = (pStart >= frames && pStart < frames + numFrames) ? (int)(pStart - frames) : anim::kNoKeyframe;
     const anim::Neighbours n = anim::neighbours(startIndex, frame, numFrames, loops);
-    const sFrame* before = n.before == anim::kReuse ? nullptr : &frames[n.before];
-    const sFrame* after = n.after == anim::kReuse ? nullptr : &frames[n.after];
+    const sFrame* before = n.before == anim::kNoKeyframe ? nullptr : &frames[n.before];
+    const sFrame* after = n.after == anim::kNoKeyframe ? nullptr : &frames[n.after];
     const sFrame& target = frames[frame];
     for (size_t i = 0; i < pBody->m_groups.size(); i++)
     {

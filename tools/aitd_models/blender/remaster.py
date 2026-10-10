@@ -361,7 +361,8 @@ def close_seams(positions: np.ndarray, round_positions: np.ndarray, loop_vertex:
     return positions, round_positions, loop_vertex, loop_uv
 
 
-def _cut(positions, round_positions, loop_vertex, loop_uv, distance):
+def _cut(positions: np.ndarray, round_positions: np.ndarray, loop_vertex: np.ndarray, loop_uv: np.ndarray,
+         distance: float):
     """One round of close_seams' cuts."""
     tri = loop_vertex.reshape(-1, 3)
     uv = loop_uv.reshape(-1, 3, 2)
@@ -389,28 +390,37 @@ def _cut(positions, round_positions, loop_vertex, loop_uv, distance):
     for t in range(len(tri)):
         mine = [(k, cuts.get(3 * t + k)) for k in range(3)]
         if not any(c for _, c in mine):
-            out_tri.append(tri[t]); out_uv.append(uv[t]); continue
+            out_tri.append(tri[t])
+            out_uv.append(uv[t])
+            continue
         ring, ring_uv = [], []  # the triangle's outline, cut points included, in winding order
         for k, cut in mine:
             a, b = tri[t, k], tri[t, (k + 1) % 3]
-            ring.append(a); ring_uv.append(uv[t, k])
+            ring.append(a)
+            ring_uv.append(uv[t, k])
             for sv, v in cut or []:
-                new_pos.append(positions[v][None]); new_round.append((round_positions[a] + sv * (round_positions[b] - round_positions[a]))[None])
-                ring.append(nxt); ring_uv.append(uv[t, k] + sv * (uv[t, (k + 1) % 3] - uv[t, k])); nxt += 1
+                new_pos.append(positions[v][None])
+                new_round.append((round_positions[a] + sv * (round_positions[b] - round_positions[a]))[None])
+                ring.append(nxt)
+                ring_uv.append(uv[t, k] + sv * (uv[t, (k + 1) % 3] - uv[t, k]))
+                nxt += 1
         split = [k for k, c in mine if c]
         if len(split) == 1:  # a fan from the corner opposite the cut edge: no flat triangle
-            apex = (split[0] + 2) % 3
-            order = ring[ring.index(tri[t, apex]):] + ring[:ring.index(tri[t, apex])]
-            order_uv = ring_uv[ring.index(tri[t, apex]):] + ring_uv[:ring.index(tri[t, apex])]
+            start = ring.index(tri[t, (split[0] + 2) % 3])
+            order, order_uv = ring[start:] + ring[:start], ring_uv[start:] + ring_uv[:start]
             for j in range(1, len(order) - 1):
-                out_tri.append(np.array([order[0], order[j], order[j + 1]])); out_uv.append(np.array([order_uv[0], order_uv[j], order_uv[j + 1]]))
+                out_tri.append(np.array([order[0], order[j], order[j + 1]]))
+                out_uv.append(np.array([order_uv[0], order_uv[j], order_uv[j + 1]]))
         else:  # a fan from the centre
-            c = nxt; nxt += 1
+            c = nxt
+            nxt += 1
             corners = [tri[t, k] for k in range(3)]
-            new_pos.append(positions[corners].mean(axis=0)[None]); new_round.append(round_positions[corners].mean(axis=0)[None])
+            new_pos.append(positions[corners].mean(axis=0)[None])
+            new_round.append(round_positions[corners].mean(axis=0)[None])
             cuv = uv[t].mean(axis=0)
             for j in range(len(ring)):
-                out_tri.append(np.array([ring[j], ring[(j + 1) % len(ring)], c])); out_uv.append(np.array([ring_uv[j], ring_uv[(j + 1) % len(ring)], cuv]))
+                out_tri.append(np.array([ring[j], ring[(j + 1) % len(ring)], c]))
+                out_uv.append(np.array([ring_uv[j], ring_uv[(j + 1) % len(ring)], cuv]))
     return (np.concatenate(new_pos), np.concatenate(new_round), np.stack(out_tri).reshape(-1),
             np.stack(out_uv).reshape(-1, 2))
 

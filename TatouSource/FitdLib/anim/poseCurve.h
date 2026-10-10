@@ -14,16 +14,18 @@
 namespace anim
 {
 
-constexpr int kReuse = -1; // no neighbour keyframe: the segment's own end stands in for it
+constexpr int kNoKeyframe = -1; // no neighbour keyframe: the segment's own end stands in for it
 
 // The keyframes around the segment that runs from `startIndex` (the start
-// keyframe's index in the animation, or kReuse when the start is not one of
-// its keyframes: a snapshot of the pose at an animation change, or none) to
-// `target`, in an animation of `numFrames` keyframes that loops or not.
+// keyframe's index in the animation, or kNoKeyframe when the start is not one of
+// its keyframes: a snapshot of the pose at an animation change) to `target`, in
+// an animation of `numFrames` keyframes that loops or not. Only a start that is
+// the keyframe before the target has a keyframe before it; a hold (the start is
+// the target) has no neighbours, so it stays still.
 struct Neighbours
 {
-    int before; // the keyframe before the start, or kReuse
-    int after;  // the keyframe after the target, or kReuse
+    int before; // the keyframe before the start, or kNoKeyframe
+    int after;  // the keyframe after the target, or kNoKeyframe
 };
 Neighbours neighbours(int startIndex, int target, int numFrames, bool loops);
 
