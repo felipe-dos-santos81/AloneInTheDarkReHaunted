@@ -205,19 +205,19 @@ rebuilds the copy compiled into the game. In-game sign-off:
 ## Music
 
 With `music.external = true` (the default) each song plays from a file in
-`data/aitd1/music`. Name each file by the game's song number: `00.ogg`,
-`01.ogg`, and so on (`.flac`, `.mp3` and `.wav` also work). A song with no
-file plays as it did before, which on a plain data folder is silence. A file
-`18` is the title theme: it loops under the startup menu and fades out when
-the menu is left. Files `19`, `20` and `21` are ambient loops for the house,
-the underground and the dance hall: they play whenever no scripted song does.
+`data/aitd1/music`, named by the game's song number: `02.ogg`, `03.ogg` and
+so on (`.flac`, `.mp3` and `.wav` also work). A song with no file plays as it
+did before, which on a plain data folder is silence.
 
-The song numbers are the ones your data's scripts call, and they differ by
-release: the CD version calls songs 2 to 17, the floppy version only the
-eight chip tunes 0 to 7. A soundtrack made for one release is misplaced on
-the other. The brief for the AI soundtrack,
-[docs/music-generation-guide.md](docs/music-generation-guide.md), targets
-the CD data.
+The numbers are the ones your data's scripts call, and they differ by
+release: the CD version calls songs 2 to 17, the floppy version the chip
+tunes 0 to 7. A soundtrack made for one release is misplaced on the other.
+Four numbers are the remaster's own: `18` is the title theme, looping under
+the startup menu; `19`, `20` and `21` are ambient loops for the house, the
+underground and the dance hall, heard whenever no scripted song plays. The
+system menu's Music ON/OFF silences all of them. The brief for the AI
+soundtrack, [docs/music-generation-guide.md](docs/music-generation-guide.md),
+targets the CD data.
 
 The macOS app reads its files from its bundle, so `make run` links the folder
 there (`make music-install` does only that).

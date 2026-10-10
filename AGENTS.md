@@ -71,7 +71,13 @@ Guidance for anyone (human or agent) changing this repository.
   `updatePendingEvents` (`mainLoop.cpp`) starts the queued song when it ends.
   Only `osystem_playMusicFile` sets the file's voice handle, and only
   `osystem_stopTrack` destroys the stream, so with the option off the game
-  behaves exactly as before. The OPL chip is programmed but not rendered. The
+  behaves exactly as before. The OPL chip is programmed but not rendered.
+  AITD1 adds two cues of its own, both through `osystem_playMusicFile`
+  directly so `currentMusic` stays -1 and the chip never sees their numbers:
+  the title theme (song 18, looping under `MainMenu()`, `AITD1.cpp`) and
+  the ambient loops (`musicAmbientFrame`, songs 19 to 21 by stage and room,
+  while no scripted song plays). `musicEnabled`, the system menu's Music
+  ON/OFF, gates `playMusic` and both cues. The
   macOS app reads `music/` from its bundle (`make music-install`, run by
   `make run`). In-game sign-off: `docs/external-music-checklist.md`.
 - `tools/` + `tests/tools/` — the Python tools (game data, HD models,

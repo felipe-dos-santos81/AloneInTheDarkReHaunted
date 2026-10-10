@@ -105,8 +105,11 @@ languages, with its Brazilian flag painted into the menu art like the others.
   archive, then on the CD (volume `ALONECD`), then on disk.
 - **External music** (`music.external`, on by default): each song plays from
   an audio file in the `music` folder, named by the game's song number
-  (`00.ogg`; also `.flac`, `.mp3`, `.wav`). The game's scripts fade the file,
+  (`02.ogg`; also `.flac`, `.mp3`, `.wav`). The game's scripts fade the file,
   stop it and start the next song, and a song with no file plays as before.
+  The remaster adds a looping title theme (`18`) and ambient loops for the
+  house, the underground and the dance hall (`19` to `21`), heard while no
+  scripted song plays.
   The numbers differ by release; the soundtrack brief,
   [music-generation-guide.md](music-generation-guide.md), says which and
   targets the CD data.
