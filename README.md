@@ -207,7 +207,9 @@ rebuilds the copy compiled into the game. In-game sign-off:
 With `music.external = true` (the default) each song plays from a file in
 `data/aitd1/music`. Name each file by the game's song number: `00.ogg`,
 `01.ogg`, and so on (`.flac`, `.mp3` and `.wav` also work). A song with no
-file plays as it did before, which on a plain data folder is silence.
+file plays as it did before, which on a plain data folder is silence. A file
+`18` is the title theme: it loops under the startup menu and fades out when
+the menu is left.
 
 The song numbers are the ones your data's scripts call, and they differ by
 release: the CD version calls songs 2 to 17, the floppy version only the

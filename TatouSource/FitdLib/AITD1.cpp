@@ -677,7 +677,16 @@ void startAITD1()
             startupMenuResult = loadSave(g_remasterConfig.debug.loadSaveOnStart) ? 3 : MainMenu();
         }
         else
+        {
+            // The title theme, song 18, exists only as a file (docs/music-generation-guide.md):
+            // played directly so the chip driver never sees a number beyond its tunes, and
+            // currentMusic stays -1 so the intro's own song starts as usual. It loops while
+            // the menu is up and fades on every way out: new game, continue, the idle timeout.
+            if (g_remasterConfig.music.enableExternalMusic)
+                osystem_playMusicFile(18, true);
             startupMenuResult = MainMenu();
+            osystem_fadeMusicFile(1.0f);
+        }
 #else
         int startupMenuResult = 0;
 #endif

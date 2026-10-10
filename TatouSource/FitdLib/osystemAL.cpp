@@ -875,7 +875,7 @@ int osystem_playTrack(int trackId)
 
 extern "C" { extern char homePath[512]; }
 
-bool osystem_playMusicFile(int song)
+bool osystem_playMusicFile(int song, bool loop)
 {
     osystem_stopTrack();
     if (!gSoloud || song < 0)
@@ -898,6 +898,7 @@ bool osystem_playMusicFile(int song)
     if (!fHandle || !loadMusicStream(fHandle))
         return false;
 
+    pWavStream->setLooping(loop);
     s_musicFileHandle = gSoloud->play(*pWavStream, g_remasterConfig.music.volume);
     return true;
 }
