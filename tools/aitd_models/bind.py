@@ -21,6 +21,7 @@ are. Island cleanup is left out: on the low-poly originals it relabelled
 whole limb segments (LISTBODY_024: 71 vertices wrong instead of 32)."""
 from __future__ import annotations
 
+import heapq
 from dataclasses import dataclass
 
 import numpy as np
@@ -29,6 +30,7 @@ from .mesh import size
 
 SMOOTH_ITERATIONS = 5
 SMOOTH_SIGMA = 0.01
+JOINT_BAND = 0.06  # of the body's size along the surface, each side of a joint: the narrowest the stretch gate passes cleanly (Carnby: 2 % fails, 4 % just, 6 % clean)
 AMBIGUOUS_MARGIN = 0.005
 WELD_UNITS = 1e-3
 CLOSEST_CHUNK = 256  # points per block: closest_on_triangles builds CLOSEST_CHUNK x T x 3 arrays
@@ -154,6 +156,58 @@ def smooth(w: np.ndarray, e: np.ndarray, length: np.ndarray, sigma: float, allow
     return w
 
 
+def _distances(seeds: list[int], adjacency: list[list[tuple[int, float]]], keep: np.ndarray, reach: float) -> dict[int, float]:
+    """Shortest surface distance from any seed, over welded edges between
+    vertices `keep` allows, up to `reach`."""
+    best = {v: 0.0 for v in seeds}
+    heap = [(0.0, v) for v in seeds]
+    while heap:
+        d, v = heapq.heappop(heap)
+        if d > best.get(v, np.inf):
+            continue
+        for u, length in adjacency[v]:
+            nd = d + length
+            if nd < reach and keep[u] and nd < best.get(u, np.inf):
+                best[u] = nd
+                heapq.heappush(heap, (nd, u))
+    return best
+
+
+def joint_band(w: np.ndarray, e: np.ndarray, length: np.ndarray, parents: list[int], band: float) -> np.ndarray:
+    """`w` per welded id (N, G). Around every boundary between a group and its
+    parent (welded edges whose strongest groups are those two), the vertices
+    of the two within `band` of it along the surface move toward half and
+    half between them, by a smoothstep of that distance: fully on the
+    boundary, not at all at `band`, where the weights are their own again.
+    Joints apply one after another, each on the weights the earlier ones
+    left, so a vertex near two (on a short bone) blends smoothly toward both.
+    Every other vertex keeps its weights."""
+    if band <= 0:
+        return w
+    labels = w.argmax(axis=1)
+    adjacency: list[list[tuple[int, float]]] = [[] for _ in range(len(w))]
+    for (a, b), l in zip(e.tolist(), length.tolist()):
+        adjacency[a].append((b, l))
+        adjacency[b].append((a, l))
+    out = w.copy()
+    for child, parent in enumerate(parents):
+        if parent < 0:
+            continue
+        la, lb = labels[e[:, 0]], labels[e[:, 1]]
+        cross = ((la == child) & (lb == parent)) | ((la == parent) & (lb == child))
+        if not cross.any():
+            continue
+        keep = (labels == child) | (labels == parent)
+        dist = _distances(sorted(set(e[cross].ravel().tolist())), adjacency, keep, band)
+        for v, d in dist.items():
+            x = d / band
+            keep_own = x * x * (3 - 2 * x)  # smoothstep: 0 on the boundary, 1 at the band's edge
+            half = np.zeros(w.shape[1])
+            half[child] = half[parent] = 0.5
+            out[v] = keep_own * out[v] + (1.0 - keep_own) * half  # on top of earlier joints: a vertex near two keeps both
+    return out
+
+
 def pack(w: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Top four weights as (joints, u8 weights summing to 255), largest first."""
     if w.shape[1] < 4:  # a body with fewer than four groups
@@ -181,7 +235,9 @@ def bind(positions: np.ndarray, triangles: np.ndarray, tri_positions: np.ndarray
     w, ambiguous = surface_weights(positions[first], tri_positions, tri_groups, related, AMBIGUOUS_MARGIN * body_size)
     e = edges(triangles, ids)
     welded = positions[first]
-    w = smooth(w, e, np.linalg.norm(welded[e[:, 0]] - welded[e[:, 1]], axis=1), SMOOTH_SIGMA * body_size, related)
+    length = np.linalg.norm(welded[e[:, 0]] - welded[e[:, 1]], axis=1)
+    w = smooth(w, e, length, SMOOTH_SIGMA * body_size, related)
+    w = joint_band(w, e, length, parents, JOINT_BAND * body_size)
     w = w[ids]
     joints, packed = pack(w)
     return Binding(w, ambiguous[ids], joints, packed)

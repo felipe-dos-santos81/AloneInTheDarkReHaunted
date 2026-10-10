@@ -1,6 +1,6 @@
 import numpy as np
 
-from aitd_models.bind import allowed_groups, bind, closest_on_triangles, pack, weld
+from aitd_models.bind import allowed_groups, bind, closest_on_triangles, joint_band, pack, weld
 from aitd_models.pose import ROTATE, pose_float
 from model_helpers import chain_rest_mesh, subdivide
 
@@ -113,3 +113,31 @@ def test_a_subdivided_mesh_takes_the_original_groups():
     single = (corner_groups == corner_groups[:, :1]).all(axis=1)
     assert single.sum() > 100
     assert (b.labels[single] == corner_groups[single, 0]).mean() >= 0.98
+
+
+def test_a_joint_blends_its_two_groups_over_the_band_and_nothing_else():
+    # a line of vertices one unit apart: 0-4 the parent (group 0), 5-9 its child (group 1),
+    # 10 an unrelated group (2) touching the child's end
+    labels = np.array([0] * 5 + [1] * 5 + [2])
+    w = np.eye(3)[labels]
+    e = np.array([[i, i + 1] for i in range(10)])
+    length = np.ones(len(e))
+    out = joint_band(w, e, length, [-1, 0, -1], 3.0)
+    assert np.allclose(out[4], [0.5, 0.5, 0]) and np.allclose(out[5], [0.5, 0.5, 0])  # on the boundary
+    assert out[3, 0] > out[3, 1] > 0  # inside the band: mostly its own group
+    assert np.allclose(out[1], [1, 0, 0]) and np.allclose(out[8], [0, 1, 0])  # beyond the band: untouched
+    assert np.allclose(out[10], [0, 0, 1]) and out[:10, 2].max() == 0  # the unrelated group never blends
+    assert np.allclose(out.sum(axis=1), 1)
+    assert np.array_equal(joint_band(w, e, length, [-1, 0, -1], 0.0), w)  # no band: today's weights
+
+
+def test_a_short_bone_inside_two_joints_blends_toward_both_without_a_jump():
+    # groups 0 -> 1 -> 2 along a line, group 1 only two vertices long, so both joints' bands cover it
+    # (measured on LISTBOD2_015: applying each joint to the original weights left one blend per vertex,
+    # a 0.5 step between neighbours, and the posed mesh tore)
+    labels = np.array([0] * 4 + [1] * 2 + [2] * 4)
+    w = np.eye(3)[labels]
+    e = np.array([[i, i + 1] for i in range(9)])
+    out = joint_band(w, e, np.ones(len(e)), [-1, 0, 1], 3.0)
+    assert np.abs(np.diff(out, axis=0)).max() < 0.45  # measured 0.37; one blend per vertex gives 0.5
+    assert out[4, 0] > 0.1                             # the short bone keeps its parent's share (measured 0.13; was 0)

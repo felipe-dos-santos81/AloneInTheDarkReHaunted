@@ -299,6 +299,142 @@ def composite(colour: np.ndarray, ao: np.ndarray, strength: float = AO_STRENGTH,
     return rgb[::-1]
 
 
+SEAM_DISTANCE = 0.0005  # stage.py's merge_distance (Blender metres): a vertex this close to another piece's open edge lies on it
+JOINT_NORMAL_COS = 0.5  # cos 60 degrees: normals this close shade as one surface where pieces meet
+
+
+def pieces(triangles: np.ndarray, count: int) -> np.ndarray:
+    """(count,) the piece of each vertex: vertices joined through shared
+    triangles carry the lowest index among them."""
+    label = np.arange(count)
+    while True:
+        low = label[triangles].min(axis=1)
+        before = label.copy()
+        for k in range(3):
+            np.minimum.at(label, triangles[:, k], low)
+        label = label[label]  # follow the chains
+        if np.array_equal(label, before):
+            return label
+
+
+def _open_edges(tri: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Edge k of triangle t is edges[3t + k] (corner k -> k + 1); returns
+    (edges, the indices of those used by one triangle only)."""
+    edges = np.stack([tri, np.roll(tri, -1, axis=1)], axis=2).reshape(-1, 2)
+    _, inv, cnt = np.unique(np.sort(edges, axis=1), axis=0, return_inverse=True, return_counts=True)
+    return edges, np.flatnonzero(cnt[inv.reshape(-1)] == 1)
+
+
+def _snap(positions: np.ndarray, piece: np.ndarray, rim: np.ndarray, distance: float) -> np.ndarray:
+    """Open-edge vertices of different pieces within `distance` of each other
+    take one position (the lowest-index one's): they then weld exactly."""
+    out = positions.copy()
+    q = positions[rim]
+    d = np.linalg.norm(q[:, None] - q[None], axis=2)
+    close = (d < distance) & (piece[rim][:, None] != piece[rim][None])
+    for i, j in zip(*np.nonzero(np.triu(close, 1))):
+        out[rim[j]] = out[rim[i]]
+    return out
+
+
+def close_seams(positions: np.ndarray, round_positions: np.ndarray, loop_vertex: np.ndarray, loop_uv: np.ndarray,
+                distance: float = SEAM_DISTANCE):
+    """Close the seams where the pieces meet. Vertices of different pieces'
+    open edges within `distance` of each other first take one position (a
+    move of at most `distance`); then, until none is left, a vertex of one
+    piece lying on an open edge of another splits that edge's triangle at it
+    (the new corner takes the vertex's position and the edge's interpolated
+    UV and round position). The seam's vertices are then shared by position,
+    so they share their skin weights and normal. Returns new
+    (positions, round_positions, loop_vertex, loop_uv)."""
+    positions, round_positions = np.asarray(positions, float), np.asarray(round_positions, float)
+    loop_vertex, loop_uv = np.asarray(loop_vertex, np.int64), np.asarray(loop_uv, float)
+    tri = loop_vertex.reshape(-1, 3)
+    piece = pieces(tri, len(positions))
+    edges, open_edges = _open_edges(tri)
+    positions = _snap(positions, piece, np.unique(edges[open_edges].ravel()), distance)
+    for _ in range(4):  # a cut can expose another; two rounds settle the bodies measured
+        before = len(loop_vertex)
+        positions, round_positions, loop_vertex, loop_uv = _cut(positions, round_positions, loop_vertex, loop_uv, distance)
+        if len(loop_vertex) == before:
+            break
+    return positions, round_positions, loop_vertex, loop_uv
+
+
+def _cut(positions, round_positions, loop_vertex, loop_uv, distance):
+    """One round of close_seams' cuts."""
+    tri = loop_vertex.reshape(-1, 3)
+    uv = loop_uv.reshape(-1, 3, 2)
+    piece = pieces(tri, len(positions))
+    edges, open_edges = _open_edges(tri)
+    candidates = np.unique(edges[open_edges].ravel())
+    q = positions[candidates]
+    cuts = {}  # edge index -> [(s, vertex)]
+    for ei in open_edges:
+        a, b = positions[edges[ei, 0]], positions[edges[ei, 1]]
+        ab = b - a
+        span = float(ab @ ab)
+        if span == 0.0:
+            continue
+        s = (q - a) @ ab / span
+        off = np.linalg.norm(a + s[:, None] * ab - q, axis=1)
+        inner = distance / np.sqrt(span)
+        hit = (off < distance) & (s > inner) & (s < 1 - inner) & (piece[candidates] != piece[edges[ei, 0]])
+        if hit.any():
+            cuts[ei] = sorted(zip(s[hit].tolist(), candidates[hit].tolist()))
+    if not cuts:
+        return positions, round_positions, loop_vertex, loop_uv
+    new_pos, new_round, out_tri, out_uv = [positions], [round_positions], [], []
+    nxt = len(positions)
+    for t in range(len(tri)):
+        mine = [(k, cuts.get(3 * t + k)) for k in range(3)]
+        if not any(c for _, c in mine):
+            out_tri.append(tri[t]); out_uv.append(uv[t]); continue
+        ring, ring_uv = [], []  # the triangle's outline, cut points included, in winding order
+        for k, cut in mine:
+            a, b = tri[t, k], tri[t, (k + 1) % 3]
+            ring.append(a); ring_uv.append(uv[t, k])
+            for sv, v in cut or []:
+                new_pos.append(positions[v][None]); new_round.append((round_positions[a] + sv * (round_positions[b] - round_positions[a]))[None])
+                ring.append(nxt); ring_uv.append(uv[t, k] + sv * (uv[t, (k + 1) % 3] - uv[t, k])); nxt += 1
+        split = [k for k, c in mine if c]
+        if len(split) == 1:  # a fan from the corner opposite the cut edge: no flat triangle
+            apex = (split[0] + 2) % 3
+            order = ring[ring.index(tri[t, apex]):] + ring[:ring.index(tri[t, apex])]
+            order_uv = ring_uv[ring.index(tri[t, apex]):] + ring_uv[:ring.index(tri[t, apex])]
+            for j in range(1, len(order) - 1):
+                out_tri.append(np.array([order[0], order[j], order[j + 1]])); out_uv.append(np.array([order_uv[0], order_uv[j], order_uv[j + 1]]))
+        else:  # a fan from the centre
+            c = nxt; nxt += 1
+            corners = [tri[t, k] for k in range(3)]
+            new_pos.append(positions[corners].mean(axis=0)[None]); new_round.append(round_positions[corners].mean(axis=0)[None])
+            cuv = uv[t].mean(axis=0)
+            for j in range(len(ring)):
+                out_tri.append(np.array([ring[j], ring[(j + 1) % len(ring)], c])); out_uv.append(np.array([ring_uv[j], ring_uv[(j + 1) % len(ring)], cuv]))
+    return (np.concatenate(new_pos), np.concatenate(new_round), np.stack(out_tri).reshape(-1),
+            np.stack(out_uv).reshape(-1, 2))
+
+
+def joint_normals(positions: np.ndarray, normals: np.ndarray, piece: np.ndarray) -> np.ndarray:
+    """Area-weighted (unnormalised) per-vertex `normals` with the vertices of
+    different pieces at one position merged: each takes the sum of those
+    within 60 degrees of its own, so a seam shades as one surface and the two
+    sides of a thin plate stay apart."""
+    key = np.round(positions / 1e-7).astype(np.int64)
+    _, group, count = np.unique(key, axis=0, return_inverse=True, return_counts=True)
+    group = group.reshape(-1)
+    out = normals.copy()
+    shared = np.flatnonzero(count[group] > 1)
+    order = shared[np.argsort(group[shared], kind="stable")]
+    unit = normals / np.maximum(np.linalg.norm(normals, axis=1, keepdims=True), 1e-30)
+    for members in np.split(order, np.flatnonzero(np.diff(group[order])) + 1):
+        if len(set(piece[members].tolist())) < 2:
+            continue
+        close = unit[members] @ unit[members].T > JOINT_NORMAL_COS
+        out[members] = close.astype(float) @ normals[members]
+    return out
+
+
 def model_glb(positions: np.ndarray, round_positions: np.ndarray, loop_vertex: np.ndarray, loop_uv: np.ndarray,
               png: bytes) -> bytes:
     """The delivery: Blender's triangles (one loop per corner, three per
@@ -308,8 +444,7 @@ def model_glb(positions: np.ndarray, round_positions: np.ndarray, loop_vertex: n
     area-weighted per Blender vertex over the same triangles, so the pieces
     a UV seam splits shade as one surface; a zero-area vertex's normal stays
     zero."""
-    loop_vertex = np.asarray(loop_vertex, np.int64)
-    loop_uv = np.asarray(loop_uv, float)
+    positions, round_positions, loop_vertex, loop_uv = close_seams(positions, round_positions, loop_vertex, loop_uv)
     pairs = np.column_stack([loop_vertex, np.round(loop_uv * 1e6).astype(np.int64)])
     unique, inverse = np.unique(pairs, axis=0, return_inverse=True)
     inverse = inverse.reshape(-1)
@@ -323,6 +458,7 @@ def model_glb(positions: np.ndarray, round_positions: np.ndarray, loop_vertex: n
     smooth = np.zeros_like(gltf)
     for k in range(3):
         np.add.at(smooth, loop_vertex.reshape(-1, 3)[:, k], face)
+    smooth = joint_normals(gltf, smooth, pieces(loop_vertex.reshape(-1, 3), len(gltf)))
     length = np.linalg.norm(smooth, axis=1, keepdims=True)
     smooth = np.divide(smooth, length, out=np.zeros_like(smooth), where=length > 0)
     p = gltf[loop_vertex[first]]
