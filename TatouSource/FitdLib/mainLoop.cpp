@@ -36,22 +36,20 @@ void updatePendingEvents(void)
             if(evalChrono(&musicChrono)>180)
             {
                 playMusic(nextMusic);
+                nextMusic = -1; // played: the end of this song must not start it again
             }
         }
-        else
+        else if (osystem_musicFileEnded())
         {
-			/*
-            if(fadeMusic(0,0,0x10)==-1)
-            {
-                currentMusic = -1;
+            // The file played once, like the original driver. The chip's own end query
+            // (fadeMusic(0,0,0x10) == -1) stays out: nothing renders the chip.
+            currentMusic = -1;
 
-                if(nextMusic != -1)
-                {
-                    playMusic(nextMusic);
-                    nextMusic = -1;
-                }
+            if (nextMusic != -1)
+            {
+                playMusic(nextMusic);
+                nextMusic = -1;
             }
-			*/
         }
     }
 }

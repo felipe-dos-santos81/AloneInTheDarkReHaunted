@@ -1,5 +1,5 @@
 # Alone In The Dark: Re-Haunted v2 — the Tatou (FITD) engine.
-# Usual flow: make deps (Linux only), then make run (game data in data/aitd1).
+# Usual flow: make deps, then make run (game data in data/aitd1).
 # `make help` lists every target and its arguments.
 
 # ── Settings ─────────────────────────────────────────────────────────────────
@@ -38,6 +38,9 @@ src         ?= $(backgrounds)
 out         ?= $(notdir $(src)).hda
 archive     ?= backgrounds_hd.hda
 
+# Music files, one per song (music-install).
+music       ?= $(data)/music
+
 # HD character models (export-models ... models-install).
 models          ?= data/models
 models_ai       ?= data/models-ai
@@ -68,7 +71,7 @@ GAME_DIR    = $(or $(BUNDLE_RESOURCES),$(data))
 # $(call require,FILE,NAME,HINT): stop with a hint unless FILE is executable.
 require = @test -x "$(1)" || { echo "error: $(2) not found - $(3)"; exit 1; }
 
-.PHONY: help deps tools-deps configure build build-fitd build-tools run \
+.PHONY: help deps tools-deps configure build build-fitd build-tools music-install run \
         test test-engine test-tools \
         hd-install hda-pack hda-unpack \
         export-models identity-models blender-models check-models import-models models-install \
@@ -104,7 +107,19 @@ build-fitd: configure ## Build the game only
 build-tools: configure ## Build the .hda archive tools only
 	$(CMAKE_BUILD) --target build_hda_archive unpack_hda_archive
 
-run: build-fitd ## Build the game and play from data/aitd1 [data=DIR]
+# The macOS app reads its files from its bundle, not from the folder it is
+# started in, so the music folder is linked there. Elsewhere the game starts in
+# data/ and finds music/ itself.
+music-install: ## Link the music folder into the app bundle (macOS; `make run` does it) [music=DIR]
+	@if [ -n "$(BUNDLE_RESOURCES)" ] && [ -d "$(music)" ] && [ -d "$(BUNDLE_RESOURCES)" ]; then \
+		if [ -L "$(BUNDLE_RESOURCES)/music" ] || [ ! -e "$(BUNDLE_RESOURCES)/music" ]; then \
+			ln -sfn "$(abspath $(music))" "$(BUNDLE_RESOURCES)/music" && echo "linked $(music) -> $(BUNDLE_RESOURCES)/music"; \
+		else \
+			echo "note: $(BUNDLE_RESOURCES)/music is a real folder; left as it is"; \
+		fi; \
+	fi
+
+run: build-fitd music-install ## Build the game and play from data/aitd1 [data=DIR]
 	$(call require,$(BINARY),binary,did the build fail?)
 	cd "$(data)" && "$(abspath $(BINARY))"
 

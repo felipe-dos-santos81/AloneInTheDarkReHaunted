@@ -1,8 +1,8 @@
 # Model contract: export → model generator → import
 
-This document covers two directions:
+This document covers two things:
 
-- what `make export-models` hands a model generator;
+- what `make export-models` gives a model generator;
 - what the generator must deliver for `make import-models` to accept it.
 
 Every generator follows it, including the in-repo one, `make blender-models`
@@ -281,18 +281,21 @@ Per body (`tools/aitd_models/blender/`):
    - unwraps the result and bakes onto it the textured original, its ambient
      occlusion and, for a body with transparent polygons or spheres (the
      glass kind), a mask of them.
-3. `remaster.py` evens out the colour bake's brightness steps (the hand-made
-   atlases paint crumpled low-poly facets; a self-guided filter on log
-   brightness over the texels within 24 of each texel on the 2048 px bake
-   flattens the weak steps, keeps strong detail such as faces and buttons,
-   and changes neither hue nor the texture's mean brightness), then composites the bakes into one 2048 px PNG, with the mask as
-   alpha 128, and writes `model.glb` with the round surface's normals.
-   Where the pieces meet it first closes the seams: a vertex of one piece
-   lying on another's open edge splits that edge, and vertices within the
-   stage's 0.5 mm merge distance of each other take one position. Vertices of
-   different pieces at one position then share one normal (unless they face
-   more than 60 degrees apart, like a thin plate's two sides), so a joint
-   shades as one surface.
+3. `remaster.py` finishes the delivery:
+   - It evens out the brightness steps of the colour bake, because the
+     hand-made atlases paint crumpled low-poly facets. A self-guided filter
+     on log brightness, over the texels within 24 of each texel on the
+     2048 px bake, flattens the weak steps. It keeps strong detail such as
+     faces and buttons, and changes neither the hue nor the texture's mean
+     brightness.
+   - It closes the seams where the pieces meet. A vertex of one piece that
+     lies on another's open edge splits that edge, and vertices within the
+     stage's 0.5 mm merge distance of each other take one position.
+   - It gives vertices of different pieces at one position one shared normal,
+     so a joint shades as one surface. Vertices that face more than
+     60 degrees apart, like the two sides of a thin plate, keep their own.
+   - It composites the bakes into one 2048 px PNG, with the mask as alpha
+     128, and writes `model.glb` with the round surface's normals.
 
 Working files go to `data/models-blender/<KEY>/`. `data/models-ai/run.md`
 lists every body: delivered (triangles, texture source, seconds), failed

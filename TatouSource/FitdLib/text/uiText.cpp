@@ -99,6 +99,7 @@ const UiRow kUiRows[] = {
     { "Music", "", "", "", "", "Música" },
     { "External music", "", "", "", "", "Música externa" },
     { "Music folder", "", "", "", "", "Pasta de música" },
+    { "Music volume", "", "", "", "", "Volume da música" },
     { "External music source changes take effect when a track is next loaded or after restart.", "", "", "", "", "As mudanças na fonte da música externa valem a partir da próxima faixa carregada ou após reiniciar." },
     { "Replacement content and development pipelines", "", "", "", "", "Conteúdo de substituição e pipelines de desenvolvimento" },
     { "Load edited HD masks", "", "", "", "", "Carregar máscaras HD editadas" },

@@ -7,10 +7,10 @@ Where the code lives and how the main parts fit together. Build steps are in
 ## Overview
 
 [FITD](https://github.com/yaz0r/FITD) reimplements the engine of *Alone in the
-Dark* 1–3, *Jack in the Dark* and *Time Gate*. A thin executable (`Fitd`) calls into a static library
-(`FitdLib`) that holds all engine logic. `FitdLib` is C++20; the executable,
-tools and tests are C++17. Rendering, windowing, audio and input use
-third-party libraries vendored in `TatouSource/ThirdParty/`.
+Dark* 1–3, *Jack in the Dark* and *Time Gate*. A thin executable (`Fitd`)
+calls a static library (`FitdLib`) that holds all engine logic. `FitdLib` is
+C++20; the executable, tools and tests are C++17. Rendering, windowing, audio
+and input use third-party libraries vendored in `TatouSource/ThirdParty/`.
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -132,11 +132,16 @@ The main files in `TatouSource/FitdLib/`, by area. Not every file is listed.
 
 ### This fork's modules
 
-Mouse gameplay (`mouse/`), the HD character models (`models/`,
-`modelReplacement.*`), the combat assists (`assist/`), the collision rules
-(`physics/`) and the translation helpers (`text/`: the Portuguese font glyphs
-and the menu string table, used through `uiTr.h`) are described, with their
-rules, in [AGENTS.md](../AGENTS.md).
+[AGENTS.md](../AGENTS.md) describes these modules and their rules.
+
+| Folder or file(s) | Responsibility |
+|-------------------|---------------|
+| `mouse/` | Left-button mouse gameplay |
+| `models/`, `modelReplacement.*` | HD character models |
+| `anim/` | The HD models' curve through an animation's keyframes |
+| `assist/` | Combat assists: automatic counter-attack, enemy attack pace |
+| `physics/` | Collision rules |
+| `text/`, `uiTr.h` | Translation: the Portuguese font glyphs and the menu string table |
 
 ### Input
 
@@ -149,10 +154,10 @@ rules, in [AGENTS.md](../AGENTS.md).
 
 | File(s) | Responsibility |
 |---------|---------------|
-| `music.cpp` / `music.h` | Music control and track switching |
-| `osystemAL.cpp` / `osystemAL.h` | Sound effect and music output |
-| `osystemAL_adlib.cpp` | AdLib music through OPL emulation |
-| `osystemAL_mp3.cpp` / `osystemAL_mp3.h` | MP3 playback |
+| `music.cpp` / `music.h` | Music control (`playMusic`, `fadeMusic`) and the OPL chip driver |
+| `osystemAL.cpp` / `osystemAL.h` | SoLoud output: sound effects, voice-over and music files (`osystem_playMusicFile`) |
+| `osystemAL_adlib.cpp` | AdLib output of the OPL chip; its code is disabled (`#if 0`) |
+| `osystemAL_mp3.cpp` / `osystemAL_mp3.h` | Old MP3 playback; its code is disabled. SoLoud plays MP3 |
 | `fmopl.cpp` / `fmopl.h` | Yamaha OPL2 emulator |
 | `vocDecoder.cpp` / `vocDecoder.h` | Creative VOC decoder |
 
@@ -218,8 +223,10 @@ main() / WinMain()                     Fitd/fitd.cpp
 5. **2D animation**: `handleAnim2d()`.
 6. **Render**: `AllRedraw()`.
 
-Music runs outside the tick: the audio stream callback calls
-`callMusicUpdate()`.
+Music plays outside the tick. SoLoud streams each song from a file on its own
+thread (`osystem_playMusicFile`, `osystemAL.cpp`), and `updatePendingEvents`
+starts the queued song when the file ends. `music.cpp` still programs the OPL
+chip from `LISTMUS.PAK`, but nothing renders it: no code calls `musicUpdate()`.
 
 ### Rendering
 

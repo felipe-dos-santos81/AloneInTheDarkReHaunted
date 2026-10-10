@@ -1,18 +1,21 @@
 # aitd_remaster.cfg
 
 The game reads `aitd_remaster.cfg` from the folder it starts in (in the macOS
-app, `Tatou.app/Contents/Resources/`) and writes it back when you change an
-option in the **F1** dialog. If the file is missing, the game uses the defaults
-below until the first save.
+app, `Tatou.app/Contents/Resources/`). It writes the file back when you change
+an option in the **F1** dialog. If the file is missing, the game uses the
+defaults below until the first save.
 
 The file has one `key = value` per line, and `#` starts a comment. Booleans
-are `true` or `false`, and strings are quoted. Unknown keys are ignored.
+are `true` or `false`, and strings are quoted. The game ignores unknown keys.
 
-`config.version` is the file's format. Older files saved the old defaults, so
-loading one changes them once and saves the file: before version 2 it turns
-`graphics.hdModels` on, before version 3 it turns `backgrounds.dump` off,
-before version 4 it sets `animation.poseSmoothingStrength` from the old
-default 0.72 to the new 0.5.
+`config.version` is the version of the file's format. An older file holds the
+defaults of its time, so the game changes them once when it loads the file,
+then saves it:
+
+- before version 2, it turns `graphics.hdModels` on;
+- before version 3, it turns `backgrounds.dump` off;
+- before version 4, it sets `animation.poseSmoothingStrength` from the old
+  default 0.72 to the new 0.5.
 
 ## Graphics
 
@@ -20,7 +23,7 @@ default 0.72 to the new 0.5.
 |---|---|---|
 | `graphics.hdBackgrounds` | `true` | Draw the HD camera views from `backgrounds_hd.hda` (`make hd-install`) |
 | `graphics.backgroundScale` | `2` | Size of the HD art, as a multiple of 320x200 (1–4). The shipped art is 4 |
-| `graphics.hdModels` | `true` | Draw the HD character models from `models_hd/` in the game data folder, or else next to the executable. Each build copies them next to the executable (into the app on macOS). A body without a model draws classic, and a missing folder logs one line |
+| `graphics.hdModels` | `true` | Draw the HD character models. The game reads `models_hd/` from the game data folder, else from next to the executable, where each build copies it (into the app on macOS). A body without a model draws classic, and a missing folder logs one line |
 | `graphics.msaa` | `4` | Anti-aliasing for 3D models: 0, 2, 4, 8 or 16 |
 | `graphics.renderer` | `auto` | `auto`, `d3d11`, `d3d12`, `opengl`, `vulkan` or `metal` |
 | `graphics.fullscreen` | `false` | Start in fullscreen (**F11** toggles it) |
@@ -79,6 +82,31 @@ Rebind them in **Controls** in the system menu rather than by hand.
 | `font.hideOriginal` | `true` | With the TTF font on, hide the original bitmap text |
 | `interface.showOptionsAtStartup` | `true` | Open the options dialog at startup |
 
+## Music
+
+| Key | Default | Meaning |
+|---|---|---|
+| `music.external` | `true` | Play each song from a file in `music.folder` |
+| `music.folder` | `"music"` | The folder of the song files: absolute, or relative to the folder the game reads its files from. That is the folder it starts in, or `Tatou.app/Contents/Resources` on macOS, where `make run` links `data/aitd1/music` |
+| `music.volume` | `1.0` | Volume of the song files, 0 to 1. The game reads it when a song starts |
+
+- **File names.** A file is named by the game's song number as two digits,
+  with a lowercase extension: `00.ogg`, `01.ogg`, and so on. AITD1 has songs
+  `00` to `07`.
+- **Formats.** `.ogg`, `.flac`, `.mp3` and `.wav`. When a song has several
+  files, the first in that order plays.
+- **A song with no file** plays as it did before this option: from the CD
+  (Windows), from `audio.hda`, or from `NN.ogg`, `NN.wav` or `NN.mp3` in the
+  folder the game starts in (there `NN` is the song number minus 1). With none
+  of these the song is silent.
+- **One play.** A song plays once and does not loop. The game's scripts fade
+  it, stop it and start the next one.
+- **Older files.** A file saved before this option worked holds
+  `music.external = false`. Set it to `true`, or tick **External music** in
+  the F1 dialog.
+- **Jack in the Dark** (`gamedata.jackmode`) reads the same folder with its
+  own song numbers. Give it its own `music.folder`, or turn the option off.
+
 ## Game data
 
 | Key | Default | Meaning |
@@ -108,5 +136,5 @@ Rebind them in **Controls** in the system menu rather than by hand.
 
 ## Not used yet
 
-The game reads and saves `graphics.filtering`, `graphics.wallDepth`,
-`music.external` and `music.folder`, but nothing in the engine acts on them.
+The game reads and saves `graphics.filtering` and `graphics.wallDepth`, but
+nothing in the engine acts on them.

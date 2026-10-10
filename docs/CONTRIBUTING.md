@@ -25,16 +25,20 @@ testing guidelines. Read it before you change code.
 
 ## Coding standards
 
-- **C++17** for the project; the engine library (`FitdLib`) compiles as C++20.
-  The code must build with MSVC (VS2022+), GCC and Clang.
+- **Language:** C++17, except the engine library (`FitdLib`), which compiles
+  as C++20. The code must build with MSVC (VS2022+), GCC and Clang.
 - **Formatting:** `TatouSource/.editorconfig` sets 4-space indents for C, C++
   and CMake files. Let your editor apply it.
-- **Naming in new code:** functions `camelCase` (`loadRemasterConfig`), types
-  `PascalCase` (`RemasterConfig`, `PostProcessing`), globals `g_` prefix
-  (`g_gameId`, `g_controllerState`), constants and enums as the surrounding
-  code does, files `camelCase.cpp` / `camelCase.h`. Code that reimplements an
-  original engine function keeps the original French name (`AffObjet`,
-  `GereDec`, `LoadEtage`) so it traces back to the original.
+- **Naming in new code:**
+  - functions: `camelCase` (`loadRemasterConfig`);
+  - types: `PascalCase` (`RemasterConfig`, `PostProcessing`);
+  - globals: a `g_` prefix (`g_gameId`, `g_controllerState`);
+  - constants and enums: as the surrounding code does;
+  - files: `camelCase.cpp` / `camelCase.h`.
+
+  Code that reimplements an original engine function keeps the original
+  French name (`AffObjet`, `GereDec`, `LoadEtage`), so that it traces back to
+  the original.
 - **Headers:** `#pragma once`, or include guards in the existing
   `#ifndef _MY_HEADER_H_` style.
 - **Comments** explain *why*, not *what*. New files start with the header

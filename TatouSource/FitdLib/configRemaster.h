@@ -86,10 +86,11 @@ struct RemasterConfig
         float poseSmoothingStrength;
     } animation;
 
-    // External music settings (for future implementation)
+    // External music (docs/configuration.md, "Music")
     struct {
         bool enableExternalMusic;
         char musicFolder[256];
+        float volume; // 0 to 1, read when a song starts
     } music;
 
     // TTF font settings
