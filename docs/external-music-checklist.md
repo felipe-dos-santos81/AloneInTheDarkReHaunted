@@ -32,3 +32,6 @@ Mark each cell `pass`, or `fail:` with a one-line note.
 | 12 | `music.folder = "music/"` and then an absolute path to the same folder: the songs play | |
 | 13 | Turn "External music" off in F1 mid-song: the song keeps playing until the script's next stop or fade, which still act on it | |
 | 14 | With an `18.wav` in the folder: the startup menu plays it, it loops past its end, and it fades out within a second on New game, on Continue, and when the menu times out into the intro; after a game over the menu plays it again; with `music.external = false` the menu is silent | |
+| 15 | With `19.wav`, `20.wav` and `21.wav` in the folder: when the attic theme ends, `19` starts and loops; it cuts to `20` on arriving underground and back to `19` on the way up; in the dance hall it cuts to `21` at the door and back to `19` on leaving | |
+| 16 | A fight's sting replaces the loop at once and the loop returns when the danger song ends; `LM_GAME_OVER`'s fade silences it like any song | |
+| 17 | Load a save made in silence: the floor's loop starts; load one made during a song: that song plays, the loop follows it; rename `19.wav` away: the house is silent and `20` still plays underground | |

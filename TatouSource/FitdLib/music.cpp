@@ -1259,6 +1259,36 @@ int fadeMusic(int param1, int param2, int param3)
     return callMusicDrv(5,&fadeParam);
 }
 
+// Ambient loops (docs/music-generation-guide.md, "Extras"): files 19 (the house), 20 (underground)
+// and 21 (the dance hall) play, looping, whenever no scripted song owns the music. A scripted song
+// replaces the loop through playMusic's own stream teardown; the loop returns once that song is over.
+static int ambientSongFor(int stage, int room)
+{
+    if (stage == 3 && room == 3)
+        return 21;
+    if (stage >= 0 && stage <= 3)
+        return 19;
+    if (stage >= 4 && stage <= 6)
+        return 20;
+    return -1; // the epilogue stage: its songs are scripted
+}
+
+void musicAmbientFrame(void)
+{
+    static int s_ambient = -1;    // the loop last started, or -1
+    static bool s_loaded = false; // its file opened, so a silence means something stopped it
+    if (!g_remasterConfig.music.enableExternalMusic || g_gameId != AITD1 || currentMusic != -1)
+    {
+        s_ambient = -1;
+        return;
+    }
+    int song = ambientSongFor(g_currentFloor, currentRoom);
+    if (song == -1 || (song == s_ambient && (!s_loaded || osystem_musicFilePlaying())))
+        return; // nothing to play, already playing, or a missing file tried once on this floor
+    s_ambient = song;
+    s_loaded = osystem_playMusicFile(song, true);
+}
+
 void playMusic(int musicNumber)
 {
 	if(currentMusic == musicNumber)

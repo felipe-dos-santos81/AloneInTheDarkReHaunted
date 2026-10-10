@@ -52,6 +52,8 @@ void updatePendingEvents(void)
             }
         }
     }
+
+    musicAmbientFrame(); // after the branch above: a song that just ended hands over this frame
 }
 
 // Fix for player getting stuck in hard collision zones after floor/room transitions

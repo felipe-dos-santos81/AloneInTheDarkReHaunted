@@ -73,9 +73,9 @@ floor wants its own.
 | # | Piece | Length | Engine work needed |
 |---|---|---|---|
 | 18 | Title screen theme. | 1:30, seamless loop | Done: plays while the startup menu is up, loops, fades out in 1 s on New game, Continue and the idle timeout. |
-| 19 | Ambient loop, the house (attic to ground floor). | 3:00, seamless loop | Looping does not exist: a loop flag on `osystem_playMusicFile`, and a cue on floor change when nothing else plays. |
-| 20 | Ambient loop, cellar and caves. | 3:00, seamless loop | Same as 19. |
-| 21 | Ambient loop, the dance hall. | 2:00, seamless loop | Same as 19, keyed to the room. |
+| 19 | Ambient loop, the house (attic to ground floor). | 3:00, seamless loop | Done: plays, looping, whenever no scripted song owns the music on stages 0 to 3; a scripted song replaces it and it returns when that song ends. |
+| 20 | Ambient loop, cellar and caves. | 3:00, seamless loop | Done, stages 4 to 6. The epilogue stage has no loop. |
+| 21 | Ambient loop, the dance hall. | 2:00, seamless loop | Done, stage 3 room 3; cuts in and out at the room's doors. |
 
 Text for these: 19 Jeremy's diary (`doc07.txt`), 20 the pirate trial
 (`doc17.txt`), 21 the dance of death (`@1031`, `@108`).
