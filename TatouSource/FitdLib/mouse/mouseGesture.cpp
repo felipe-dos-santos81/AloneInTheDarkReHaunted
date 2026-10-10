@@ -65,6 +65,7 @@ Decision pressDecision(PointerState& s, Point pos, int clicks, int camera,
         d.type = DecisionType::Attack;
         d.kind = r.kind;
         d.payload = r.payload;
+        d.run = s.run;
         return d;
     }
     if (latchedPush || r.kind == ClickKind::Blocked || r.kind == ClickKind::OnHero)

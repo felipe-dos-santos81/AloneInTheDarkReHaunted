@@ -82,6 +82,20 @@ inline int armedActionFor(Hand hand, int actionsChoice)
     return kArmedUseInHand;
 }
 
+// Actions with Fight chosen: the fists strike.
+constexpr int kArmedFight = 16;
+// The stick directions held with Action (the engine's JoyD bits).
+constexpr int kStickUp = 1;
+constexpr int kStickLeft = 4;
+
+// The stick held with Action for a click on an enemy. Fists punch on left and
+// kick on up: one press punches, a double press kicks. Everything else strikes
+// on up, the only direction a gun fires on.
+inline int strikeStick(int armedAction, bool doublePress)
+{
+    return armedAction == kArmedFight && !doublePress ? kStickLeft : kStickUp;
+}
+
 // The longest a touch keeps Action held for the animation it started.
 constexpr uint32_t kActionHoldMs = 5000;
 
@@ -172,7 +186,7 @@ struct Decision
     DecisionType type = DecisionType::Nothing;
     ClickKind kind = ClickKind::Blocked;
     Payload payload;
-    bool run = false;
+    bool run = false; // a double press: the hero runs, or, on an enemy, kicks
 };
 
 void resetPointer(PointerState& s);

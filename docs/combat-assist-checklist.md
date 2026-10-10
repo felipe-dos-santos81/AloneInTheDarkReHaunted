@@ -31,7 +31,7 @@ the enemy's blow lands.
 | 19 | A killing blow → the death sequence plays normally; no counter | | |
 | 20 | A thrown object or a hazard hits the hero → no counter | | |
 | 21 | Cutscenes and intros with the option on → unaffected; a left click still skips | | |
-| 22 | Mouse click-attack on an enemy, option on and off → the hero faces it and swings once, as before (mouse checklist row 13) | | |
+| 22 | Mouse click-attack on an enemy, option on and off → the hero faces it and swings once either way (mouse checklist rows 13 and 53) | | |
 | 23 | Option off, fight by keyboard only, then by gamepad only → unchanged from before | | |
 | 24 | Use save, load, the map, the inventory and the system menu during and after combat → no counter survives them | | |
 | 25 | Open F1 → Controls → a "Combat" heading above "Controller behavior", with the checkbox "Hit back automatically when an enemy strikes you", unticked. Hover (?) → the help text shows. Tick it, quit and relaunch → it stays ticked, and `aitd_remaster.cfg` has `controls.autoCounterAttack = true` | | |

@@ -70,6 +70,8 @@ const ClickKindInfo& kindInfo(mouse::ClickKind kind);
 // The world object at `worldIdx`, or null when the index is out of range.
 const tWorldObject* worldObject(int worldIdx);
 bool isCombatTarget(int idx);
+// The inventory action armed for the Action key (AITD1 only).
+int armedAction();
 // Scripted or movable scenery that is not picked up: held to push (AITD1 only).
 bool isHoldActionTarget(int idx);
 // A swing needs something in hand, and an idle hero to start one.
@@ -145,6 +147,7 @@ struct World
     int attackTarget = -1;
     uint32_t attackStartMs = 0;
     int attackFrames = 0;
+    int attackStick = 0; // the direction held with Action for this swing
     bool actionSent = false; // the live intent's touched object got its Action
     std::optional<ActionHold> actionHold;
     bool lastInputMouse = false;
@@ -176,7 +179,9 @@ bool refreshHeldTarget();
 
 void clearAttack();
 // Accept a click on an enemy: stop, face it, and hold Action until the swing ends.
-void armAttack(int actorIdx);
+void armAttack(int actorIdx, bool doublePress);
+// A double press while a punch is under way: the kick takes over.
+void kickTakesOver(int clicks, uint32_t now);
 // One frame of FITD's own melee input for an accepted click. False when none.
 bool tickAttack(uint32_t now);
 

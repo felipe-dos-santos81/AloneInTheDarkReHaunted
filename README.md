@@ -118,7 +118,7 @@ Rebind keys under **Controls** in the system menu.
 | Run | **Double-click and hold** |
 | Use an object | **Hold** on it: the hero walks to it and touches it |
 | Push | **Hold** on pushable scenery |
-| Fight | **Click** an enemy |
+| Fight | **Click** an enemy. With fists a click punches and a **double-click** kicks |
 | Inventory / map / menu | **Click** the icons at the top left; every screen also works by click |
 
 - The cursor shape shows what a click would do; "not allowed" means nothing.

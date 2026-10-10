@@ -131,7 +131,7 @@ void applyDecision(const mouse::Decision& d)
         cancelIntent("held pointer moved onto a blocked pixel");
         break;
     case mouse::DecisionType::Attack:
-        armAttack(d.payload.actor);
+        armAttack(d.payload.actor, d.run);
         break;
     default:
         break;
@@ -439,6 +439,7 @@ void mouseWorldFrame(int allowSystemMenu)
         case mouse::EventType::Down:
             g_world.lastInputMouse = true;
             mouse::onPress(g_world.pointer, e.pos);
+            kickTakesOver(e.clicks, now); // before the resolver: mid-swing it answers blocked
             if (e.pos)
                 applyDecision(mouse::pressDecision(g_world.pointer, *e.pos, e.clicks, camera, resolve, latchedPush()));
             break;

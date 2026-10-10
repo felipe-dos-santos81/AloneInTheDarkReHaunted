@@ -20,7 +20,7 @@ note. Each check reads "what you do → what you should see".
 | 10 | Found screen: hover and click Leave, then Take → both work | | |
 | 11 | Hold on the wardrobe → the hero pushes it. Release → the push stops. Action is never set: the hero never freezes | | |
 | 12 | Open the inventory mid-push → the push stops cleanly and does not resume | | |
-| 13 | Melee: click the first enemy once → the hero faces it and swings; the weapon is not thrown | | |
+| 13 | Melee with a weapon in hand: click the first enemy once → the hero faces it and swings; the weapon is not thrown | | |
 | 14 | Melee with nothing in hand → "not allowed" cursor; nothing happens | | |
 | 15 | Open the inventory with the satchel icon → rows, actions and scroll arrows work; X closes it | | |
 | 16 | Read a book → Prev / Close / Next work; Prev is dimmed on page 1, Next on the last page | | |
@@ -60,5 +60,6 @@ note. Each check reads "what you do → what you should see".
 | 50 | Floor 2 stairwell (room 2, top of the stairs): hold at the screen's left edge until the hero walks under the pointer → he keeps walking with the pointer on him; a small drift does not stop him | | |
 | 51 | Floor 2: from room 3, hold on the doorway back into room 4 through the camera cut, pointer nearly still → the hero keeps heading for the door, not for what now shows under the pointer | | |
 | 52 | Floor 2 landing (room 2, camera 28), with `debug.mouseNavOverlay` on: look at the strip at the screen's left edge, below the hero, leading to the door to room 4 → it shows walk-grid dots. Press or hold there → the hero walks to the pointer, not straight left. Attic: look at the narrow gaps between neighbouring cameras' zones → they show dots too, and walking across them behaves as on the rest of the floor | | |
+| 53 | Fists (Actions with Fight chosen): click an enemy once → the hero faces it and punches. Double-click it → he kicks: the second press cuts the punch short, or the kick follows a punch that already landed. With a weapon or a gun in hand a double-click strikes or fires as a single click does | | |
 
 Signed off by: ______  Date: ______  Build: `git rev-parse --short HEAD` = ______
