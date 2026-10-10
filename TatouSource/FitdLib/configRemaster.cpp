@@ -83,8 +83,9 @@ void initDefaultRemasterConfig()
     g_remasterConfig.animation.poseSmoothingStrength = kPoseSmoothingStrength;
 
     // External music defaults
-    g_remasterConfig.music.enableExternalMusic = false;
+    g_remasterConfig.music.enableExternalMusic = true;
     strcpy(g_remasterConfig.music.musicFolder, "music");
+    g_remasterConfig.music.volume = 1.0f;
 
     // TTF font defaults
     g_remasterConfig.font.enableTTF = true;
@@ -234,6 +235,13 @@ void loadRemasterConfig()
                 if (*end == '"') *end = '\0';
                 strncpy(g_remasterConfig.music.musicFolder, start, 255);
                 g_remasterConfig.music.musicFolder[255] = '\0';
+            }
+            else if (strcmp(key, "music.volume") == 0)
+            {
+                float v = (float)atof(value);
+                if (v < 0.0f) v = 0.0f;
+                if (v > 1.0f) v = 1.0f;
+                g_remasterConfig.music.volume = v;
             }
 
             // TTF font settings
@@ -512,7 +520,8 @@ void saveRemasterConfig()
 
     fprintf(file, "# External Music Settings\n");
     fprintf(file, "music.external = %s\n", g_remasterConfig.music.enableExternalMusic ? "true" : "false");
-    fprintf(file, "music.folder = \"%s\"\n\n", g_remasterConfig.music.musicFolder);
+    fprintf(file, "music.folder = \"%s\"\n", g_remasterConfig.music.musicFolder);
+    fprintf(file, "music.volume = %.2f\n\n", g_remasterConfig.music.volume);
 
     fprintf(file, "# TTF Font Settings\n");
     fprintf(file, "font.enableTTF = %s\n", g_remasterConfig.font.enableTTF ? "true" : "false");

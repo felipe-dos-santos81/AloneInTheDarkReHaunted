@@ -79,6 +79,14 @@ Rebind them in **Controls** in the system menu rather than by hand.
 | `font.hideOriginal` | `true` | With the TTF font on, hide the original bitmap text |
 | `interface.showOptionsAtStartup` | `true` | Open the options dialog at startup |
 
+## Music
+
+| Key | Default | Meaning |
+|---|---|---|
+| `music.external` | `true` | Play each song from a file named by the game's song number: `00.ogg`, else `.flac`, `.mp3`, `.wav`, in that order. A song with no file plays as before (CD, `audio.hda`, else nothing) |
+| `music.folder` | `"music"` | Folder of the music files, relative to the working directory (the data folder under `make run`) or absolute |
+| `music.volume` | `1.0` | Volume of the music files, 0 to 1, read when a song starts |
+
 ## Game data
 
 | Key | Default | Meaning |
@@ -108,5 +116,5 @@ Rebind them in **Controls** in the system menu rather than by hand.
 
 ## Not used yet
 
-The game reads and saves `graphics.filtering`, `graphics.wallDepth`,
-`music.external` and `music.folder`, but nothing in the engine acts on them.
+The game reads and saves `graphics.filtering` and `graphics.wallDepth`, but
+nothing in the engine acts on them.
