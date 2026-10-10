@@ -38,20 +38,17 @@ void updatePendingEvents(void)
                 playMusic(nextMusic);
             }
         }
-        else
+        else if (osystem_musicFileEnded())
         {
-			/*
-            if(fadeMusic(0,0,0x10)==-1)
-            {
-                currentMusic = -1;
+            // The file played once, like the original driver. The chip's own end query
+            // (fadeMusic(0,0,0x10) == -1) stays out: nothing renders the chip.
+            currentMusic = -1;
 
-                if(nextMusic != -1)
-                {
-                    playMusic(nextMusic);
-                    nextMusic = -1;
-                }
+            if (nextMusic != -1)
+            {
+                playMusic(nextMusic);
+                nextMusic = -1;
             }
-			*/
         }
     }
 }

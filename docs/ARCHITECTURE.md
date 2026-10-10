@@ -218,8 +218,10 @@ main() / WinMain()                     Fitd/fitd.cpp
 5. **2D animation**: `handleAnim2d()`.
 6. **Render**: `AllRedraw()`.
 
-Music runs outside the tick: the audio stream callback calls
-`callMusicUpdate()`.
+Music runs outside the tick: a song streams through SoLoud
+(`osystem_playMusicFile`, `osystemAL.cpp`) and `updatePendingEvents` notices
+its end. The OPL chip driver in `music.cpp` is still programmed from
+`LISTMUS.PAK` but not rendered: nothing calls `callMusicUpdate()`.
 
 ### Rendering
 

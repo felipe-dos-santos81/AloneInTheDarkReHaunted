@@ -99,8 +99,11 @@ languages, with its Brazilian flag painted into the menu art like the others.
 - **Voice-over (AITD1 CD):** books, letters and notebooks are read aloud, page
   by page, with page-turn sounds. The VOC files are looked up in the HDA
   archive, then on the CD (volume `ALONECD`), then on disk.
-- **External music:** `music.external` and `music.folder` are read and saved,
-  but nothing plays them yet.
+- **External music:** each song plays from `<music.folder>/NN.ogg` (else
+  `.flac`, `.mp3`, `.wav`), `NN` the game's song number, at `music.volume`;
+  the script's fade, stop and queued next song act on the file. A song
+  with no file plays as before. In-game sign-off:
+  [external-music-checklist.md](external-music-checklist.md).
 
 ## Key bindings
 

@@ -1246,6 +1246,12 @@ int fadeParam[3];
 
 int fadeMusic(int param1, int param2, int param3)
 {
+    // The music file first (a no-op without one), then the chip driver as always.
+    if (param3 & 0x8000)
+        osystem_fadeMusicFile(3.0f); // the script's fade-out; LM_FADE_MUSIC waits 180 ticks before the next song
+    else if (param3 & 0x40)
+        osystem_fadeMusicFile(0.0f);
+
     fadeParam[0] = param1;
     fadeParam[1] = param2;
     fadeParam[2] = param3;
@@ -1259,6 +1265,11 @@ void playMusic(int musicNumber)
 		return;
 
 	currentMusic = musicNumber;
+
+	// The music folder is an explicit choice: before the CD, the archive and the JACK check.
+	// The number is the script's own, before AITD2's CD mapping. -1 falls through and stops.
+	if (g_remasterConfig.music.enableExternalMusic && osystem_playMusicFile(musicNumber))
+		return;
 
 	int trackNumber = musicNumber;
 
