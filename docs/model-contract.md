@@ -132,6 +132,10 @@ and need their own delivery.
 `make check-models` (a dry run) and `make import-models` align the mesh to
 the original, check the fit, derive skin weights from the original's bone
 groups and write `Assets/models_hd/body_<KEY>.hdm` (see "Import output").
+Around each joint the weights blend the two groups over 6 % of the body's
+size along the surface (`bind.JOINT_BAND`), half and half on the joint, so
+elbows and knees bend as one rounded surface; the engine skins with dual
+quaternions, which keep the joint's volume.
 
 Every build of the game copies `Assets/models_hd` next to the executable
 (into the app's `Contents/Resources` on macOS). `make models-install` copies
@@ -283,6 +287,12 @@ Per body (`tools/aitd_models/blender/`):
    flattens the weak steps, keeps strong detail such as faces and buttons,
    and changes neither hue nor the texture's mean brightness), then composites the bakes into one 2048 px PNG, with the mask as
    alpha 128, and writes `model.glb` with the round surface's normals.
+   Where the pieces meet it first closes the seams: a vertex of one piece
+   lying on another's open edge splits that edge, and vertices within the
+   stage's 0.5 mm merge distance of each other take one position. Vertices of
+   different pieces at one position then share one normal (unless they face
+   more than 60 degrees apart, like a thin plate's two sides), so a joint
+   shades as one surface.
 
 Working files go to `data/models-blender/<KEY>/`. `data/models-ai/run.md`
 lists every body: delivered (triangles, texture source, seconds), failed
