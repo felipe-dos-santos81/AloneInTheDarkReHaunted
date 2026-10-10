@@ -3,8 +3,9 @@
 What to generate for the external soundtrack of Alone in the Dark 1, piece
 by piece: how many, how long, what each one scores, and which in-game text
 to feed the generator. The generation itself is another project; this is
-its brief. The player side is `docs/superpowers/specs/2026-10-10-external-music-design.md`
-and the `music.*` keys in `docs/configuration.md`.
+its brief. The player side is the external-music design
+(`docs/superpowers/specs/2026-10-10-external-music-design.md`, local only)
+and the `music.*` keys in [configuration.md](configuration.md#music).
 
 ## What the engine plays
 
@@ -26,7 +27,8 @@ and the `music.*` keys in `docs/configuration.md`.
 
 ## The 15 pieces the game calls
 
-Lengths are the CD track lengths from the disc's cue sheet (`GAME.INS`);
+Lengths are the CD track lengths from the disc's cue sheet (`GAME.INS`,
+beside `GAME.GOG` in the game folder of the GOG release, local only);
 the chip tune length is given where a chip version exists (`00.wav` to
 `07.wav` in `data/aitd1/music`, made by m-aitd's `make convert-music`).
 Target length is the CD length within about 10 percent. Total: about 24
@@ -34,18 +36,18 @@ minutes of music.
 
 | # | Plays when | CD length | Chip | Voice | Text to prompt with |
 |---|---|---|---|---|---|
-| 02 | The epilogue's last scene and credits: the house behind, the car, the driver's reveal. Follows 09. | 1:20 | 1:03 | **Lyrics** | Jeremy's note, `doc01.txt`: "They will find my body but will not have my soul." Closing on "Some may understand what I have done. May God forgive me. Farewell." Sung as a farewell, not a dirge. |
-| 03 | The intro: the car on the road to Derceto, the walk up, the climb to the attic. Cut by 04 when play starts. | 1:17 | 2:42 | **Lyrics** | Edward's case notes, `doc20.txt`: "it's the kind of place ghosts run away from in terror. Grisly murders, curses, lunacy ..." Emily's letter, `doc21.txt`: "Derceto is waiting for me. I pray that my fear is nothing more than the fruit of my imagination." One file plays for both heroes, so the lyric is in one voice: Emily's, or a narrator's that fits either. |
-| 04 | The attic theme: starts the game, and is queued again (`NEXT_MUSIC`) after every enemy dies, so it is the "calm restored" theme of the whole house. Played most. | 2:08 | 3:28 | none | Emily, `doc21.txt`: "That creaking old mansion, with its unusual tales, its secret library door, the ancient upstairs clock, all those occult books". Uneasy calm. |
-| 05 | Danger: queued by every enemy when it engages (after the sting 12, 13 or 14) and runs while the fight lasts. | 1:44 | 1:46 | none | `doc09.txt`, "The Creatures of Night": "night engenders monsters and that night creatures exist." Driving, no resolution. |
-| 07 | House haunting cue: an invisible object on each of the four house floors rolls dice every frame and now and then plays a creak, a groan, or this song. Rare, unannounced. | 2:03 | 2:27 | none | Jeremy's diary, `doc07.txt`, February 7: "His breath was ice and his burning eyes froze me; I could not move!" Sparse, long silences welcome. |
-| 08 | Death: the hero's body carried to the tree in the cavern, "The End" (`@40`). Game over follows. | 0:34 | none | none | Pregzt, `doc18.txt`: "My servants will lay you upon the sacrificial stone. My roar will rend the night." One phrase, then nothing. |
-| 09 | Epilogue, first part: the hero walks out of Derceto to the waiting car. Then 02. | 1:29 | none | none | `doc21.txt`: "Nothing will ever persuade me that my uncle was insane." Dawn after a night; relief with a shadow. |
-| 10 | The ending cinematic: the oil lamp thrown, the tree and Pregzt burning (`ENDSEQ.PAK`), then "Get out of here!" (`@112`) as the cavern shakes. | 1:23 | none | none | `doc03.txt`, Book of Abdul: "Let the shadow of Cthulhu darken the sky." Climax, fire, collapse. |
-| 11 | Caves haunting cue: the same dice as 07, on the three underground floors (cellar passages, caves, the pirates' cavern). | 3:20 | none | none | `doc17.txt`, the Astarte's song: "A skull! Go to port / Saber! To starboard! / Pass over that will / And with death you'll deal." Drums far off ("the insidious rhythm of far-off drums"). An optional sung version may use these eight lines. |
-| 12 | Fight sting, type A: some enemies open with it (the attic window zombie among them), then 05. | 0:25 | none | none | `doc09.txt`: "He who prowls among books will perish by the blade." A hit, a rise, hand over to 05. |
-| 13 | Fight sting, type B (the attic's other zombie among them), then 05. | 0:11 | none | none | `doc09.txt`: "Unhappy he who frees the prowler." |
-| 14 | Fight sting, type C (the dance hall ghosts, the cave creatures among others), then 05. | 0:09 | none | none | `doc09.txt`: "He who flies in the dark caverns will scream in fear." |
+| 02 | The epilogue's last scene and credits: the house behind, the car, the driver's reveal. Follows 09. | 1:20 | 1:03 | **Lyrics** | Jeremy's note, `doc01.txt` lines 2 and 5 to 6: "They will find my body but will not have my soul." Closing on "Some may understand what I have done. May God forgive me. Farewell." Sung as a farewell, not a dirge. |
+| 03 | The intro: the car on the road to Derceto, the walk up, the climb to the attic. Cut by 04 when play starts. | 1:17 | 2:42 | **Lyrics** | Edward's case notes, `doc20.txt` line 43: "it's the kind of place ghosts run away from in terror. Grisly murders, curses, lunacy ..." Emily's letter, `doc21.txt` line 36: "Derceto is waiting for me. I pray that my fear is nothing more than the fruit of my imagination." One file plays for both heroes, so the lyric is in one voice: Emily's, or a narrator's that fits either. |
+| 04 | The attic theme: starts the game, and is queued again (`NEXT_MUSIC`) after every enemy dies, so it is the "calm restored" theme of the whole house. Played most. | 2:08 | 3:28 | none | Emily, `doc21.txt` line 11: "That creaking old mansion, with its unusual tales, its secret library door, the ancient upstairs clock, all those occult books". Uneasy calm. |
+| 05 | Danger: queued by every enemy when it engages (after the sting 12, 13 or 14) and runs while the fight lasts. | 1:44 | 1:46 | none | `doc09.txt` line 16, "The Creatures of Night": "night engenders monsters and that night creatures exist." Driving, no resolution. |
+| 07 | House haunting cue: an invisible object on each of the four house floors rolls dice every frame and now and then plays a creak, a groan, or this song. Rare, unannounced. | 2:03 | 2:27 | none | Jeremy's diary, `doc07.txt` line 81, February 7: "His breath was ice and his burning eyes froze me; I could not move!" Sparse, long silences welcome. |
+| 08 | Death: the hero's body carried to the tree in the cavern, "The End" (`@40`). Game over follows. | 0:34 | none | none | Pregzt, `doc18.txt` line 35: "My servants will lay you upon the sacrificial stone. My roar will rend the night." One phrase, then nothing. |
+| 09 | Epilogue, first part: the hero walks out of Derceto to the waiting car. Then 02. | 1:29 | none | none | `doc21.txt` line 39: "Nothing will ever persuade me that my uncle was insane." Dawn after a night; relief with a shadow. |
+| 10 | The ending cinematic: the oil lamp thrown, the tree and Pregzt burning (`ENDSEQ.PAK`), then "Get out of here!" (`@112`) as the cavern shakes. | 1:23 | none | none | `doc03.txt` line 21, Book of Abdul: "Let the shadow of Cthulhu darken the sky." Climax, fire, collapse. |
+| 11 | Caves haunting cue: the same dice as 07, on the three underground floors (cellar passages, caves, the pirates' cavern). | 3:20 | none | none | `doc17.txt` lines 73 to 80, the Astarte's song: "A skull! Go to port / Saber! To starboard! / Pass over that will / And with death you'll deal." Drums far off (line 142, "the insidious rhythm of far-off drums"). An optional sung version may use these eight lines. |
+| 12 | Fight sting, type A: some enemies open with it (the attic window zombie among them), then 05. | 0:25 | none | none | `doc09.txt` line 56: "He who prowls among books will perish by the blade." A hit, a rise, hand over to 05. |
+| 13 | Fight sting, type B (the attic's other zombie among them), then 05. | 0:11 | none | none | `doc09.txt` line 40: "Unhappy he who frees the prowler." |
+| 14 | Fight sting, type C (the dance hall ghosts, the cave creatures among others), then 05. | 0:09 | none | none | `doc09.txt` line 58: "He who flies in the dark caverns will scream in fear." |
 | 15 | The first gramophone record, "You're listening to the Blue Danube" (`@942`). Diegetic: it comes out of the horn. | 2:51 | none | none | Strauss, The Blue Danube, 1866, public domain. A 1920s shellac recording: horn, hiss, wow. |
 | 16 | The second record, "the Posthumous Opus 69 Nr 1" (`@1041`). | 1:39 | none | none | Chopin, Waltz Op. 69 No. 1, 1835, public domain. Same gramophone sound. |
 | 17 | The third record, "the Dance of Death" (`@1031`): the one the dance hall's ghosts answer to; any record may draw "They seem to dislike this music" (`@108`). | 3:33 | none | none | Saint-Saëns, Danse macabre, 1874, public domain. Same gramophone sound. |
@@ -63,7 +65,10 @@ Notes for the generator:
 ## Extras the engine does not call yet
 
 Numbers 18 and up are free. Files can be produced now; each needs a cue in
-the engine before it plays, listed here as pending work.
+the engine before it plays, listed here as pending work. No game-over sting
+is reserved: row 08 is that cue. Three ambient loops rather than one per
+floor, because the floors within a group share a mood; split a group when a
+floor wants its own.
 
 | # | Piece | Length | Engine work needed |
 |---|---|---|---|
@@ -97,14 +102,21 @@ Text for these: 19 Jeremy's diary (`doc07.txt`), 20 the pirate trial
   `#P`, `#T`, `#C`, `#G<n>` are page, tab, centre and image codes to strip).
   Fragments above are quoted from those files; the other project reads
   them from there.
-- The cue column comes from a linear disassembly of every script in
-  `LISTLIFE.PAK` (563 scripts; opcodes `MUSIC` 44, `NEXT_MUSIC` 80,
-  `FADE_MUSIC` 81, with the AITD1 argument sizes), joined to the objects of
-  `OBJETS.ITD` (26 words each) that run each script, and read against the
-  room list in `data/aitd1/AITD1_walkthrough_llm.md`. `FADE_MUSIC` appears
-  in no script. To redo it, `tools/aitd_data/pak.py` reads the PAK and
+- The cue column, row 03 included, comes from a linear disassembly of every
+  script in `LISTLIFE.PAK` (563 scripts; opcodes `MUSIC` 44, `NEXT_MUSIC`
+  80, `FADE_MUSIC` 81, with the AITD1 argument sizes), joined to the objects
+  of `OBJETS.ITD` (26 words each) that run each script, and read against
+  the room list in the walkthrough kept beside the data
+  (`data/aitd1/AITD1_walkthrough_llm.md`, local only like everything under
+  `data/`). `FADE_MUSIC` appears in no script of this release, so row 3b of
+  [external-music-checklist.md](external-music-checklist.md) cannot fire
+  with it; that checklist's files `00` to `07` are the chip tunes. To redo
+  the scan, `tools/aitd_data/pak.py` reads the PAK and
   `TatouSource/FitdLib/AITD1.cpp` lists the opcodes in order.
-- In-game spot check: with `debug.logLifeScripts = true` the log prints
-  `LM_MUSIC n` and `LM_NEXT_MUSIC n` as they fire. Rows 04, 12 and 05 are
-  the first minute of a new game; row 07 needs patience. Not yet checked
+- In-game spot check: with `debug.logLifeScripts = true` the log prints the
+  actor, the life script number and the opcode name, not the song, so match
+  the script number: a new game logs `Life 562 | ... MUSIC` (row 04); the
+  attic window zombie, when it rises, `Life 19 | ... MUSIC` then
+  `NEXT_MUSIC` (rows 12 and 05); the attic's other zombie `Life 16` (row
+  13). Row 07 is `Life 528` to `531` and needs patience. Not yet checked
   in-game at the time of writing.
