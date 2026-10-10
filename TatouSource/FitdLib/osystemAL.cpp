@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <memory>
 #include <cstdint>
+#include <filesystem>
 #include "consoleLog.h"
 
 #ifdef _WIN32
@@ -767,6 +768,21 @@ int osystemAL_getSampleRate()
     return 44100;
 }
 
+// Opens a music file as the stream (pFile, pWavStream). A file that does not
+// decode leaves both null.
+static bool loadMusicStream(FILE* fHandle)
+{
+    pFile = new SoLoud::DiskFile(fHandle); // DiskFile closes the handle in its destructor
+    pWavStream = new SoLoud::WavStream();
+    if (pWavStream->loadFile(pFile) == SoLoud::SO_NO_ERROR)
+        return true;
+
+    delete pWavStream;
+    pWavStream = nullptr;
+    delete pFile;
+    pFile = nullptr;
+    return false;
+}
 
 int osystem_playTrack(int trackId)
 {
@@ -850,23 +866,11 @@ int osystem_playTrack(int trackId)
     if (fHandle == NULL)
         return 0;
 
-    pFile = new SoLoud::DiskFile(fHandle);
-    pWavStream = new SoLoud::WavStream();
-    SoLoud::result res = pWavStream->loadFile(pFile);
-    if (res == SoLoud::SO_NO_ERROR)
-    {
-        gSoloud->play(*pWavStream);
-        return 1;
-    }
-    else
-    {
-        delete pWavStream;
-        pWavStream = nullptr;
-        delete pFile;
-        pFile = nullptr;
-    }
+    if (!loadMusicStream(fHandle))
+        return 0;
 
-    return 0;
+    gSoloud->play(*pWavStream);
+    return 1;
 }
 
 extern "C" { extern char homePath[512]; }
@@ -877,29 +881,23 @@ bool osystem_playMusicFile(int song)
     if (!gSoloud || song < 0)
         return false;
 
+    // An absolute music.folder is used as written; a relative one is under homePath.
+    const char* folder = g_remasterConfig.music.musicFolder;
+    const char* base = std::filesystem::path(folder).is_absolute() ? "" : homePath;
+
     static const char* const kExtensions[] = { ".ogg", ".flac", ".mp3", ".wav" };
     FILE* fHandle = nullptr;
     for (const char* ext : kExtensions)
     {
         char path[1024];
-        snprintf(path, sizeof(path), "%s%s/%02d%s", homePath, g_remasterConfig.music.musicFolder, song, ext);
+        snprintf(path, sizeof(path), "%s%s/%02d%s", base, folder, song, ext);
         if (fopen_s(&fHandle, path, "rb") == 0 && fHandle)
             break;
         fHandle = nullptr;
     }
-    if (!fHandle)
+    if (!fHandle || !loadMusicStream(fHandle))
         return false;
 
-    pFile = new SoLoud::DiskFile(fHandle); // DiskFile closes the handle in its destructor
-    pWavStream = new SoLoud::WavStream();
-    if (pWavStream->loadFile(pFile) != SoLoud::SO_NO_ERROR)
-    {
-        delete pWavStream;
-        pWavStream = nullptr;
-        delete pFile;
-        pFile = nullptr;
-        return false;
-    }
     s_musicFileHandle = gSoloud->play(*pWavStream, g_remasterConfig.music.volume);
     return true;
 }
