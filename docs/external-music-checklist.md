@@ -19,8 +19,8 @@ Mark each cell `pass`, or `fail:` with a one-line note.
 |---|---|---|
 | 1 | Start the game and a new game: the intro's song and the attic's song play from `data/aitd1/music` | |
 | 2 | Let a song end without changing room: silence follows and nothing restarts | |
-| 3 | With `debug.logLifeScripts = true`, play until the log prints `LM_NEXT_MUSIC` while a song plays: the queued song starts when the current one ends | |
-| 3b | Play until the log prints `LM_FADE_MUSIC` while a song plays: the song fades out over about 3 s and the next song starts after the wait | |
+| 3 | With `debug.logLifeScripts = true`, play until the log prints `NEXT_MUSIC` while a song plays: the queued song starts when the current one ends | |
+| 3b | Play until the log prints `FADE_MUSIC` while a song plays: the song fades out over about 3 s and the next song starts after the wait. No script of the CD release calls it (`docs/music-generation-guide.md`): with that data, mark `n/a` | |
 | 4 | `music.folder = "nope"`: the game runs with no error and is silent, as before this change | |
 | 5 | Rename `01.wav` away: that song is silent, the others play | |
 | 6 | `music.external = false`: silent, as before this change | |
