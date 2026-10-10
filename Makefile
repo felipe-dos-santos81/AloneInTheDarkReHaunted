@@ -97,6 +97,7 @@ tools-deps: ## Create tools/.venv for the Python tools
 
 configure: ## Generate the CMake build [BUILD_TYPE=Debug] [generator=Ninja]
 	$(CMAKE) -S "$(SRC_DIR)" -B "$(BUILD_DIR)" $(CONFIGURE_FLAGS)
+	$(CMAKE) -E create_symlink "$(abspath $(BUILD_DIR))/compile_commands.json" "$(SRC_DIR)/build/compile_commands.json" # where clangd looks: a build/ child of the sources' parent
 
 build: configure ## Build the game and the archive tools
 	$(CMAKE_BUILD)
