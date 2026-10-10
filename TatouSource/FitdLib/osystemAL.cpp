@@ -258,6 +258,7 @@ static unsigned char* readAudioEntry(const HDArchiveEntry* entry, size_t* outSiz
 // Music stream state (declared here so closeAudioArchive can clean them up)
 SoLoud::DiskFile* pFile = NULL;
 SoLoud::WavStream* pWavStream = NULL;
+static SoLoud::handle s_musicFileHandle = 0; // the voice osystem_playMusicFile started; 0 = none
 static unsigned char* s_musicArchiveBuf = nullptr;
 
 // Voice Over stream state
@@ -288,23 +289,7 @@ void closeAudioArchive()
     s_voHandle = 0;
 
     // Stop and clean up any active music stream before closing the archive.
-    // The WavStream may be reading from s_musicArchiveBuf, so destroy it first.
-    if (pWavStream)
-    {
-        pWavStream->stop();
-        delete pWavStream;
-        pWavStream = nullptr;
-    }
-    if (pFile)
-    {
-        delete pFile;
-        pFile = nullptr;
-    }
-    if (s_musicArchiveBuf)
-    {
-        delete[] s_musicArchiveBuf;
-        s_musicArchiveBuf = nullptr;
-    }
+    osystem_stopTrack();
 
     if (s_audioArchiveFile)
     {
@@ -427,29 +412,28 @@ static bool playCDAudioTrack(int) { return false; }
 
 void osystem_stopTrack()
 {
-    if (gSoloud)
-    {
-        if (pWavStream)
-        {
-            pWavStream->stop();
-            delete pWavStream;
-            pWavStream = nullptr;
-        }
-
-        if (pFile)
-        {
-            delete pFile;
-            pFile = nullptr;
-        }
-
-        if (s_musicArchiveBuf)
-        {
-            delete[] s_musicArchiveBuf;
-            s_musicArchiveBuf = nullptr;
-        }
-    }
-
+    s_musicFileHandle = 0;
     stopCDAudio();
+    if (!gSoloud)
+        return; // no engine, no stream: every stream below was created with gSoloud alive
+    // Destroy the stream before freeing the archive buffer: with loadMem(aCopy=false)
+    // the mixing thread reads s_musicArchiveBuf until the WavStream is gone.
+    if (pWavStream)
+    {
+        pWavStream->stop();
+        delete pWavStream;
+        pWavStream = nullptr;
+    }
+    if (pFile)
+    {
+        delete pFile;
+        pFile = nullptr;
+    }
+    if (s_musicArchiveBuf)
+    {
+        delete[] s_musicArchiveBuf;
+        s_musicArchiveBuf = nullptr;
+    }
 }
 
 void osystemAL_init()
@@ -460,6 +444,8 @@ void osystemAL_init()
 
 void osystemAL_deinit()
 {
+    osystem_stopTrack(); // the stream must die while gSoloud still exists (AudioSource::stop uses it)
+
     // Stop VO playback
     if (s_voStream)
     {
@@ -787,31 +773,7 @@ int osystem_playTrack(int trackId)
     if (!gSoloud)
         return 0;
 
-    // Delete the previous WavStream BEFORE freeing the archive buffer.
-    // WavStream::loadMem with aCopy=false means SoLoud's audio mixing thread
-    // reads directly from s_musicArchiveBuf. We must fully destroy the stream
-    // (which stops the audio thread's access) before freeing the buffer,
-    // otherwise we get a use-after-free access violation.
-    if (pWavStream)
-    {
-        pWavStream->stop();
-        delete pWavStream;
-        pWavStream = nullptr;
-    }
-
-    // Clean up previous DiskFile (used by filesystem fallback path)
-    if (pFile)
-    {
-        delete pFile;
-        pFile = nullptr;
-    }
-
-    // Now safe to free the archive buffer - no audio thread references remain
-    if (s_musicArchiveBuf)
-    {
-        delete[] s_musicArchiveBuf;
-        s_musicArchiveBuf = nullptr;
-    }
+    osystem_stopTrack();
 
     // Stop any active CD audio before switching tracks
     stopCDAudio();
