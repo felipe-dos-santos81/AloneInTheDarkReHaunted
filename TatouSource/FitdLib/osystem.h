@@ -156,7 +156,7 @@
 
 	// External music (docs/configuration.md, "Music"):
 	// <music.folder>/NN.{ogg,flac,mp3,wav}, NN the game's song number.
-	bool osystem_playMusicFile(int song);      // stops the current stream; true when a file now plays
+	bool osystem_playMusicFile(int song, bool loop = false); // stops the current stream; true when a file now plays
 	void osystem_fadeMusicFile(float seconds); // fade the file to silence and stop; <= 0 stops now
 	bool osystem_musicFileEnded();             // true once, when the file reached its end
 

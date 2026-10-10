@@ -31,3 +31,4 @@ Mark each cell `pass`, or `fail:` with a one-line note.
 | 11 | `music.volume = 2.0` in the cfg: plays at full volume (the game clamps the value to 1.0 when it reads the cfg) | |
 | 12 | `music.folder = "music/"` and then an absolute path to the same folder: the songs play | |
 | 13 | Turn "External music" off in F1 mid-song: the song keeps playing until the script's next stop or fade, which still act on it | |
+| 14 | With an `18.wav` in the folder: the startup menu plays it, it loops past its end, and it fades out within a second on New game, on Continue, and when the menu times out into the intro; after a game over the menu plays it again; with `music.external = false` the menu is silent | |

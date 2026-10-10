@@ -72,7 +72,7 @@ floor wants its own.
 
 | # | Piece | Length | Engine work needed |
 |---|---|---|---|
-| 18 | Title screen theme (the startup menu is silent today). | 1:30, loop-friendly | `playMusic(18)` when the startup menu opens, stop on New game or Load. |
+| 18 | Title screen theme. | 1:30, seamless loop | Done: plays while the startup menu is up, loops, fades out in 1 s on New game, Continue and the idle timeout. |
 | 19 | Ambient loop, the house (attic to ground floor). | 3:00, seamless loop | Looping does not exist: a loop flag on `osystem_playMusicFile`, and a cue on floor change when nothing else plays. |
 | 20 | Ambient loop, cellar and caves. | 3:00, seamless loop | Same as 19. |
 | 21 | Ambient loop, the dance hall. | 2:00, seamless loop | Same as 19, keyed to the room. |
