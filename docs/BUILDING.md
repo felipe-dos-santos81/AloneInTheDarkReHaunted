@@ -29,6 +29,10 @@ make build-fitd                    # configure and build the game
 make run data=/path/to/game/data   # build, then play from that folder
 ```
 
+`make configure` (run by every build target) also links the build tree's
+`compile_commands.json` to `TatouSource/build/`, where clangd finds it, so an
+editor shows the engine's real include paths and flags.
+
 Every build copies the HD character models (`Assets/models_hd`) next to the
 executable (into `Tatou.app/Contents/Resources` on macOS). The game finds them
 there from any working directory.
